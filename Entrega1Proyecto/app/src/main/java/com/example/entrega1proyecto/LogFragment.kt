@@ -2,12 +2,11 @@ package com.example.entrega1proyecto
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import kotlinx.android.synthetic.main.fragment_log.*
+import androidx.fragment.app.Fragment
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -32,19 +31,21 @@ class LogFragment : Fragment() {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
         }
-        //IngresarButton.setOnClickListener {
-          //  val intent = Intent(activity, ListaActivity::class.java)
-            //activity?.startActivity(intent)
+    }
 
-        //}
+    fun goToList(){
+        val intent = Intent(activity, ListaActivity::class.java)
+        startActivity(intent)
     }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_log, container, false)
+        val rootView = inflater.inflate(R.layout.fragment_log, container, false)
+        val button = rootView.findViewById<Button>(R.id.IngresarButton)
+        button.setOnClickListener { goToList() }
+        return rootView
     }
 
 
