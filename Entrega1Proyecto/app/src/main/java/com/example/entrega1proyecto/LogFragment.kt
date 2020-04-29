@@ -38,10 +38,7 @@ class LogFragment : Fragment() {
         startActivity(intent)
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val rootView = inflater.inflate(R.layout.fragment_log, container, false)
         val button = rootView.findViewById<Button>(R.id.IngresarButton)
         button.setOnClickListener { goToList() }

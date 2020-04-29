@@ -22,10 +22,10 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener {
         setContentView(R.layout.activity_lista)
         recyclerView.adapter = AdaptadorCustom(listaList, this)
         recyclerView.layoutManager = LinearLayoutManager(this)
+
     }
 
     override fun onItemCLicked(result: ListaItem){
-
     }
 
 

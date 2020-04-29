@@ -37,7 +37,6 @@ class AdaptadorCustom(private val items: ArrayList<ListaItem>, val itemClickList
                 clickListener.onItemCLicked(item)
             }
         }
-
     }
 }
 interface OnItemClickListener{
