@@ -5,7 +5,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.template.view.*
+import java.io.Serializable
 import java.sql.Date
+import java.util.*
+import kotlin.collections.ArrayList
 
 class AdaptadorCustom(private val items: ArrayList<ListaItem>, private val itemClickListener: OnItemClickListener, private val trashClickListener: OnTrashClickListener): RecyclerView.Adapter<AdaptadorCustom.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -50,5 +53,5 @@ interface OnTrashClickListener{
     fun onTrashCLicked(result: ListaItem)
 }
 
-class ListaItem(var name: String, val items: String) {}
-//class Item(var name: String, fechaPlazo: Date, prioridad: Boolean, notas: String){}
+class ListaItem(var name: String, var items: ArrayList<Item>? = null): Serializable {}
+class Item(var nameItem: String, estado: Boolean, prioridad:Boolean, plazo: String?, notasItem: String?, fechaCreacion: String): Serializable{}

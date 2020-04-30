@@ -18,16 +18,24 @@ import kotlinx.android.synthetic.main.template.*
 class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickListener{
 
     var listaList: ArrayList<ListaItem> = ArrayList()
+    var username: String? = null
+
+    companion object {
+        var LISTS = "LISTS"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_lista)
         recycler_view.adapter = AdaptadorCustom(listaList, this, this)
         recycler_view.layoutManager = LinearLayoutManager(this)
+        username = intent.getStringExtra(LISTS)!!
+        nombreUsuarioTextView.text = username
     }
 
     override fun onItemCLicked(result: ListaItem){
         val intent = Intent(this, listDetails::class.java)
+        intent.putExtra(LISTS, result)
         startActivity(intent)
     }
 
@@ -51,7 +59,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
 
         builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
-                listaList.add(ListaItem(view.listNameTextView.text.toString(),""))
+                listaList.add(ListaItem(view.listNameTextView.text.toString(),null))
                 recycler_view.adapter?.notifyItemInserted(listaList.size - 1)
                 dialog?.dismiss()
             }

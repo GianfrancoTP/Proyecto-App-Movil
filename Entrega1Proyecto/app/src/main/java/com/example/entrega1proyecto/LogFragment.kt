@@ -7,6 +7,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import androidx.fragment.app.Fragment
+import com.example.entrega1proyecto.ListaActivity.Companion.LISTS
+import kotlinx.android.synthetic.main.fragment_log.*
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -35,6 +37,7 @@ class LogFragment : Fragment() {
 
     fun goToList(){
         val intent = Intent(activity, ListaActivity::class.java)
+        intent.putExtra(LISTS,emailTextView.getText().toString())
         startActivity(intent)
     }
 
