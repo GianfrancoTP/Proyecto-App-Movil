@@ -2,6 +2,7 @@ package com.example.entrega1proyecto
 
 import android.app.Dialog
 import android.content.DialogInterface
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -14,18 +15,26 @@ import kotlinx.android.synthetic.main.popup.view.*
 import kotlinx.android.synthetic.main.popup.view.listNameTextView
 import kotlinx.android.synthetic.main.template.*
 
-class ListaActivity : AppCompatActivity(), OnItemClickListener {
+class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickListener{
 
     var listaList: ArrayList<ListaItem> = ArrayList()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_lista)
-        recyclerView.adapter = AdaptadorCustom(listaList, this)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-
+        recycler_view.adapter = AdaptadorCustom(listaList, this, this)
+        recycler_view.layoutManager = LinearLayoutManager(this)
     }
 
     override fun onItemCLicked(result: ListaItem){
+        val intent = Intent(this, listDetails::class.java)
+        startActivity(intent)
+    }
+
+    override fun onTrashCLicked(result: ListaItem) {
+        var pos = listaList.indexOf(result)
+        listaList.remove(result)
+        recycler_view.adapter?.notifyItemRemoved(pos)
     }
 
 
@@ -43,7 +52,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener {
         builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
                 listaList.add(ListaItem(view.listNameTextView.text.toString(),""))
-                recyclerView.adapter?.notifyItemInserted(listaList.size - 1)
+                recycler_view.adapter?.notifyItemInserted(listaList.size - 1)
                 dialog?.dismiss()
             }
         })

@@ -3,12 +3,11 @@ package com.example.entrega1proyecto
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.template.view.*
 import java.sql.Date
 
-class AdaptadorCustom(private val items: ArrayList<ListaItem>, val itemClickListener: OnItemClickListener): RecyclerView.Adapter<AdaptadorCustom.ViewHolder>() {
+class AdaptadorCustom(private val items: ArrayList<ListaItem>, private val itemClickListener: OnItemClickListener, private val trashClickListener: OnTrashClickListener): RecyclerView.Adapter<AdaptadorCustom.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.template, parent, false)
         return ViewHolder(view)
@@ -20,7 +19,7 @@ class AdaptadorCustom(private val items: ArrayList<ListaItem>, val itemClickList
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
-        holder.bindHistoric(item, itemClickListener)
+        holder.bindHistoric(item, itemClickListener, trashClickListener)
     }
 
     class ViewHolder(private var view: View) : RecyclerView.ViewHolder(view) {
@@ -29,18 +28,26 @@ class AdaptadorCustom(private val items: ArrayList<ListaItem>, val itemClickList
         init {
         }
 
-        fun bindHistoric(item: ListaItem, clickListener: OnItemClickListener) {
+        fun bindHistoric(item: ListaItem, clickListener: OnItemClickListener, trashListener: OnTrashClickListener) {
             this.item = item
             view.listaButton.text = item.name
+            view.trashImageButton.setOnClickListener{
+                trashListener.onTrashCLicked(item)
+            }
 
-            itemView.setOnClickListener {
+            view.listaButton.setOnClickListener {
                 clickListener.onItemCLicked(item)
+                println("HOLA")
             }
         }
     }
 }
 interface OnItemClickListener{
     fun onItemCLicked(result: ListaItem)
+}
+
+interface OnTrashClickListener{
+    fun onTrashCLicked(result: ListaItem)
 }
 
 class ListaItem(var name: String, val items: String) {}
