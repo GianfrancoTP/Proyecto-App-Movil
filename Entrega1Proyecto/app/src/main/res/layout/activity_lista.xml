@@ -31,7 +31,8 @@
         app:layout_constraintTop_toTopOf="@+id/guideline2"
         app:srcCompat="@drawable/account_icon_50dp"
         tools:layout_conversion_absoluteHeight="50dp"
-        tools:layout_conversion_absoluteWidth="50dp" />
+        tools:layout_conversion_absoluteWidth="50dp"
+        android:onClick="logOutPopUp"/>
 
     <TextView
         android:id="@+id/nombreUsuarioTextView"
@@ -45,7 +46,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/iconImageView"
         tools:layout_conversion_absoluteHeight="27dp"
-        tools:layout_conversion_absoluteWidth="147dp" />
+        tools:layout_conversion_absoluteWidth="147dp"
+        android:onClick="logOutPopUp"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view"

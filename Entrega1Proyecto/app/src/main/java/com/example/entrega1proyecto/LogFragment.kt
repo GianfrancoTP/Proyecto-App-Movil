@@ -1,5 +1,6 @@
 package com.example.entrega1proyecto
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -24,7 +25,7 @@ class LogFragment : Fragment() {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
-
+    var listaDeListas: ArrayList<ListaItem>? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,10 +38,20 @@ class LogFragment : Fragment() {
 
     fun goToList(){
         val intent = Intent(activity, ListaActivity::class.java)
-        intent.putExtra(LISTS,emailTextView.getText().toString())
-        startActivity(intent)
+        intent.putExtra("email",emailTextView.getText().toString())
+        intent.putExtra("lista",listaDeListas)
+        startActivityForResult(intent, 2)
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (data != null) {
+            if (resultCode == Activity.RESULT_OK){
+                listaDeListas = data.getSerializableExtra("lista de listas") as ArrayList<ListaItem>
+            }
+        }
+    }
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val rootView = inflater.inflate(R.layout.fragment_log, container, false)
         val button = rootView.findViewById<Button>(R.id.IngresarButton)

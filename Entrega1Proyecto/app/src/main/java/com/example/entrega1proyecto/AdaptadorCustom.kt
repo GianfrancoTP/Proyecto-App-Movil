@@ -40,7 +40,6 @@ class AdaptadorCustom(private val items: ArrayList<ListaItem>, private val itemC
 
             view.listaButton.setOnClickListener {
                 clickListener.onItemCLicked(item)
-                println("HOLA")
             }
         }
     }
@@ -54,4 +53,3 @@ interface OnTrashClickListener{
 }
 
 class ListaItem(var name: String, var items: ArrayList<Item>? = null): Serializable {}
-class Item(var nameItem: String, estado: Boolean, prioridad:Boolean, plazo: String?, notasItem: String?, fechaCreacion: String): Serializable{}

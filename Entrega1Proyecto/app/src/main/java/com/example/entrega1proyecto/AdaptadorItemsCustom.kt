@@ -4,9 +4,11 @@ package com.example.entrega1proyecto
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.items_template.view.*
 import kotlinx.android.synthetic.main.template.view.*
+import java.io.Serializable
 
 class AdaptadorItemsCustom(private val items: ArrayList<Item>, private val specificItemClickListener: OnSpecificItemClickListener): RecyclerView.Adapter<AdaptadorItemsCustom.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -32,15 +34,18 @@ class AdaptadorItemsCustom(private val items: ArrayList<Item>, private val speci
         fun bindHistoric(item: Item, clickListener: OnSpecificItemClickListener) {
             this.item = item
             view.checkBox.text = item.nameItem
-
-
-            view.listaButton.setOnClickListener {
-                clickListener.onSpecificItemCLicked(item)
+            if(item.estado) {
+                view.checkBox.performClick()
+            }
+            view.checkBox.setOnClickListener {
+                clickListener.onSpecificItemCLicked(item, it.checkBox)
             }
         }
     }
 }
 
 interface OnSpecificItemClickListener{
-    fun onSpecificItemCLicked(result: Item)
+    fun onSpecificItemCLicked(result: Item, it:CheckBox)
 }
+class Item(var nameItem: String, var estado: Boolean, var prioridad:Boolean, var plazo: String?, var notasItem: String?,
+           var fechaCreacion: String): Serializable {}
