@@ -4,22 +4,21 @@ import android.app.Activity
 import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.activity_lista.*
-import kotlinx.android.synthetic.main.popup.*
 import kotlinx.android.synthetic.main.popup.view.*
-import kotlinx.android.synthetic.main.popup.view.listNameTextView
-import kotlinx.android.synthetic.main.template.*
-import java.nio.file.Files.find
 import java.util.*
 import kotlin.collections.ArrayList
+
 
 class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickListener{
 
@@ -28,6 +27,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     var itemsRecibidos: ListaItem = ListaItem("")
     var username: String? = null
     var modified: ListaItem? = null
+    var validador: Boolean = false
 
     companion object {
         var LISTS = "LISTS"
@@ -40,12 +40,13 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         recycler_view.layoutManager = LinearLayoutManager(this)
         username = intent.getStringExtra("email")!!
         if (intent?.getSerializableExtra("lista") != null) {
+            validador = true
             startingListaList = intent.getSerializableExtra("lista")!! as ArrayList<ListaItem>
             createLists(startingListaList)
         }
         nombreUsuarioTextView.text = username
 
-        //This is for Drag and Drop ----------------------------------------------------------------------------
+        //This is for the Drag and Drop ----------------------------------------------------------------------------
 
         val touchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0){
             override fun onMove(
@@ -145,5 +146,20 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         })
         var dialog: Dialog = builder.create()
         dialog.show()
+    }
+
+    public override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+        savedInstanceState.putString("nombreDeUsuarioTextView", nombreUsuarioTextView.text.toString())
+        savedInstanceState.putSerializable("lista listas",listaList)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
+        super.onRestoreInstanceState(savedInstanceState)
+        nombreUsuarioTextView.text = savedInstanceState?.getString("nombreDeUsuarioTextView")
+        startingListaList = savedInstanceState?.getSerializable("lista listas") as ArrayList<ListaItem>
+        if(!validador) {
+            createLists(startingListaList)
+        }
     }
 }

@@ -28,8 +28,8 @@ import java.time.format.FormatStyle
 
 class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
 
-    //CAMBIAR EL TIPO DE ELEMENTOS DENTRO DE LA LISTA
-    val itemsOnList: ArrayList<Item> = ArrayList()
+    var itemsOnList: ArrayList<Item> = ArrayList()
+    var copyItemsOnList: ArrayList<Item> = ArrayList()
     var list: ListaItem? = null
     var prioritario = false
 
@@ -39,7 +39,9 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         itemsRecyclerView.adapter = AdaptadorItemsCustom(itemsOnList, this)
         itemsRecyclerView.layoutManager = LinearLayoutManager(this)
         list = intent.getSerializableExtra(LISTS)!! as ListaItem
-        createItems(list!!)
+        if(savedInstanceState == null) {
+            createItems(list!!)
+        }
         nombreListaTextView.text = list?.name
     }
 
@@ -116,11 +118,25 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     }
 
 
-    //FALTA IMPLEMENTAR LOS ITEMS DENTRO DE LA LISTA
     override fun onSpecificItemCLicked(result: Item, check:CheckBox) {
         var itemModifiedPosition = itemsOnList.indexOf(result)
         result.estado = check.isChecked
         itemsOnList[itemModifiedPosition] = result
     }
 
+    public override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+        savedInstanceState.putSerializable("lista listas",itemsOnList)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
+        super.onRestoreInstanceState(savedInstanceState)
+        copyItemsOnList = savedInstanceState?.getSerializable("lista listas") as ArrayList<Item>
+        copyItemsOnList.forEach {
+            itemsOnList.add(it)
+            itemsRecyclerView.adapter?.notifyItemInserted(itemsOnList.size - 1)
+        }
+
+
+    }
 }
