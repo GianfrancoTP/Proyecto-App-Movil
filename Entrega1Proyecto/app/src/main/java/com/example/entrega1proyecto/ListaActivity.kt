@@ -9,13 +9,17 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import androidx.appcompat.app.AlertDialog
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.activity_lista.*
 import kotlinx.android.synthetic.main.popup.*
 import kotlinx.android.synthetic.main.popup.view.*
 import kotlinx.android.synthetic.main.popup.view.listNameTextView
 import kotlinx.android.synthetic.main.template.*
 import java.nio.file.Files.find
+import java.util.*
+import kotlin.collections.ArrayList
 
 class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickListener{
 
@@ -40,6 +44,28 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
             createLists(startingListaList)
         }
         nombreUsuarioTextView.text = username
+
+        //This is for Drag and Drop ----------------------------------------------------------------------------
+
+        val touchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0){
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val sourcePosition = viewHolder.adapterPosition
+                val targetPosition = target.adapterPosition
+                Collections.swap(listaList, sourcePosition, targetPosition)
+                recycler_view.adapter?.notifyItemMoved(sourcePosition, targetPosition)
+                return true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                TODO("Not yet implemented")
+            }
+        })
+        touchHelper.attachToRecyclerView(recycler_view)
+        // End of Drag and Drop --------------------------------------------------------------------------------
     }
 
     private fun createLists(startingListaList: ArrayList<ListaItem>){
