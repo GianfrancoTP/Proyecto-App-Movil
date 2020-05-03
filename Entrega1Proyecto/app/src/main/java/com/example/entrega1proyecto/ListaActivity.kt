@@ -25,8 +25,8 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     var listaList: ArrayList<ListaItem> = ArrayList()
     var startingListaList: ArrayList<ListaItem> = ArrayList()
     var itemsRecibidos: ListaItem = ListaItem("")
+    var modified: ListaItem = ListaItem("")
     var username: String? = null
-    var modified: ListaItem? = null
     var validador: Boolean = false
 
     companion object {
@@ -84,7 +84,6 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-
         if (data != null) {
             if (resultCode == Activity.RESULT_OK){
                 itemsRecibidos = data.getSerializableExtra("listaItems") as ListaItem
@@ -151,6 +150,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         savedInstanceState.putString("nombreDeUsuarioTextView", nombreUsuarioTextView.text.toString())
+        savedInstanceState.putSerializable("ItemModificado",modified)
         savedInstanceState.putSerializable("lista listas",listaList)
     }
 
@@ -158,6 +158,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         super.onRestoreInstanceState(savedInstanceState)
         nombreUsuarioTextView.text = savedInstanceState?.getString("nombreDeUsuarioTextView")
         startingListaList = savedInstanceState?.getSerializable("lista listas") as ArrayList<ListaItem>
+        modified = savedInstanceState?.getSerializable("ItemModificado") as ListaItem
         if(!validador) {
             createLists(startingListaList)
         }

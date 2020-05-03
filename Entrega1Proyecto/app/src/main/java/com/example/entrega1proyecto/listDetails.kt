@@ -30,8 +30,9 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
 
     var itemsOnList: ArrayList<Item> = ArrayList()
     var copyItemsOnList: ArrayList<Item> = ArrayList()
-    var list: ListaItem? = null
+    var list: ListaItem = ListaItem("")
     var prioritario = false
+    var modified: ListaItem = ListaItem("")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -112,7 +113,6 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         val myIntent: Intent = Intent()
         list = ListaItem(list!!.name, itemsOnList)
         myIntent.putExtra("listaItems",list)
-        myIntent.putExtra("username",nombreListaTextView.text)
         setResult(Activity.RESULT_OK, myIntent)
         finish()
     }
@@ -136,7 +136,5 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             itemsOnList.add(it)
             itemsRecyclerView.adapter?.notifyItemInserted(itemsOnList.size - 1)
         }
-
-
     }
 }
