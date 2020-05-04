@@ -6,10 +6,10 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.template.view.*
 import java.io.Serializable
-import java.sql.Date
 import java.util.*
 import kotlin.collections.ArrayList
 
+// This is the adapter for the lists
 class AdaptadorCustom(private val items: ArrayList<ListaItem>, private val itemClickListener: OnItemClickListener, private val trashClickListener: OnTrashClickListener): RecyclerView.Adapter<AdaptadorCustom.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.template, parent, false)
@@ -33,17 +33,20 @@ class AdaptadorCustom(private val items: ArrayList<ListaItem>, private val itemC
 
         fun bindHistoric(item: ListaItem, clickListener: OnItemClickListener, trashListener: OnTrashClickListener) {
             this.item = item
+            // We set the name of the list here
             view.listaButton.text = item.name
+            // We set the trash image of the list listening to be able to delete the list
             view.trashImageButton.setOnClickListener{
                 trashListener.onTrashCLicked(item)
             }
-
+            // We set the list listening to be able to click it and go to the items activity
             view.listaButton.setOnClickListener {
                 clickListener.onItemCLicked(item)
             }
         }
     }
 }
+
 interface OnItemClickListener{
     fun onItemCLicked(result: ListaItem)
 }
