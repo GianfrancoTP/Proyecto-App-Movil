@@ -7,13 +7,21 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.entrega1proyecto.model.User
+import com.example.entrega1proyecto.networking.PersonApi
+import com.example.entrega1proyecto.networking.UserService
 import kotlinx.android.synthetic.main.activity_lista.*
 import kotlinx.android.synthetic.main.popup.view.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import java.io.Serializable
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -26,6 +34,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     var modified: ListaItem = ListaItem("")
     var username: String? = null
     var validador: Boolean = false
+    var user: User? = null
 
     companion object {
         var LISTS = "LISTS"
@@ -34,11 +43,30 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_lista)
+        val request = UserService.buildService(PersonApi::class.java)
+
         // The recycler view for the Activity that contains the lists
         recycler_view.adapter = AdaptadorCustom(listaList, this, this)
         recycler_view.layoutManager = LinearLayoutManager(this)
+
         // This is to obtain the username of the logged person
         username = intent.getStringExtra("email")!!
+        val call = request.getUsers()
+        call.enqueue(object: Callback<User> {
+            override fun onResponse(call: Call<User>, response: Response<User>) {
+                if (response.isSuccessful) {
+                    if (response.body() != null) {
+                        user = response.body()!!
+                        nombreUsuarioTextView.text = user!!.name
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call<User>, t: Throwable) {
+                Toast.makeText(this@ListaActivity, "${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+
         // This is to keep the Lists if we got back to the Log In activity
         if (intent?.getSerializableExtra("lista") != null) {
             validador = true
@@ -101,6 +129,15 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 listaList[x] = itemsRecibidos
                 recycler_view.adapter?.notifyItemChanged(x)
             }
+            else if (resultCode == 2){
+                user = data.getSerializableExtra("user details updated") as User
+                val endIntent = Intent()
+                // We give the result to the Log in activity to maintain the information
+                endIntent.putExtra("lista de listas",listaList as Serializable)
+                endIntent.putExtra("user details finish",user as Serializable)
+                setResult(Activity.RESULT_OK, endIntent)
+                finish()
+            }
         }
     }
 
@@ -113,32 +150,11 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
 
     // Function when was clicked the username to log out
     fun logOutPopUp(view: View){
-        // We created a Dialog to ask if he really wants to log out
-        var builder: AlertDialog.Builder = AlertDialog.Builder(this)
-        var inflater: LayoutInflater = layoutInflater
-        var view: View = inflater.inflate(R.layout.log_out_pop_up,null)
-        builder.setView(view)
-
-        // To resume what was going on in the app if he does't want to log out
-        builder.setNegativeButton("Cancelar", object: DialogInterface.OnClickListener{
-            override fun onClick(dialog: DialogInterface?, which: Int) {
-                dialog?.dismiss()
-            }
-        })
-
-        // To go back to the Log in activity
-        builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
-            override fun onClick(dialog: DialogInterface?, which: Int) {
-                val myIntent = Intent()
-                // We give the result to the Log in activity to maintain the information
-                myIntent.putExtra("lista de listas",listaList)
-                setResult(Activity.RESULT_OK, myIntent)
-                dialog?.dismiss()
-                finish()
-            }
-        })
-        var dialog: Dialog = builder.create()
-        dialog.show()
+        val intent = Intent(this, UserDetails::class.java)
+        // We give the result to the Log in activity to maintain the information
+        intent.putExtra("lista de listas",listaList)
+        intent.putExtra("user details", user as Serializable)
+        startActivityForResult(intent, 1)
     }
 
     // Function to create new lists
@@ -193,3 +209,6 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         }
     }
 }
+
+
+

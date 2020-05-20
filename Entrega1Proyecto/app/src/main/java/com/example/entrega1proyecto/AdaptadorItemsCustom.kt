@@ -40,7 +40,14 @@ class AdaptadorItemsCustom(private val items: ArrayList<Item>, private val speci
             view.checkBox.text = item.nameItem
             // We set the item on clicked if it was clicked before
             if(item.estado) {
-                view.checkBox.performClick()
+                if (!view.checkBox.isChecked) {
+                    view.checkBox.isChecked = true
+                }
+            }
+            else{
+                if (view.checkBox.isChecked) {
+                    view.checkBox.isChecked = false
+                }
             }
             // We set the priority items in different color to highlight from the others
             if(item.prioridad){
