@@ -42,6 +42,7 @@ class LogFragment : Fragment() {
         val intent = Intent(activity, ListaActivity::class.java)
         intent.putExtra("email",emailTextView.getText().toString())
         intent.putExtra("lista",listaDeListas)
+        intent.putExtra("coming from Log In", true)
         startActivityForResult(intent, 2)
     }
 

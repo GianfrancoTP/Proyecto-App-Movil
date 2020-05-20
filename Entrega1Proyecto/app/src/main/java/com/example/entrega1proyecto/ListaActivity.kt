@@ -35,6 +35,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     var username: String? = null
     var validador: Boolean = false
     var user: User? = null
+    var weJustGotFromLogIn: Boolean = false
 
     companion object {
         var LISTS = "LISTS"
@@ -66,13 +67,18 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 Toast.makeText(this@ListaActivity, "${t.message}", Toast.LENGTH_SHORT).show()
             }
         })
+        if (savedInstanceState?.getBoolean("validador") != null){
+            validador = savedInstanceState?.getBoolean("validador")!!
+        }
 
         // This is to keep the Lists if we got back to the Log In activity
-        if (intent?.getSerializableExtra("lista") != null) {
-            validador = true
-            // This is to mantain the list if we change the orientation of the phone
-            startingListaList = intent.getSerializableExtra("lista")!! as ArrayList<ListaItem>
-            createLists(startingListaList)
+        if (!validador) {
+            if (intent?.getSerializableExtra("lista") != null) {
+                validador = true
+                // This is to mantain the list if we change the orientation of the phone
+                startingListaList = intent.getSerializableExtra("lista")!! as ArrayList<ListaItem>
+                createLists(startingListaList)
+            }
         }
         nombreUsuarioTextView.text = username
 
@@ -188,25 +194,29 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         // We give the username
-        savedInstanceState.putString("nombreDeUsuarioTextView", nombreUsuarioTextView.text.toString())
+        savedInstanceState.putSerializable("person", user as Serializable)
         // We give the changed item if the screen is rotated before being saved in the array of lists
         savedInstanceState.putSerializable("ItemModificado",modified)
         // We give the array of lists
         savedInstanceState.putSerializable("lista listas",listaList)
+
+        savedInstanceState.putBoolean("validador", validador)
     }
 
     // Function to obtain what was given before changing the state of the activity
     override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
         super.onRestoreInstanceState(savedInstanceState)
         // Obtain the username
-        nombreUsuarioTextView.text = savedInstanceState?.getString("nombreDeUsuarioTextView")
+        user = savedInstanceState?.getSerializable("person") as User
+        nombreUsuarioTextView.text = user!!.name
         // Obtain the array list
         startingListaList = savedInstanceState?.getSerializable("lista listas") as ArrayList<ListaItem>
         // Obtain the modified items on the list
         modified = savedInstanceState?.getSerializable("ItemModificado") as ListaItem
-        if(!validador) {
-            createLists(startingListaList)
-        }
+
+       // if(!validador) {
+        createLists(startingListaList)
+       // }
     }
 }
 
