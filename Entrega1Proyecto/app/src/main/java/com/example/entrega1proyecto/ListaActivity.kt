@@ -32,10 +32,11 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     var startingListaList: ArrayList<ListaItem> = ArrayList()
     var itemsRecibidos: ListaItem = ListaItem("")
     var modified: ListaItem = ListaItem("")
-    var username: String? = null
+    var username: User? = null
     var validador: Boolean = false
     var user: User? = null
     var weJustGotFromLogIn: Boolean = false
+    var switchState: Boolean = false
 
     companion object {
         var LISTS = "LISTS"
@@ -44,32 +45,43 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_lista)
-        val request = UserService.buildService(PersonApi::class.java)
+
 
         // The recycler view for the Activity that contains the lists
         recycler_view.adapter = AdaptadorCustom(listaList, this, this)
         recycler_view.layoutManager = LinearLayoutManager(this)
 
         // This is to obtain the username of the logged person
-        username = intent.getStringExtra("email")!!
-        val call = request.getUsers()
-        call.enqueue(object: Callback<User> {
-            override fun onResponse(call: Call<User>, response: Response<User>) {
-                if (response.isSuccessful) {
-                    if (response.body() != null) {
-                        user = response.body()!!
-                        nombreUsuarioTextView.text = user!!.name
-                    }
-                }
-            }
+        if(intent.getSerializableExtra("email") != null){
+            username = intent.getSerializableExtra("email") as User
+        }
 
-            override fun onFailure(call: Call<User>, t: Throwable) {
-                Toast.makeText(this@ListaActivity, "${t.message}", Toast.LENGTH_SHORT).show()
-            }
-        })
+        switchState = intent.getBooleanExtra("switchFromStart",false)
         if (savedInstanceState?.getBoolean("validador") != null){
             validador = savedInstanceState?.getBoolean("validador")!!
         }
+        try{
+            user = savedInstanceState?.getSerializable("user details update") as User
+            nombreUsuarioTextView.text = user!!.name
+        }catch (e: Exception){
+            val request = UserService.buildService(PersonApi::class.java)
+            val call = request.getUsers()
+            call.enqueue(object: Callback<User> {
+                override fun onResponse(call: Call<User>, response: Response<User>) {
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                            user = response.body()!!
+                            nombreUsuarioTextView.text = user!!.name
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<User>, t: Throwable) {
+                    Toast.makeText(this@ListaActivity, "${t.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
+        }
+
 
         // This is to keep the Lists if we got back to the Log In activity
         if (!validador) {
@@ -80,7 +92,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 createLists(startingListaList)
             }
         }
-        nombreUsuarioTextView.text = username
+
 
         //This is for the Drag and Drop ----------------------------------------------------------------------------
 
@@ -120,6 +132,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         // Go to the items in a list activity
         val intent = Intent(this, listDetails::class.java)
         intent.putExtra(LISTS, result)
+        intent.putExtra("switch", switchState)
         startActivityForResult(intent, 1)
     }
 
@@ -133,6 +146,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 var x = listaList.indexOf(modified)
                 // We update the changed list inside the array of lists
                 listaList[x] = itemsRecibidos
+                switchState = data.getBooleanExtra("SwitchState", false)
                 recycler_view.adapter?.notifyItemChanged(x)
             }
             else if (resultCode == 2){
@@ -141,8 +155,13 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 // We give the result to the Log in activity to maintain the information
                 endIntent.putExtra("lista de listas",listaList as Serializable)
                 endIntent.putExtra("user details finish",user as Serializable)
+                endIntent.putExtra("switchStateToStart", switchState)
                 setResult(Activity.RESULT_OK, endIntent)
                 finish()
+            }
+            else if (resultCode == 3){
+                user = data.getSerializableExtra("user details update") as User
+                nombreUsuarioTextView.text = user!!.name
             }
         }
     }
@@ -160,7 +179,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         // We give the result to the Log in activity to maintain the information
         intent.putExtra("lista de listas",listaList)
         intent.putExtra("user details", user as Serializable)
-        startActivityForResult(intent, 1)
+        startActivityForResult(intent, 3)
     }
 
     // Function to create new lists
@@ -217,6 +236,14 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
        // if(!validador) {
         createLists(startingListaList)
        // }
+    }
+    override fun onBackPressed() {
+        val endIntent = Intent()
+        endIntent.putExtra("lista de listas",listaList as Serializable)
+        endIntent.putExtra("user details finish",user as Serializable)
+        setResult(Activity.RESULT_OK, endIntent)
+        finish()
+        super.onBackPressed()
     }
 }
 

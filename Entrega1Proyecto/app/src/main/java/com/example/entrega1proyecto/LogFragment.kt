@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import com.example.entrega1proyecto.ListaActivity.Companion.LISTS
 import com.example.entrega1proyecto.model.User
 import kotlinx.android.synthetic.main.fragment_log.*
+import java.io.Serializable
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -28,6 +29,7 @@ class LogFragment : Fragment() {
     private var param2: String? = null
     var listaDeListas: ArrayList<ListaItem>? = null
     var user: User? = null
+    var switch: Boolean = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,9 +42,12 @@ class LogFragment : Fragment() {
 
     fun goToList(){
         val intent = Intent(activity, ListaActivity::class.java)
-        intent.putExtra("email",emailTextView.getText().toString())
+        if (user!= null) {
+            intent.putExtra("email", user as Serializable)
+        }
         intent.putExtra("lista",listaDeListas)
         intent.putExtra("coming from Log In", true)
+        intent.putExtra("switchFromStart", switch)
         startActivityForResult(intent, 2)
     }
 
@@ -53,6 +58,7 @@ class LogFragment : Fragment() {
             if (resultCode == Activity.RESULT_OK){
                 listaDeListas = data.getSerializableExtra("lista de listas") as ArrayList<ListaItem>
                 user = data.getSerializableExtra("user details finish") as User
+                switch = data.getBooleanExtra("switchStateToStart",false)
                 emailTextView.setText(user!!.email)
                 passwordTextView.setText(user!!.name)
             }

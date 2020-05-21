@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.items_template.view.*
 import java.io.Serializable
@@ -49,6 +50,12 @@ class AdaptadorItemsCustom(private val items: ArrayList<Item>, private val speci
                     view.checkBox.isChecked = false
                 }
             }
+            if(item.isShown){
+                view.checkBox.visibility = View.VISIBLE
+            }
+            else{
+                view.checkBox.visibility = View.GONE
+            }
             // We set the priority items in different color to highlight from the others
             if(item.prioridad){
                 val colors = intArrayOf(
@@ -78,4 +85,4 @@ interface OnSpecificItemClickListener{
     fun onSpecificItemCLicked(result: Item, it:CheckBox)
 }
 class Item(var nameItem: String, var estado: Boolean, var prioridad:Boolean, var plazo: String?, var notasItem: String?,
-           var fechaCreacion: String): Serializable {}
+           var fechaCreacion: String, var isShown: Boolean): Serializable {}

@@ -10,9 +10,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.CheckBox
+import android.widget.CompoundButton
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.entrega1proyecto.ListaActivity.Companion.LISTS
 import kotlinx.android.synthetic.main.activity_list_details.*
 import kotlinx.android.synthetic.main.items_template.*
@@ -25,6 +28,8 @@ import kotlinx.android.synthetic.main.popup_to_create_item.view.*
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.*
+import kotlin.collections.ArrayList
 
 class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
 
@@ -33,6 +38,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     var list: ListaItem = ListaItem("")
     var prioritario = false
     var modified: ListaItem = ListaItem("")
+    var shown = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,12 +48,53 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         itemsRecyclerView.layoutManager = LinearLayoutManager(this)
         // We obtain the array of lists
         list = intent.getSerializableExtra(LISTS)!! as ListaItem
+        var switch = intent.getBooleanExtra("switch", false)
+        SwitchItemsChecked.isChecked = switch
         // If the activity haven't changed the orientation
         if(savedInstanceState == null) {
             createItems(list!!)
         }
+
+        SwitchItemsChecked.setOnCheckedChangeListener { compoundButton: CompoundButton, b: Boolean ->
+            if (b){
+                itemsOnList.forEach {
+                    var itemModifiedPosition = itemsOnList.indexOf(it)
+                    it.isShown = !it.isShown
+                    itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
+                }
+            }
+            else{
+                itemsOnList.forEach {
+                    var itemModifiedPosition = itemsOnList.indexOf(it)
+                    it.isShown = !it.isShown
+                    itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
+                }
+            }
+        }
         // We set the name of the list
         nombreListaTextView.text = list?.name
+
+        //This is for the Drag and Drop ----------------------------------------------------------------------------
+
+        val touchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0){
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val sourcePosition = viewHolder.adapterPosition
+                val targetPosition = target.adapterPosition
+                Collections.swap(itemsOnList, sourcePosition, targetPosition)
+                itemsRecyclerView.adapter?.notifyItemMoved(sourcePosition, targetPosition)
+                return true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                TODO("Not yet implemented")
+            }
+        })
+        touchHelper.attachToRecyclerView(itemsRecyclerView)
+        // End of Drag and Drop --------------------------------------------------------------------------------
     }
 
     // We set the items on the list in this activity
@@ -86,10 +133,11 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 val current = LocalDateTime.now()
                 val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                 val formatted = current.format(formatter)
+                shown = !SwitchItemsChecked.isChecked
                 // Here we create the item
                 var newItem = Item(nameItem = view.itemNameEditText.getText().toString(),estado = false,
                     prioridad= prioritario, plazo= view.plazoEditText.getText().toString(),
-                    notasItem= view.descripcionEditText.getText().toString(),fechaCreacion= formatted)
+                    notasItem= view.descripcionEditText.getText().toString(),fechaCreacion= formatted, isShown = shown)
                 // We add it to the array of items
                 itemsOnList.add(newItem)
                 itemsRecyclerView.adapter?.notifyItemInserted(itemsOnList.size -1)
@@ -128,6 +176,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         val myIntent: Intent = Intent()
         list = ListaItem(list!!.name, itemsOnList)
         myIntent.putExtra("listaItems",list)
+        myIntent.putExtra("SwitchState",SwitchItemsChecked.isChecked)
         setResult(Activity.RESULT_OK, myIntent)
         finish()
     }
@@ -136,8 +185,11 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     override fun onSpecificItemCLicked(result: Item, check:CheckBox) {
         var itemModifiedPosition = itemsOnList.indexOf(result)
         result.estado = check.isChecked
+        result.isShown = !check.isChecked
+
         // We save it on the list ot items
         itemsOnList[itemModifiedPosition] = result
+        itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
     }
 
     // If the state is changed we need to pass the important data to don't lose it
