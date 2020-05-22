@@ -32,10 +32,8 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     var startingListaList: ArrayList<ListaItem> = ArrayList()
     var itemsRecibidos: ListaItem = ListaItem("")
     var modified: ListaItem = ListaItem("")
-    var username: User? = null
     var validador: Boolean = false
     var user: User? = null
-    var weJustGotFromLogIn: Boolean = false
     var switchState: Boolean = false
 
     companion object {
@@ -51,37 +49,14 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         recycler_view.adapter = AdaptadorCustom(listaList, this, this)
         recycler_view.layoutManager = LinearLayoutManager(this)
 
-        // This is to obtain the username of the logged person
-        if(intent.getSerializableExtra("email") != null){
-            username = intent.getSerializableExtra("email") as User
-        }
-
         switchState = intent.getBooleanExtra("switchFromStart",false)
+
         if (savedInstanceState?.getBoolean("validador") != null){
             validador = savedInstanceState?.getBoolean("validador")!!
         }
-        try{
-            user = savedInstanceState?.getSerializable("user details update") as User
-            nombreUsuarioTextView.text = user!!.name
-        }catch (e: Exception){
-            val request = UserService.buildService(PersonApi::class.java)
-            val call = request.getUsers()
-            call.enqueue(object: Callback<User> {
-                override fun onResponse(call: Call<User>, response: Response<User>) {
-                    if (response.isSuccessful) {
-                        if (response.body() != null) {
-                            user = response.body()!!
-                            nombreUsuarioTextView.text = user!!.name
-                        }
-                    }
-                }
 
-                override fun onFailure(call: Call<User>, t: Throwable) {
-                    Toast.makeText(this@ListaActivity, "${t.message}", Toast.LENGTH_SHORT).show()
-                }
-            })
-        }
-
+        user = intent.getSerializableExtra("user details start") as User
+        nombreUsuarioTextView.text = user!!.name
 
         // This is to keep the Lists if we got back to the Log In activity
         if (!validador) {

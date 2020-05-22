@@ -25,6 +25,7 @@ import kotlinx.android.synthetic.main.popup.*
 import kotlinx.android.synthetic.main.popup.view.*
 import kotlinx.android.synthetic.main.popup_to_create_item.*
 import kotlinx.android.synthetic.main.popup_to_create_item.view.*
+import java.lang.Error
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -37,8 +38,9 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     var copyItemsOnList: ArrayList<Item> = ArrayList()
     var list: ListaItem = ListaItem("")
     var prioritario = false
-    var modified: ListaItem = ListaItem("")
     var shown = false
+    var itemModificadoPos = -1
+    var itemModified: Item? =  null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,6 +97,23 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         })
         touchHelper.attachToRecyclerView(itemsRecyclerView)
         // End of Drag and Drop --------------------------------------------------------------------------------
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (data != null) {
+            if (resultCode == 5) {
+                try{
+                    itemModified = data.getSerializableExtra("item updated") as Item
+                    itemsOnList[itemModificadoPos] = itemModified!!
+                    itemsRecyclerView.adapter?.notifyItemChanged(itemModificadoPos)
+                }catch (e: Exception){
+                    itemsOnList.removeAt(itemModificadoPos)
+                    itemsRecyclerView.adapter?.notifyItemRemoved(itemModificadoPos)
+                }
+
+            }
+        }
     }
 
     // We set the items on the list in this activity
@@ -192,6 +211,13 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
     }
 
+    override fun onEyeItemCLicked(result: Item) {
+        val intent = Intent(this, ItemDetails::class.java)
+        itemModificadoPos = itemsOnList.indexOf(result)
+        intent.putExtra("item to watch", result)
+        startActivityForResult(intent, 4)
+    }
+
     // If the state is changed we need to pass the important data to don't lose it
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
@@ -206,5 +232,15 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             itemsOnList.add(it)
             itemsRecyclerView.adapter?.notifyItemInserted(itemsOnList.size - 1)
         }
+    }
+
+    override fun onBackPressed() {
+        val myIntent: Intent = Intent()
+        list = ListaItem(list!!.name, itemsOnList)
+        myIntent.putExtra("listaItems",list)
+        myIntent.putExtra("SwitchState",SwitchItemsChecked.isChecked)
+        setResult(Activity.RESULT_OK, myIntent)
+        finish()
+        super.onBackPressed()
     }
 }

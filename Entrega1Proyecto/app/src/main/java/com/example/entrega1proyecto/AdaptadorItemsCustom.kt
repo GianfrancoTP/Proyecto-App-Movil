@@ -1,12 +1,14 @@
 package com.example.entrega1proyecto
 
 
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
+import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.items_template.view.*
@@ -52,9 +54,11 @@ class AdaptadorItemsCustom(private val items: ArrayList<Item>, private val speci
             }
             if(item.isShown){
                 view.checkBox.visibility = View.VISIBLE
+                view.seeItemDetails.visibility = View.VISIBLE
             }
             else{
                 view.checkBox.visibility = View.GONE
+                view.seeItemDetails.visibility = View.GONE
             }
             // We set the priority items in different color to highlight from the others
             if(item.prioridad){
@@ -77,12 +81,17 @@ class AdaptadorItemsCustom(private val items: ArrayList<Item>, private val speci
             view.checkBox.setOnClickListener {
                 clickListener.onSpecificItemCLicked(item, it.checkBox)
             }
+
+            view.seeItemDetails.setOnClickListener{
+                clickListener.onEyeItemCLicked(item)
+            }
         }
     }
 }
 
 interface OnSpecificItemClickListener{
     fun onSpecificItemCLicked(result: Item, it:CheckBox)
+    fun onEyeItemCLicked(result: Item)
 }
 class Item(var nameItem: String, var estado: Boolean, var prioridad:Boolean, var plazo: String?, var notasItem: String?,
            var fechaCreacion: String, var isShown: Boolean): Serializable {}
