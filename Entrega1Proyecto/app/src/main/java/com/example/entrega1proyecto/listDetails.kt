@@ -105,6 +105,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             if (resultCode == 5) {
                 try{
                     itemModified = data.getSerializableExtra("item updated") as Item
+                    itemModificadoPos = data.getIntExtra("item position modified", -1)
                     itemsOnList[itemModificadoPos] = itemModified!!
                     itemsRecyclerView.adapter?.notifyItemChanged(itemModificadoPos)
                 }catch (e: Exception){
@@ -203,8 +204,14 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     // We update the item if it was clicked
     override fun onSpecificItemCLicked(result: Item, check:CheckBox) {
         var itemModifiedPosition = itemsOnList.indexOf(result)
-        result.estado = check.isChecked
-        result.isShown = !check.isChecked
+        if(result.estado){
+            result.estado = check.isChecked
+            result.isShown = check.isChecked
+        }
+        else {
+            result.estado = check.isChecked
+            result.isShown = !check.isChecked
+        }
 
         // We save it on the list ot items
         itemsOnList[itemModifiedPosition] = result
@@ -215,6 +222,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         val intent = Intent(this, ItemDetails::class.java)
         itemModificadoPos = itemsOnList.indexOf(result)
         intent.putExtra("item to watch", result)
+        intent.putExtra("Item position", itemModificadoPos)
         startActivityForResult(intent, 4)
     }
 

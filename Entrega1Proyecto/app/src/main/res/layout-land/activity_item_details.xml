@@ -158,8 +158,9 @@
 
     <ScrollView
         android:id="@+id/scrollView2"
-        android:layout_width="725dp"
+        android:layout_width="match_parent"
         android:layout_height="64dp"
+        android:background="@color/MyModifiedColor"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
@@ -169,11 +170,11 @@
             android:id="@+id/notasItemEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@color/MyColor"
             android:layout_marginStart="39dp"
             android:layout_marginTop="20dp"
             android:layout_marginEnd="39dp"
             android:layout_marginBottom="10dp"
-            android:background="@android:color/transparent"
             android:ems="10"
             android:gravity="start|top"
             android:inputType="textMultiLine"

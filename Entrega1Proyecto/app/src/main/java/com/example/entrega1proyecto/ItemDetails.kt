@@ -12,19 +12,37 @@ import androidx.core.view.isVisible
 import kotlinx.android.synthetic.main.activity_item_details.*
 import kotlinx.android.synthetic.main.popup.view.*
 import java.io.Serializable
+import java.lang.Exception
 
 class ItemDetails : AppCompatActivity() {
 
     var item: Item? = null
+    var pos = -1
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_item_details)
 
-        item = intent.getSerializableExtra("item to watch")!! as Item
+        try {
+            item = savedInstanceState?.getSerializable("Item") as Item
+            pos = savedInstanceState?.getInt("Position")
+        }
+        catch(e:Exception){
+            item = intent.getSerializableExtra("item to watch")!! as Item
+            pos = intent.getIntExtra("Item position", -1)
+        }
+
 
         nombreItemTextView.text = item!!.nameItem
         createdAtTextView.text = item!!.fechaCreacion
-        fechaPlazoTextView.setText(item!!.plazo)
+        if(item!!.plazo == ""){
+            fechaPlazoTextView.hint = "Escriba aquí la fecha de plazo"
+            fechaPlazoTextView.setText("")
+        }
+        else{
+            fechaPlazoTextView.hint = ""
+            fechaPlazoTextView.setText(item!!.plazo)
+        }
 
         if (item!!.estado){
             button3.text = "Volver a no completado"
@@ -48,6 +66,7 @@ class ItemDetails : AppCompatActivity() {
         val myIntent: Intent = Intent()
         updateItem()
         myIntent.putExtra("item updated",item as Serializable)
+        myIntent.putExtra("item position modified", pos)
         setResult(5, myIntent)
         finish()
     }
@@ -66,12 +85,17 @@ class ItemDetails : AppCompatActivity() {
         item!!.prioridad = NotPriorityImageView.visibility != View.VISIBLE
         item!!.notasItem = notasItemEditText.text.toString()
         if (button3.text == "Volver a no completado"){
-            item!!.isShown = false
-            item!!.estado = true
+            if(!item!!.estado) {
+                item!!.isShown = false
+                item!!.estado = true
+            }
+
         }
         else{
-            item!!.isShown = false
-            item!!.estado = false
+            if(item!!.estado) {
+                item!!.isShown = false
+                item!!.estado = false
+            }
         }
     }
 
@@ -116,5 +140,31 @@ class ItemDetails : AppCompatActivity() {
             NotPriorityImageView.visibility = View.VISIBLE
             PriorityImageView.visibility = View.GONE
         }
+    }
+
+    // Function to maintain the data when the activity is changed of state
+    public override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+        updateItem()
+        // We give the username
+        savedInstanceState.putSerializable("Item", item as Serializable)
+        savedInstanceState.putInt("Item position", pos)
+    }
+
+    // Function to obtain what was given before changing the state of the activity
+    override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
+        super.onRestoreInstanceState(savedInstanceState)
+        // Obtain the username
+        item = savedInstanceState?.getSerializable("Item") as Item
+    }
+
+    override fun onBackPressed() {
+        val myIntent: Intent = Intent()
+        updateItem()
+        myIntent.putExtra("item updated",item as Serializable)
+        myIntent.putExtra("item position modified", pos)
+        setResult(5, myIntent)
+        finish()
+        super.onBackPressed()
     }
 }

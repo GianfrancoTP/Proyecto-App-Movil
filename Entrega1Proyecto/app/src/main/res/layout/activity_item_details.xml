@@ -57,8 +57,8 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/detailsBox"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="311dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
@@ -68,7 +68,7 @@
             android:id="@+id/createdAtTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="56dp"
+            android:layout_marginTop="16dp"
             android:text="TextView"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -113,7 +113,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="36dp"
             android:text="Prioridad:"
             android:textSize="16dp"
             app:layout_constraintStart_toStartOf="parent"
@@ -146,7 +146,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
-            android:layout_marginTop="64dp"
+            android:layout_marginTop="80dp"
             android:text="Notas:"
             android:textSize="16dp"
             app:layout_constraintStart_toStartOf="parent"
@@ -155,41 +155,45 @@
 
     <ScrollView
         android:id="@+id/scrollView2"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="300dp"
+        android:background="@color/MyModifiedColor"
+        app:layout_constraintBottom_toTopOf="@id/guideline5"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/detailsBox">
+        app:layout_constraintTop_toBottomOf="@+id/detailsBox"
+        app:layout_constraintVertical_bias="0.02">
 
         <EditText
             android:id="@+id/notasItemEditText"
+            android:padding="6dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="39dp"
-            android:layout_marginTop="20dp"
             android:layout_marginEnd="39dp"
-            android:layout_marginBottom="10dp"
-            android:background="@android:color/transparent"
+            android:background="@color/MyColor"
             android:ems="10"
-            android:gravity="start|top"
             android:inputType="textMultiLine"
-            android:textSize="16dp"
-
-            />
+            android:textSize="16dp" />
     </ScrollView>
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.90971273" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/Grid"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
-
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/scrollView2"
+        app:layout_constraintTop_toBottomOf="@id/guideline5"
         app:layout_constraintVertical_bias="1.0">
 
         <Button

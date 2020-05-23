@@ -119,14 +119,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:padding="8dp"
-        android:columnCount="2"
+        android:columnCount="1"
         android:rowCount="1">
-        <Button
-            android:id="@+id/button2"
-            android:layout_marginRight="6dp"
-            android:text="Editar"
-            android:background="@drawable/button_shape_blue"
-            android:layout_columnWeight="1"/>
 
         <Button
             android:id="@+id/button3"

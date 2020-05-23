@@ -3,6 +3,8 @@ package com.example.entrega1proyecto
 
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.DrawableContainer
 import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
@@ -75,6 +77,9 @@ class AdaptadorItemsCustom(private val items: ArrayList<Item>, private val speci
                 gd.cornerRadius = 0f
                 //apply the button background to newly created drawable gradient
                 view.checkBox.background = gd
+            }
+            else{
+                view.checkBox.setBackgroundResource(R.drawable.button_shape)
             }
 
             // To update what happens when is checked the item
