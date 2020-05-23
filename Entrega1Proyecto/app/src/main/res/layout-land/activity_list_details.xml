@@ -78,7 +78,7 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/itemsRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="480dp"
+        android:layout_height="150dp"
         android:layout_marginTop="10dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -86,55 +86,75 @@
         app:layout_constraintBottom_toTopOf="@+id/SwitchLayout">
 
     </androidx.recyclerview.widget.RecyclerView>
-    <LinearLayout
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/SwitchLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginBottom="20dp"
-        app:layout_constraintTop_toBottomOf="@id/itemsRecyclerView"
+        app:layout_constraintBottom_toTopOf="@+id/Grid"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/itemsRecyclerView">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_weight="10"
             android:text="Ver Items realizados:"
             android:textSize="20dp"
-            android:layout_marginStart="10dp"
-            android:layout_weight="10">
+            app:layout_constraintEnd_toStartOf="@+id/SwitchItemsChecked"
+            app:layout_constraintHorizontal_bias="0.039"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
         </TextView>
+
         <Switch
             android:id="@+id/SwitchItemsChecked"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="60dp"
             android:layout_weight="1"
-            android:layout_marginEnd="10dp">
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
         </Switch>
-    </LinearLayout>
-    <GridLayout
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/Grid"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
         android:padding="8dp"
-        android:columnCount="2"
-        android:rowCount="1">
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
         <Button
             android:id="@+id/button2"
             android:layout_marginRight="6dp"
-            android:text="Editar"
+            android:layout_height="match_parent"
+            android:layout_width="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/button3"
+            app:layout_constraintBottom_toBottomOf="parent"
             android:background="@drawable/button_shape_blue"
-            android:layout_columnWeight="1"/>
+            android:text="Editar"/>
 
         <Button
             android:id="@+id/button3"
+            android:layout_height="match_parent"
+            android:layout_width="0dp"
+            app:layout_constraintStart_toEndOf="@id/button2"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
             android:layout_marginLeft="6dp"
             android:background="@drawable/button_shape_blue"
             android:text="Compartir"
-            android:layout_columnWeight="1"/>
-    </GridLayout>
+
+            />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
