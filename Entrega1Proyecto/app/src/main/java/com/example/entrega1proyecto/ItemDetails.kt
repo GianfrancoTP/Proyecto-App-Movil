@@ -174,7 +174,7 @@ class ItemDetails : AppCompatActivity() {
 
     override fun onPause() {
         if(dialog!=null && dialog!!.isShowing) {
-            dialog!!.dismiss();
+            dialog!!.dismiss()
         }
         super.onPause()
     }
