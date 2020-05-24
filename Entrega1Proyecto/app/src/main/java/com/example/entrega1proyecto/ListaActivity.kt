@@ -7,20 +7,14 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.entrega1proyecto.model.User
-import com.example.entrega1proyecto.networking.PersonApi
-import com.example.entrega1proyecto.networking.UserService
 import kotlinx.android.synthetic.main.activity_lista.*
 import kotlinx.android.synthetic.main.popup.view.*
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import java.io.Serializable
 import java.util.*
 import kotlin.collections.ArrayList
@@ -35,6 +29,8 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     var validador: Boolean = false
     var user: User? = null
     var switchState: Boolean = false
+    var isShowingDialog = false
+    var dialog: Dialog? = null
 
     companion object {
         var LISTS = "LISTS"
@@ -53,6 +49,13 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
 
         if (savedInstanceState?.getBoolean("validador") != null){
             validador = savedInstanceState?.getBoolean("validador")!!
+        }
+
+        if(savedInstanceState!=null){
+            isShowingDialog = savedInstanceState.getBoolean("IS_SHOWING_DIALOG", false)
+            if(isShowingDialog){
+                plusButton(View(this))
+            }
         }
 
         user = intent.getSerializableExtra("user details start") as User
@@ -163,12 +166,14 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         var builder: AlertDialog.Builder = AlertDialog.Builder(this)
         var inflater: LayoutInflater = layoutInflater
         var view: View = inflater.inflate(R.layout.popup,null)
+        builder.setCancelable(false)
         builder.setView(view)
 
         // If they don't want to create a new List we resume what we were showing
         builder.setNegativeButton("Cancelar", object: DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
                 dialog?.dismiss()
+                isShowingDialog = false
             }
         })
 
@@ -178,10 +183,12 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 listaList.add(ListaItem(view.listNameTextView.text.toString(),null))
                 recycler_view.adapter?.notifyItemInserted(listaList.size - 1)
                 dialog?.dismiss()
+                isShowingDialog = false
             }
         })
-        var dialog: Dialog = builder.create()
-        dialog.show()
+        dialog = builder.create()
+        dialog!!.show()
+        isShowingDialog = true
     }
 
     // Function to maintain the data when the activity is changed of state
@@ -193,6 +200,8 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         savedInstanceState.putSerializable("ItemModificado",modified)
         // We give the array of lists
         savedInstanceState.putSerializable("lista listas",listaList)
+
+        savedInstanceState.putBoolean("IS_SHOWING_DIALOG", isShowingDialog)
 
         savedInstanceState.putBoolean("validador", validador)
     }
@@ -212,6 +221,14 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         createLists(startingListaList)
        // }
     }
+
+    override fun onPause() {
+        if(dialog!=null && dialog!!.isShowing) {
+            dialog!!.dismiss();
+        }
+        super.onPause()
+    }
+
     override fun onBackPressed() {
         val endIntent = Intent()
         endIntent.putExtra("lista de listas",listaList as Serializable)

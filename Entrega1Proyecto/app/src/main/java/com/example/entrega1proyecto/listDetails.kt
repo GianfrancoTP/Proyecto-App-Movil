@@ -5,7 +5,6 @@ import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -13,19 +12,14 @@ import android.widget.CheckBox
 import android.widget.CompoundButton
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.entrega1proyecto.ListaActivity.Companion.LISTS
 import kotlinx.android.synthetic.main.activity_list_details.*
-import kotlinx.android.synthetic.main.items_template.*
-import kotlinx.android.synthetic.main.items_template.view.*
-import kotlinx.android.synthetic.main.items_template.view.checkBox
-import kotlinx.android.synthetic.main.popup.*
 import kotlinx.android.synthetic.main.popup.view.*
-import kotlinx.android.synthetic.main.popup_to_create_item.*
 import kotlinx.android.synthetic.main.popup_to_create_item.view.*
-import java.lang.Error
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -41,6 +35,10 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     var shown = false
     var itemModificadoPos = -1
     var itemModified: Item? =  null
+    var isShowingDialogAdd = false
+    var isShowingDialogEdit = false
+    var dialogEdit: Dialog? = null
+    var dialogAdd: Dialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +53,16 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         // If the activity haven't changed the orientation
         if(savedInstanceState == null) {
             createItems(list!!)
+        }
+        if(savedInstanceState!=null){
+            isShowingDialogAdd = savedInstanceState.getBoolean("IS_SHOWING_DIALOG_ADD", false)
+            if(isShowingDialogAdd){
+                anadirItem(View(this))
+            }
+            isShowingDialogEdit = savedInstanceState.getBoolean("IS_SHOWING_DIALOG_EDIT", false)
+            if(isShowingDialogEdit){
+                editarListaName(View(this))
+            }
         }
 
         SwitchItemsChecked.setOnCheckedChangeListener { compoundButton: CompoundButton, b: Boolean ->
@@ -133,11 +141,14 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         var builder: AlertDialog.Builder = AlertDialog.Builder(this)
         var inflater: LayoutInflater = layoutInflater
         var view: View = inflater.inflate(R.layout.popup_to_create_item,null)
+        builder.setCancelable(false)
         builder.setView(view)
+
         // If they dont want to create a new item we resume what the activity was showing
         builder.setNegativeButton("Cancelar", object: DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
                 dialog?.dismiss()
+                isShowingDialogAdd = false
             }
         })
         // Here we create the item
@@ -155,17 +166,20 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 val formatted = current.format(formatter)
                 shown = !SwitchItemsChecked.isChecked
                 // Here we create the item
-                var newItem = Item(nameItem = view.itemNameEditText.getText().toString(),estado = false,
-                    prioridad= prioritario, plazo= view.plazoEditText.getText().toString(),
-                    notasItem= view.descripcionEditText.getText().toString(),fechaCreacion= formatted, isShown = shown)
+                var newItem = Item(nameItem = view.itemNameEditText.text.toString(),estado = false,
+                    prioridad= prioritario, plazo= view.plazoEditText.text.toString(),
+                    notasItem= view.descripcionEditText.text.toString(),
+                    fechaCreacion= formatted, isShown = shown)
                 // We add it to the array of items
                 itemsOnList.add(newItem)
                 itemsRecyclerView.adapter?.notifyItemInserted(itemsOnList.size -1)
                 dialog?.dismiss()
+                isShowingDialogAdd = false
             }
         })
-        var dialog: Dialog = builder.create()
-        dialog.show()
+        dialogAdd = builder.create()
+        dialogAdd!!.show()
+        isShowingDialogAdd = true
     }
 
     // Function to edit the name of the list
@@ -174,10 +188,13 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         var builder: AlertDialog.Builder = AlertDialog.Builder(this)
         var inflater: LayoutInflater = layoutInflater
         var view: View = inflater.inflate(R.layout.popup,null)
+        builder.setCancelable(false)
         builder.setView(view)
+
         builder.setNegativeButton("Cancelar", object: DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
                 dialog?.dismiss()
+                isShowingDialogEdit = false
             }
         })
         builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
@@ -185,10 +202,12 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 list?.name = view.listNameTextView.getText().toString()
                 nombreListaTextView.text = list?.name
                 dialog?.dismiss()
+                isShowingDialogEdit = false
             }
         })
-        var dialog: Dialog = builder.create()
-        dialog.show()
+        dialogEdit = builder.create()
+        dialogEdit!!.show()
+        isShowingDialogEdit = true
     }
 
     // Function to go back to the activity with the lists
@@ -230,6 +249,8 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         savedInstanceState.putSerializable("lista listas",itemsOnList)
+        savedInstanceState.putBoolean("IS_SHOWING_DIALOG_EDIT", isShowingDialogEdit)
+        savedInstanceState.putBoolean("IS_SHOWING_DIALOG_ADD", isShowingDialogAdd)
     }
 
     // Here we recover the data when the state is changed
@@ -240,6 +261,16 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             itemsOnList.add(it)
             itemsRecyclerView.adapter?.notifyItemInserted(itemsOnList.size - 1)
         }
+    }
+
+    override fun onPause() {
+        if (dialogEdit != null && dialogEdit!!.isShowing) {
+            dialogEdit!!.dismiss()
+        }
+        if (dialogAdd != null && dialogAdd!!.isShowing) {
+            dialogAdd!!.dismiss()
+        }
+        super.onPause()
     }
 
     override fun onBackPressed() {

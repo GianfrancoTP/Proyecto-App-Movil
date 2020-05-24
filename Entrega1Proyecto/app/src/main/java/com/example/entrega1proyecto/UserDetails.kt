@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
-import android.view.WindowManager
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -22,6 +21,10 @@ class UserDetails : AppCompatActivity() {
 
     var listaList: ArrayList<ListaItem> = ArrayList()
     var user: User? = null
+    var logOutdialog: Dialog? = null
+    var dialog: Dialog? = null
+    var isShowingDialogExit = false
+    var isShowingDialogProfile = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +37,16 @@ class UserDetails : AppCompatActivity() {
         user_email_text_view.text = user!!.email
         Glide.with(this).load(user!!.profile_photo).apply(RequestOptions.circleCropTransform())
             .into(banner_picture_user_image_view)
+        if(savedInstanceState != null){
+            isShowingDialogExit = savedInstanceState.getBoolean("IS_SHOWING_DIALOG_EXIT", false);
+            if(isShowingDialogExit) {
+                logOutPopUp(View(this))
+            }
+            isShowingDialogProfile = savedInstanceState.getBoolean("IS_SHOWING_DIALOG_PROFILE", false);
+            if(isShowingDialogProfile) {
+                seeMyProfile(View(this))
+            }
+        }
     }
 
     fun seeMyProfile(view: View) {
@@ -41,6 +54,7 @@ class UserDetails : AppCompatActivity() {
         var builder: AlertDialog.Builder = AlertDialog.Builder(this)
         var inflater: LayoutInflater = layoutInflater
         var view: View = inflater.inflate(R.layout.edit_user_popup,null)
+        builder.setCancelable(false)
 
         // Here we disable the input type to don't edit nothing without clicking the icon to edit
         disableEditTextInput(view.name_text_view)
@@ -84,6 +98,7 @@ class UserDetails : AppCompatActivity() {
         builder.setNegativeButton("Cancelar", object: DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
                 dialog?.dismiss()
+                isShowingDialogProfile = false
             }
         })
 
@@ -115,10 +130,12 @@ class UserDetails : AppCompatActivity() {
                 user_name_text_view.text = user!!.name + " " +user!!.last_name
                 user_email_text_view.text = user!!.email
                 dialog?.dismiss()
+                isShowingDialogProfile = false
             }
         })
-        var dialog: Dialog = builder.create()
-        dialog.show()
+        dialog = builder.create()
+        dialog!!.show()
+        isShowingDialogProfile = true
     }
 
     fun setData(view: View){
@@ -165,12 +182,14 @@ class UserDetails : AppCompatActivity() {
         var builder: AlertDialog.Builder = AlertDialog.Builder(this)
         var inflater: LayoutInflater = layoutInflater
         var view: View = inflater.inflate(R.layout.log_out_pop_up,null)
+        builder.setCancelable(false)
         builder.setView(view)
 
         // To resume what was going on in the app if he does't want to log out
         builder.setNegativeButton("Cancelar", object: DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
                 dialog?.dismiss()
+                isShowingDialogExit = false
             }
         })
 
@@ -182,11 +201,13 @@ class UserDetails : AppCompatActivity() {
                 myIntent.putExtra("user details updated",user as Serializable)
                 setResult(2, myIntent)
                 dialog?.dismiss()
+                isShowingDialogExit = false
                 finish()
             }
         })
-        var dialog: Dialog = builder.create()
-        dialog.show()
+        logOutdialog = builder.create()
+        logOutdialog!!.show()
+        isShowingDialogExit = true
     }
 
     override fun onBackPressed() {
@@ -194,6 +215,22 @@ class UserDetails : AppCompatActivity() {
         goBackIntent.putExtra("user details update", user as Serializable)
         setResult(3, goBackIntent)
         super.onBackPressed()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putBoolean("IS_SHOWING_DIALOG_EXIT", isShowingDialogExit)
+        outState.putBoolean("IS_SHOWING_DIALOG_PROFILE", isShowingDialogProfile)
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onPause() {
+        if(logOutdialog!=null && logOutdialog!!.isShowing) {
+            logOutdialog!!.dismiss()
+        }
+        if(dialog!=null && dialog!!.isShowing) {
+            dialog!!.dismiss()
+        }
+        super.onPause()
     }
 
 

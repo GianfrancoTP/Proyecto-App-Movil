@@ -18,6 +18,8 @@ class ItemDetails : AppCompatActivity() {
 
     var item: Item? = null
     var pos = -1
+    var isShowingDialog = false
+    var dialog: Dialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,6 +34,12 @@ class ItemDetails : AppCompatActivity() {
             pos = intent.getIntExtra("Item position", -1)
         }
 
+        if(savedInstanceState!=null){
+            isShowingDialog = savedInstanceState.getBoolean("IS_SHOWING_DIALOG", false)
+            if(isShowingDialog){
+                editItemName(View(this))
+            }
+        }
 
         nombreItemTextView.text = item!!.nameItem
         createdAtTextView.text = item!!.fechaCreacion
@@ -114,10 +122,13 @@ class ItemDetails : AppCompatActivity() {
         var inflater: LayoutInflater = layoutInflater
         var view: View = inflater.inflate(R.layout.popup,null)
         view.listNameTextView.hint = "Nombre del Item"
+        builder.setCancelable(false)
         builder.setView(view)
+
         builder.setNegativeButton("Cancelar", object: DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
                 dialog?.dismiss()
+                isShowingDialog = false
             }
         })
         builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
@@ -125,10 +136,12 @@ class ItemDetails : AppCompatActivity() {
                 item?.nameItem = view.listNameTextView.getText().toString()
                 nombreItemTextView.text = item?.nameItem
                 dialog?.dismiss()
+                isShowingDialog = false
             }
         })
-        var dialog: Dialog = builder.create()
-        dialog.show()
+        dialog = builder.create()
+        dialog!!.show()
+        isShowingDialog = true
     }
 
     fun changePriority(view: View){
@@ -148,6 +161,7 @@ class ItemDetails : AppCompatActivity() {
         updateItem()
         // We give the username
         savedInstanceState.putSerializable("Item", item as Serializable)
+        savedInstanceState.putBoolean("IS_SHOWING_DIALOG", isShowingDialog)
         savedInstanceState.putInt("Item position", pos)
     }
 
@@ -156,6 +170,13 @@ class ItemDetails : AppCompatActivity() {
         super.onRestoreInstanceState(savedInstanceState)
         // Obtain the username
         item = savedInstanceState?.getSerializable("Item") as Item
+    }
+
+    override fun onPause() {
+        if(dialog!=null && dialog!!.isShowing) {
+            dialog!!.dismiss();
+        }
+        super.onPause()
     }
 
     override fun onBackPressed() {
