@@ -27,7 +27,7 @@ class ItemDetails : AppCompatActivity() {
 
         try {
             item = savedInstanceState?.getSerializable("Item") as Item
-            pos = savedInstanceState?.getInt("Position")
+            pos = savedInstanceState?.getInt("Item Mod Position")
         }
         catch(e:Exception){
             item = intent.getSerializableExtra("item to watch")!! as Item
@@ -70,6 +70,7 @@ class ItemDetails : AppCompatActivity() {
         notasItemEditText.setText(item!!.notasItem)
     }
 
+    // When the back button is pressed, to go back to the other view
     fun goBackToItemsView(view: View){
         val myIntent: Intent = Intent()
         updateItem()
@@ -79,6 +80,7 @@ class ItemDetails : AppCompatActivity() {
         finish()
     }
 
+    // To delete the specific item
     fun deleteItem(view: View){
         val myIntent: Intent = Intent()
         updateItem()
@@ -87,6 +89,7 @@ class ItemDetails : AppCompatActivity() {
         finish()
     }
 
+    // When we end modifying the item
     fun updateItem(){
         item!!.nameItem =  nombreItemTextView.text.toString()
         item!!.plazo = fechaPlazoTextView.text.toString()
@@ -107,6 +110,7 @@ class ItemDetails : AppCompatActivity() {
         }
     }
 
+    // To change the state from being completed or not completed
     fun modifyCompletion(view: View){
         if (button3.text == "Volver a no completado"){
             button3.text = "Completar"
@@ -116,6 +120,7 @@ class ItemDetails : AppCompatActivity() {
         }
     }
 
+    // To edit the name of the item
     fun editItemName(view: View){
         // We show a Dialog to ask the new name
         var builder: AlertDialog.Builder = AlertDialog.Builder(this)
@@ -144,6 +149,7 @@ class ItemDetails : AppCompatActivity() {
         isShowingDialog = true
     }
 
+    // Function to change the priority of a item, and show it or not show it
     fun changePriority(view: View){
         if (NotPriorityImageView.visibility == View.VISIBLE){
             NotPriorityImageView.visibility = View.GONE
@@ -162,7 +168,7 @@ class ItemDetails : AppCompatActivity() {
         // We give the username
         savedInstanceState.putSerializable("Item", item as Serializable)
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG", isShowingDialog)
-        savedInstanceState.putInt("Item position", pos)
+        savedInstanceState.putInt("Item Mod Position", pos)
     }
 
     // Function to obtain what was given before changing the state of the activity
@@ -172,6 +178,8 @@ class ItemDetails : AppCompatActivity() {
         item = savedInstanceState?.getSerializable("Item") as Item
     }
 
+    // To maintain the state of the dialog if we change the orientation of the phone and
+    // the dialog was being shown
     override fun onPause() {
         if(dialog!=null && dialog!!.isShowing) {
             dialog!!.dismiss()
@@ -179,6 +187,7 @@ class ItemDetails : AppCompatActivity() {
         super.onPause()
     }
 
+    // When the back button was pressed
     override fun onBackPressed() {
         val myIntent: Intent = Intent()
         updateItem()

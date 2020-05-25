@@ -22,14 +22,12 @@ import java.io.Serializable
 class LogFragment : Fragment() {
     var listaDeListas: ArrayList<ListaItem>? = null
     var user: User? = null
-    var switch: Boolean = false
 
     fun goToList(){
         val intent = Intent(activity, ListaActivity::class.java)
 
         intent.putExtra("lista",listaDeListas)
         intent.putExtra("coming from Log In", true)
-        intent.putExtra("switchFromStart", switch)
         intent.putExtra("user details start",user as Serializable)
         startActivityForResult(intent, 2)
     }
@@ -41,7 +39,6 @@ class LogFragment : Fragment() {
             if (resultCode == Activity.RESULT_OK){
                 listaDeListas = data.getSerializableExtra("lista de listas") as ArrayList<ListaItem>
                 user = data.getSerializableExtra("user details finish") as User
-                switch = data.getBooleanExtra("switchStateToStart",false)
                 emailTextView.setText(user!!.email)
                 passwordTextView.setText(user!!.name)
             }

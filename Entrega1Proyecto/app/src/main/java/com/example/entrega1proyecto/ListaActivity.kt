@@ -28,7 +28,6 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     var modified: ListaItem = ListaItem("")
     var validador: Boolean = false
     var user: User? = null
-    var switchState: Boolean = false
     var isShowingDialog = false
     var dialog: Dialog? = null
 
@@ -45,7 +44,6 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         recycler_view.adapter = AdaptadorCustom(listaList, this, this)
         recycler_view.layoutManager = LinearLayoutManager(this)
 
-        switchState = intent.getBooleanExtra("switchFromStart",false)
 
         if (savedInstanceState?.getBoolean("validador") != null){
             validador = savedInstanceState?.getBoolean("validador")!!
@@ -110,7 +108,6 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         // Go to the items in a list activity
         val intent = Intent(this, listDetails::class.java)
         intent.putExtra(LISTS, result)
-        intent.putExtra("switch", switchState)
         startActivityForResult(intent, 1)
     }
 
@@ -124,7 +121,6 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 var x = listaList.indexOf(modified)
                 // We update the changed list inside the array of lists
                 listaList[x] = itemsRecibidos
-                switchState = data.getBooleanExtra("SwitchState", false)
                 recycler_view.adapter?.notifyItemChanged(x)
             }
             else if (resultCode == 2){
@@ -133,7 +129,6 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 // We give the result to the Log in activity to maintain the information
                 endIntent.putExtra("lista de listas",listaList as Serializable)
                 endIntent.putExtra("user details finish",user as Serializable)
-                endIntent.putExtra("switchStateToStart", switchState)
                 setResult(Activity.RESULT_OK, endIntent)
                 finish()
             }
@@ -222,6 +217,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
        // }
     }
 
+    // To mantain the dialogs states when the app state is changed
     override fun onPause() {
         if(dialog!=null && dialog!!.isShowing) {
             dialog!!.dismiss();
@@ -229,6 +225,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         super.onPause()
     }
 
+    // To go back to the log in activity
     override fun onBackPressed() {
         val endIntent = Intent()
         endIntent.putExtra("lista de listas",listaList as Serializable)

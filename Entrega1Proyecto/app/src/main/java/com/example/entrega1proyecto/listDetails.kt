@@ -48,8 +48,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         itemsRecyclerView.layoutManager = LinearLayoutManager(this)
         // We obtain the array of lists
         list = intent.getSerializableExtra(LISTS)!! as ListaItem
-        var switch = intent.getBooleanExtra("switch", false)
-        SwitchItemsChecked.isChecked = switch
+
         // If the activity haven't changed the orientation
         if(savedInstanceState == null) {
             createItems(list!!)
@@ -213,9 +212,15 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     // Function to go back to the activity with the lists
     fun goBackToListsView(view:View){
         val myIntent: Intent = Intent()
+        if(SwitchItemsChecked.isChecked) {
+            itemsOnList.forEach {
+                var itemModifiedPosition = itemsOnList.indexOf(it)
+                it.isShown = !it.isShown
+                itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
+            }
+        }
         list = ListaItem(list!!.name, itemsOnList)
         myIntent.putExtra("listaItems",list)
-        myIntent.putExtra("SwitchState",SwitchItemsChecked.isChecked)
         setResult(Activity.RESULT_OK, myIntent)
         finish()
     }
@@ -237,6 +242,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
     }
 
+    // To go to the item details activity
     override fun onEyeItemCLicked(result: Item) {
         val intent = Intent(this, ItemDetails::class.java)
         itemModificadoPos = itemsOnList.indexOf(result)
@@ -263,6 +269,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         }
     }
 
+    // To maintain the dialog states if the app state is changed
     override fun onPause() {
         if (dialogEdit != null && dialogEdit!!.isShowing) {
             dialogEdit!!.dismiss()
@@ -273,11 +280,18 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         super.onPause()
     }
 
+    // To go back to the lists activity
     override fun onBackPressed() {
         val myIntent: Intent = Intent()
+        if(SwitchItemsChecked.isChecked) {
+            itemsOnList.forEach {
+                var itemModifiedPosition = itemsOnList.indexOf(it)
+                it.isShown = !it.isShown
+                itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
+            }
+        }
         list = ListaItem(list!!.name, itemsOnList)
         myIntent.putExtra("listaItems",list)
-        myIntent.putExtra("SwitchState",SwitchItemsChecked.isChecked)
         setResult(Activity.RESULT_OK, myIntent)
         finish()
         super.onBackPressed()

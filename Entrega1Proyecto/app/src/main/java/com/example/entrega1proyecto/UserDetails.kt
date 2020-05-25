@@ -138,6 +138,7 @@ class UserDetails : AppCompatActivity() {
         isShowingDialogProfile = true
     }
 
+    // Set the data modified to the user
     fun setData(view: View){
         view.emailTextView.text = user!!.email
         view.name_text_view.setText(user!!.name)
@@ -145,6 +146,7 @@ class UserDetails : AppCompatActivity() {
         view.phone_text_view.setText(user!!.phone)
     }
 
+    // To not be able to modify the attributes
     fun disableEditTextInput(editText: EditText){
         if (editText.text.toString() == "") {
             editText.setText(editText.hint.toString())
@@ -157,12 +159,16 @@ class UserDetails : AppCompatActivity() {
         }
     }
 
+    // To be able to modify the attributes
     fun enableEditTextInput(editText: EditText){
         editText.inputType = InputType.TYPE_TEXT_VARIATION_PERSON_NAME
         editText.hint = editText.text.toString()
         editText.setText("")
     }
 
+    // To set it in text or hint the attributes of the user
+    // Hint is to show that you are able to modify that parameter
+    // and text is to show that you cant modify it
     fun verificador(editText: EditText): List<String>{
         var fullName: List<String>
         if(editText.text.toString() == ""){
@@ -177,6 +183,7 @@ class UserDetails : AppCompatActivity() {
         return fullName
     }
 
+    // When we want to log out
     fun logOutPopUp(view: View) {
         // We created a Dialog to ask if he really wants to log out
         var builder: AlertDialog.Builder = AlertDialog.Builder(this)
@@ -210,6 +217,7 @@ class UserDetails : AppCompatActivity() {
         isShowingDialogExit = true
     }
 
+    // To go back to the lists activity
     override fun onBackPressed() {
         val goBackIntent = Intent()
         goBackIntent.putExtra("user details update", user as Serializable)
@@ -223,6 +231,7 @@ class UserDetails : AppCompatActivity() {
         super.onSaveInstanceState(outState)
     }
 
+    // To maintain the dialogs states when the app changes of state
     override fun onPause() {
         if(logOutdialog!=null && logOutdialog!!.isShowing) {
             logOutdialog!!.dismiss()

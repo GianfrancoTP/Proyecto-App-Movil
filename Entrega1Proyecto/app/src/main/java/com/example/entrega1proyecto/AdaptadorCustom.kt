@@ -6,7 +6,6 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.template.view.*
 import java.io.Serializable
-import java.util.*
 import kotlin.collections.ArrayList
 
 // This is the adapter for the lists
