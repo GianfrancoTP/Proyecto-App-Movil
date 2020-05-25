@@ -155,33 +155,38 @@
             app:layout_constraintTop_toBottomOf="@+id/textView11" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-
     <ScrollView
         android:id="@+id/scrollView2"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="0dp"
         android:background="@color/MyModifiedColor"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/detailsBox">
+        app:layout_constraintBottom_toTopOf="@id/guideline5"
+        app:layout_constraintTop_toBottomOf="@+id/detailsBox"
+        android:layout_marginBottom="10dp">
 
         <EditText
             android:id="@+id/notasItemEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/MyColor"
-            android:layout_marginStart="39dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginEnd="39dp"
-            android:layout_marginBottom="10dp"
-            android:ems="10"
-            android:gravity="start|top"
+            android:layout_marginStart="30dp"
+            android:paddingStart="9dp"
+            android:paddingTop="9dp"
+            android:layout_marginEnd="30dp"
+            android:paddingEnd="9dp"
+            android:paddingBottom="9dp"
             android:inputType="textMultiLine"
-            android:textSize="16dp"
-
-            />
+            android:textSize="16dp" />
     </ScrollView>
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.86" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/Grid"
@@ -189,11 +194,9 @@
         android:layout_height="56dp"
         android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
-
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/scrollView2"
+        app:layout_constraintTop_toBottomOf="@id/guideline5"
         app:layout_constraintVertical_bias="1.0">
 
         <Button
