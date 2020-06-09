@@ -19,7 +19,6 @@ import java.io.Serializable
 
 class UserDetails : AppCompatActivity() {
 
-    var listaList: ArrayList<ListaItem> = ArrayList()
     var user: User? = null
     var logOutdialog: Dialog? = null
     var dialog: Dialog? = null
@@ -29,8 +28,6 @@ class UserDetails : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_details)
-
-        listaList = intent.getSerializableExtra("lista de listas")!! as ArrayList<ListaItem>
         user = intent.getSerializableExtra("user details")!! as User
 
         user_name_text_view.text = user!!.name + " " +user!!.last_name
