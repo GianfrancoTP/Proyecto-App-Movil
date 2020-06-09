@@ -133,7 +133,7 @@ class ItemDetails : AppCompatActivity() {
                 item!!.estado = false
             }
         }
-        //database.insertItem(item!!)
+        database.insertItem(item!!)
     }
 
     // To change the state from being completed or not completed
@@ -173,7 +173,7 @@ class ItemDetails : AppCompatActivity() {
         dialog = builder.create()
         dialog!!.show()
         isShowingDialog = true
-        //database.insertItem(item!!)
+        database.insertItem(item!!)
     }
 
     // Function to change the priority of a item, and show it or not show it
@@ -192,10 +192,10 @@ class ItemDetails : AppCompatActivity() {
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         updateItem()
-        AsyncTask.execute {
-            database.insertItem(item!!)
-            savedInstanceState.putSerializable("Item", item!!.id)
-        }
+
+        database.insertItem(item!!)
+        savedInstanceState.putSerializable("Item", item!!.id)
+
         // We give the username
 
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG", isShowingDialog)
