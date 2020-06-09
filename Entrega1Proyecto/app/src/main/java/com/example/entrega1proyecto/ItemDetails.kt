@@ -133,7 +133,7 @@ class ItemDetails : AppCompatActivity() {
                 item!!.estado = false
             }
         }
-        database.insertItem(item!!)
+        database.updateItem(item!!)
     }
 
     // To change the state from being completed or not completed
@@ -173,7 +173,7 @@ class ItemDetails : AppCompatActivity() {
         dialog = builder.create()
         dialog!!.show()
         isShowingDialog = true
-        database.insertItem(item!!)
+        database.updateItem(item!!)
     }
 
     // Function to change the priority of a item, and show it or not show it
@@ -193,7 +193,7 @@ class ItemDetails : AppCompatActivity() {
         super.onSaveInstanceState(savedInstanceState)
         updateItem()
 
-        database.insertItem(item!!)
+        database.updateItem(item!!)
         savedInstanceState.putSerializable("Item", item!!.id)
 
         // We give the username

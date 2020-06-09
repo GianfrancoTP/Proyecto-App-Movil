@@ -16,6 +16,9 @@ interface ListDao{
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertList(data: ListBDD): Long
 
+    @Update
+    fun updateList(data: ListBDD)
+
     @Transaction
     @Query("SELECT * FROM $TABLE_NAME")
     fun getListWithItems(): List<ListWithItems>
@@ -33,6 +36,9 @@ interface ListDao{
     // Esto es para crear, updatear, obtener o eliminar un item
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertItem(data: ItemBDD): Long
+
+    @Update
+    fun updateItem(data:ItemBDD)
 
     //@Query("SELECT * FROM $TABLE2_NAME")
     //fun getAllItems(): ArrayList<ItemBDD>

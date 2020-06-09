@@ -55,7 +55,6 @@ class AdaptadorItemsCustom(private val items: ArrayList<ItemBDD>, private val sp
                     view.checkBox.isChecked = false
                 }
             }
-            println("DENTRO DE ADAPTADOR! $item")
             if(item.isShown){
                 view.checkBox.visibility = View.VISIBLE
                 view.seeItemDetails.visibility = View.VISIBLE

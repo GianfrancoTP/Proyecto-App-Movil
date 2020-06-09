@@ -93,10 +93,9 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             if (b) {
                 itemsOnList.forEach {
                     var itemModifiedPosition = itemsOnList.indexOf(it)
-                    println("ANTES DEL MODIFICAR EL SWITCH ON     $itemsOnList")
                     it.isShown = !it.isShown
                     itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
-                    database.insertItem(it)
+                    database.updateItem(it)
                     println("Switch On!!!!!      $itemsOnList")
                 }
             } else {
@@ -104,7 +103,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                     var itemModifiedPosition = itemsOnList.indexOf(it)
                     it.isShown = !it.isShown
                     itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
-                    database.insertItem(it)
+                    database.updateItem(it)
                     println("Switch off!!!!!      $itemsOnList")
                 }
             }
@@ -234,7 +233,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             override fun onClick(dialog: DialogInterface?, which: Int) {
                 list?.list.name = view.listNameTextView.getText().toString()
                 nombreListaTextView.text = list?.list.name
-                database.insertList(list.list)
+                database.updateList(list.list)
                 dialog?.dismiss()
                 isShowingDialogEdit = false
             }
@@ -249,12 +248,15 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         val myIntent: Intent = Intent()
         if(SwitchItemsChecked.isChecked) {
             itemsOnList.forEach {
-                var itemModifiedPosition = itemsOnList.indexOf(it)
+                //var itemModifiedPosition = itemsOnList.indexOf(it)
                 it.isShown = !it.isShown
-                itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
+                //itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
+                database.updateItem(it)
             }
         }
         list = ListWithItems(list!!.list, itemsOnList)
+        database.updateList(list.list)
+
         myIntent.putExtra("Name List updated", list.list.name)
         //myIntent.putExtra("listaItems",list as Serializable)
         setResult(Activity.RESULT_OK, myIntent)
@@ -276,7 +278,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         // We save it on the list ot items
         itemsOnList[itemModifiedPosition] = result
         itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
-        database.insertItem(result)
+        database.updateItem(result)
     }
 
     // To go to the item details activity
@@ -346,13 +348,14 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         val myIntent: Intent = Intent()
         if(SwitchItemsChecked.isChecked) {
             itemsOnList.forEach {
-                var itemModifiedPosition = itemsOnList.indexOf(it)
+                //var itemModifiedPosition = itemsOnList.indexOf(it)
                 it.isShown = !it.isShown
-                itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
+                database.updateItem(it)
+                //itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
             }
         }
         list = ListWithItems(list!!.list, itemsOnList)
-        database.insertList(list.list)
+        database.updateList(list.list)
         //myIntent.putExtra("listaItems",list as Serializable)
         setResult(Activity.RESULT_OK, myIntent)
         finish()
