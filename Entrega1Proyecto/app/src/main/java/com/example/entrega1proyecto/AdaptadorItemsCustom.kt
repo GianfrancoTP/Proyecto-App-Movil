@@ -13,13 +13,12 @@ import android.widget.CheckBox
 import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
-import com.example.entrega1proyecto.model.ItemBDD
 import kotlinx.android.synthetic.main.items_template.view.*
 import java.io.Serializable
 
 
 // This is the adapter of the items on a list
-class AdaptadorItemsCustom(private val items: ArrayList<ItemBDD>, private val specificItemClickListener: OnSpecificItemClickListener): RecyclerView.Adapter<AdaptadorItemsCustom.ViewHolder>() {
+class AdaptadorItemsCustom(private val items: ArrayList<Item>, private val specificItemClickListener: OnSpecificItemClickListener): RecyclerView.Adapter<AdaptadorItemsCustom.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.items_template, parent, false)
         return ViewHolder(view)
@@ -35,12 +34,12 @@ class AdaptadorItemsCustom(private val items: ArrayList<ItemBDD>, private val sp
     }
 
     class ViewHolder(private var view: View) : RecyclerView.ViewHolder(view) {
-        private var item: ItemBDD? = null
+        private var item: Item? = null
 
         init {
         }
 
-        fun bindHistoric(item: ItemBDD, clickListener: OnSpecificItemClickListener) {
+        fun bindHistoric(item: Item, clickListener: OnSpecificItemClickListener) {
             this.item = item
             // We set the text of the items
             view.checkBox.text = item.nameItem
@@ -96,8 +95,8 @@ class AdaptadorItemsCustom(private val items: ArrayList<ItemBDD>, private val sp
 }
 
 interface OnSpecificItemClickListener{
-    fun onSpecificItemCLicked(result: ItemBDD, it:CheckBox)
-    fun onEyeItemCLicked(result: ItemBDD)
+    fun onSpecificItemCLicked(result: Item, it:CheckBox)
+    fun onEyeItemCLicked(result: Item)
 }
 class Item(var nameItem: String, var estado: Boolean, var prioridad:Boolean, var plazo: String?, var notasItem: String?,
            var fechaCreacion: String, var isShown: Boolean): Serializable {}

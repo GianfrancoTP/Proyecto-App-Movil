@@ -24,51 +24,36 @@ import kotlin.collections.ArrayList
 
 class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickListener{
 
-    var listaList: ArrayList<ListWithItems> = ArrayList()
-    var startingListaList: ArrayList<ListWithItems> = ArrayList()
-    //lateinit var itemsRecibidos: ListWithItems
-    var modified: ListWithItems? = null
+    var listaList: ArrayList<ListaItem> = ArrayList()
+    var startingListaList: ArrayList<ListaItem> = ArrayList()
+    var itemsRecibidos: ListaItem = ListaItem("")
+    var modified: ListaItem = ListaItem("")
     var validador: Boolean = false
     var user: User? = null
     var isShowingDialog = false
     var dialog: Dialog? = null
-    // Database
+    // For the DB
     lateinit var database: ListDao
     var testListaList: ArrayList<ListWithItems> = ArrayList()
-    var listsCounter: Long = 0
     lateinit var adapter: AdaptadorCustom
+    var listsCounter: Long = 0
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_lista)
 
-        //Create the database
-        database = Room.databaseBuilder(this, Database::class.java,"ListsBDD").fallbackToDestructiveMigration().build().ListDao()
-        GetAllLists(this).execute()
-/*      testListaList = ArrayList(database.getListWithItems())
-
-        /*database.getAllItems().forEach {
-            database.deleteItem(it)
-        }
-        database.getListWithItems().forEach{
-            database.deleteList(it.list)
-        }
-
-
-        println("BORRANDOOO TODOOOO    ${database.getListWithItems()}")
-
-         */
-
-        if (testListaList.size > 0 && listsCounter == 0.toLong()) {
-            listsCounter = testListaList[testListaList.lastIndex].list.id
-        }
-
-
-*/
         // The recycler view for the Activity that contains the lists
         adapter = AdaptadorCustom(this, this)
         recycler_view.adapter = adapter
         recycler_view.layoutManager = LinearLayoutManager(this)
+
+        // Here we create the db
+        database = Room.databaseBuilder(this, Database::class.java, "ListsBDD")
+            .fallbackToDestructiveMigration().build().ListDao()
+
+        // We get all the lists from the db
+        GetAllLists(this).execute()
 
         if (savedInstanceState?.getBoolean("validador") != null){
             validador = savedInstanceState?.getBoolean("validador")!!
@@ -84,6 +69,16 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         user = intent.getSerializableExtra("user details start") as User
         nombreUsuarioTextView.text = user!!.name
 
+        // This is to keep the Lists if we got back to the Log In activity
+        if (!validador) {
+            if (intent?.getSerializableExtra("lista") != null) {
+                validador = true
+                // This is to mantain the list if we change the orientation of the phone
+                startingListaList = intent.getSerializableExtra("lista")!! as ArrayList<ListaItem>
+                createLists(startingListaList)
+            }
+        }
+
 
         //This is for the Drag and Drop ----------------------------------------------------------------------------
 
@@ -93,10 +88,9 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 viewHolder: RecyclerView.ViewHolder,
                 target: RecyclerView.ViewHolder
             ): Boolean {
-
                 val sourcePosition = viewHolder.adapterPosition
                 val targetPosition = target.adapterPosition
-                Collections.swap(testListaList, sourcePosition, targetPosition)
+                Collections.swap(listaList, sourcePosition, targetPosition)
                 recycler_view.adapter?.notifyItemMoved(sourcePosition, targetPosition)
                 return true
             }
@@ -109,13 +103,21 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         // End of Drag and Drop --------------------------------------------------------------------------------
     }
 
+    // The function to maintain the lists if we rotate the screen or come from the login activity
+    private fun createLists(startingListaList: ArrayList<ListaItem>){
+        startingListaList.forEach {
+            listaList.add(it)
+            recycler_view.adapter?.notifyItemInserted(listaList.size - 1)
+        }
+    }
+
     // Function to go to the activity which contains the items inside a list
-    override fun onItemCLicked(result: ListWithItems){
+    override fun onItemCLicked(result: ListaItem){
         // We keep the List who was clicked
         modified = result
         // Go to the items in a list activity
         val intent = Intent(this, listDetails::class.java)
-        intent.putExtra("List Id", result.list!!.id)
+        intent.putExtra(LISTS, result)
         startActivityForResult(intent, 1)
     }
 
@@ -124,18 +126,18 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         super.onActivityResult(requestCode, resultCode, data)
         if (data != null) {
             if (resultCode == Activity.RESULT_OK){
-                GetSpecificList(
-                    this
-                )
-                /*var x = testListaList.indexOf(modified)
-                testListaList[x] = database.getSpecificList(modified!!.list.id)
-                recycler_view.adapter!!.notifyItemChanged(x)*/
+                // We get the updated List with all the created items
+                itemsRecibidos = data.getSerializableExtra("listaItems") as ListaItem
+                var x = listaList.indexOf(modified)
+                // We update the changed list inside the array of lists
+                listaList[x] = itemsRecibidos
+                recycler_view.adapter?.notifyItemChanged(x)
             }
             else if (resultCode == 2){
                 user = data.getSerializableExtra("user details updated") as User
                 val endIntent = Intent()
-
                 // We give the result to the Log in activity to maintain the information
+                endIntent.putExtra("lista de listas",listaList as Serializable)
                 endIntent.putExtra("user details finish",user as Serializable)
                 setResult(Activity.RESULT_OK, endIntent)
                 finish()
@@ -148,22 +150,17 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     }
 
     // Function when we want to delete a list
-    override fun onTrashCLicked(result: ListWithItems) {
-        Trash(this).execute(result)
-/*
-        var pos = testListaList.indexOf(result)
-        database.deleteList(result.list)
-        database.deleteListItems(result.list.id)
-        testListaList.removeAt(pos)
+    override fun onTrashCLicked(result: ListaItem) {
+        var pos = listaList.indexOf(result)
+        listaList.remove(result)
         recycler_view.adapter?.notifyItemRemoved(pos)
-        
- */
     }
 
     // Function when was clicked the username to log out
     fun logOutPopUp(view: View){
         val intent = Intent(this, UserDetails::class.java)
         // We give the result to the Log in activity to maintain the information
+        intent.putExtra("lista de listas",listaList)
         intent.putExtra("user details", user as Serializable)
         startActivityForResult(intent, 3)
     }
@@ -188,19 +185,10 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         // Here we create the new list with null items inside it
         builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
-                // Add it to the database
-
-                insertList(
-                    this@ListaActivity
-                ).execute(ListBDD(listsCounter,view.listNameTextView.text.toString()))
-/*
-                listsCounter = database.insertList(ListBDD(listsCounter,view.listNameTextView.text.toString())) + 1
-
-                // Add it to the List
-                testListaList.add(ListWithItems(ListBDD(listsCounter-1,view.listNameTextView.text.toString()),null))
-                recycler_view.adapter?.notifyItemInserted(testListaList.size - 1)
-
- */
+                listaList.add(ListaItem(view.listNameTextView.text.toString(),null))
+                InsertList(this@ListaActivity).execute(
+                    ListaItem(view.listNameTextView.text.toString(),null))
+                recycler_view.adapter?.notifyItemInserted(listaList.size - 1)
                 dialog?.dismiss()
                 isShowingDialog = false
             }
@@ -216,12 +204,11 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         // We give the username
         savedInstanceState.putSerializable("person", user as Serializable)
         // We give the changed item if the screen is rotated before being saved in the array of lists
-        if (modified != null) {
-            savedInstanceState.putSerializable("ItemModificado", modified as Serializable)
-        }
-        savedInstanceState.putBoolean("IS_SHOWING_DIALOG", isShowingDialog)
-        println("ANTES DE ROTAAAR     $testListaList")
+        savedInstanceState.putSerializable("ItemModificado",modified)
+        // We give the array of lists
+        savedInstanceState.putSerializable("lista listas",listaList)
 
+        savedInstanceState.putBoolean("IS_SHOWING_DIALOG", isShowingDialog)
 
         savedInstanceState.putBoolean("validador", validador)
     }
@@ -232,13 +219,14 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         // Obtain the username
         user = savedInstanceState?.getSerializable("person") as User
         nombreUsuarioTextView.text = user!!.name
+        // Obtain the array list
+        startingListaList = savedInstanceState?.getSerializable("lista listas") as ArrayList<ListaItem>
         // Obtain the modified items on the list
-        try {
-            modified = savedInstanceState?.getSerializable("ItemModificado") as ListWithItems
-        }catch (error: TypeCastException){
-            println("NO se pudo")
-        }
+        modified = savedInstanceState?.getSerializable("ItemModificado") as ListaItem
 
+        // if(!validador) {
+        createLists(startingListaList)
+        // }
     }
 
     // To mantain the dialogs states when the app state is changed
@@ -252,6 +240,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     // To go back to the log in activity
     override fun onBackPressed() {
         val endIntent = Intent()
+        endIntent.putExtra("lista de listas",listaList as Serializable)
         endIntent.putExtra("user details finish",user as Serializable)
         setResult(Activity.RESULT_OK, endIntent)
         finish()
@@ -261,73 +250,48 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     companion object {
         var LISTS = "LISTS"
 
-        class GetAllLists(private val listaActivity: ListaActivity) : AsyncTask<Void, Void, ArrayList<ListWithItems>>(){
+        // Class to get all the lists from the database
+        class GetAllLists(private val listaActivity: ListaActivity) :
+            AsyncTask<Void, Void, ArrayList<ListWithItems>>() {
+            var list: ListaItem = ListaItem("")
             override fun doInBackground(vararg params: Void?): ArrayList<ListWithItems> {
+                // Here we get the elements from the database
                 listaActivity.testListaList =
                     ArrayList(listaActivity.database.getListWithItems())
-                println("esta es la lista guardada dps de rotar     ${listaActivity.testListaList}")
+
+                //Here we notify the adapter that we deleted everything, because we'll search it later
+                listaActivity.listaList = ArrayList()
+                listaActivity.adapter.notifyDataSetChanged()
+
                 return listaActivity.testListaList
             }
 
             override fun onPostExecute(result: ArrayList<ListWithItems>?) {
+                //After getting the elements from the db
                 if (listaActivity.testListaList.size > 0 && listaActivity.listsCounter == 0.toLong()) {
-                    listaActivity.listsCounter = listaActivity.testListaList[listaActivity.testListaList.lastIndex].list.id
+                    listaActivity.listsCounter = listaActivity.testListaList[listaActivity.testListaList.lastIndex].list.id + 1
                 }
 
-                // The recycler view for the Activity that contains the lists
-                listaActivity.adapter.setData(listaActivity.testListaList)
+                // Here we add it to the lista list
+                listaActivity.testListaList.forEach{
+                    list = ListaItem(it.list.name)
+                    it.items?.forEach {
+                        list.items!!.add(Item(it.nameItem, it.estado, it.prioridad, it.plazo,
+                            it.notasItem, it.fechaCreacion, it.isShown))
+                    }
+                    listaActivity.listaList.add(list)
+                }
+                listaActivity.adapter.setData(listaActivity.listaList)
             }
         }
 
-        class GetSpecificList(private val listaActivity: ListaActivity) : AsyncTask<Void, Void, ListWithItems>(){
-            override fun doInBackground(vararg params: Void?): ListWithItems {
-                var x = listaActivity.testListaList.indexOf(listaActivity.modified)
-                listaActivity.testListaList[x] = listaActivity.database.getSpecificList(
-                    listaActivity.modified!!.list.id)
-                return listaActivity.testListaList[x]
+        // Class to insert items into the db
+        class InsertList(private val listaActivity: ListaActivity) : AsyncTask<ListaItem, Void, Void>(){
+            override fun doInBackground(vararg params: ListaItem?): Void? {
+                // We get the new id to add a new list when we add a list
+                listaActivity.listsCounter = listaActivity.database.insertList(ListBDD(listaActivity.listsCounter,params[0]!!.name)) + 1
+                return null
             }
-
-            override fun onPostExecute(result: ListWithItems?) {
-                var x = listaActivity.testListaList.indexOf(listaActivity.modified)
-                listaActivity.recycler_view.adapter!!.notifyItemChanged(x)
-            }
-        }
-
-        class insertList(private val listaActivity: ListaActivity) : AsyncTask<ListBDD, Void, ListBDD>(){
-            override fun doInBackground(vararg params: ListBDD?): ListBDD? {
-                listaActivity.listsCounter = listaActivity.database.insertList(params[0]!!) + 1
-                return params[0]!!
-            }
-
-            override fun onPostExecute(result: ListBDD?) {
-                listaActivity.testListaList.add(
-                    ListWithItems(
-                        result!!,
-                        null
-                    )
-                )
-                listaActivity.adapter.notifyItemInserted(listaActivity.testListaList.size - 1)
-                println("SE INSERTO EL ITEM      $result")
-            }
-
-        }
-
-        class Trash(private val listaActivity: ListaActivity) : AsyncTask<ListWithItems, Void, ListWithItems>(){
-            override fun doInBackground(vararg params: ListWithItems?): ListWithItems? {
-                listaActivity.database.deleteList(params[0]!!.list)
-                listaActivity.database.deleteListItems(params[0]!!.list.id)
-                return params[0]!!
-            }
-    
-            override fun onPostExecute(result: ListWithItems?) {
-                var pos: Int = listaActivity.testListaList.indexOf(result)
-                listaActivity.testListaList.removeAt(pos)
-                listaActivity.recycler_view.adapter?.notifyItemRemoved(pos)
-            }
-    
         }
     }
 }
-
-
-

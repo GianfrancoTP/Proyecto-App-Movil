@@ -9,14 +9,14 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.CheckBox
+import android.widget.CompoundButton
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.room.Room
-import com.example.entrega1proyecto.model.*
+import com.example.entrega1proyecto.ListaActivity.Companion.LISTS
 import kotlinx.android.synthetic.main.activity_list_details.*
 import kotlinx.android.synthetic.main.popup.view.*
 import kotlinx.android.synthetic.main.popup_to_create_item.view.*
@@ -28,50 +28,31 @@ import kotlin.collections.ArrayList
 
 class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
 
-    var itemsOnList: ArrayList<ItemBDD> = ArrayList()
-    var copyItemsOnList: ArrayList<ItemBDD> = ArrayList()
-    lateinit var list: ListWithItems
+    var itemsOnList: ArrayList<Item> = ArrayList()
+    var copyItemsOnList: ArrayList<Item> = ArrayList()
+    var list: ListaItem = ListaItem("")
     var prioritario = false
     var shown = false
     var itemModificadoPos = -1
-    var itemModified: ItemBDD? =  null
+    var itemModified: Item? =  null
     var isShowingDialogAdd = false
     var isShowingDialogEdit = false
     var dialogEdit: Dialog? = null
     var dialogAdd: Dialog? = null
-    var itemsCounter: Long = 0
-    // Database
-    lateinit var database: ListDao
-    var idOfList: Long = (-1).toLong()
-    var testItemsList: ArrayList<ItemBDD> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_list_details)
-
-        database = Room.databaseBuilder(this, Database::class.java,"ListsBDD").allowMainThreadQueries().fallbackToDestructiveMigration().build().ListDao()
-        testItemsList = ArrayList(database.getAllItems())
-
-        if (testItemsList.size > 0 && itemsCounter == 0.toLong()) {
-            itemsCounter = testItemsList[testItemsList.lastIndex].id
-        }
-
-        // We obtain the array of lists
-        idOfList = intent.getSerializableExtra("List Id")!! as Long
-
-        list = database.getSpecificList(idOfList)
-        itemsOnList = ArrayList(list.items!!)
-        println("EN EL ON CREATE ANTES DEL ADAPTER       $itemsOnList    $list")
-
         // We set the adapter for his activity
         itemsRecyclerView.adapter = AdaptadorItemsCustom(itemsOnList, this)
         itemsRecyclerView.layoutManager = LinearLayoutManager(this)
-
+        // We obtain the array of lists
+        list = intent.getSerializableExtra(LISTS)!! as ListaItem
 
         // If the activity haven't changed the orientation
-        /*if(savedInstanceState == null) {
+        if(savedInstanceState == null) {
             createItems(list!!)
-        }*/
+        }
         if(savedInstanceState!=null){
             isShowingDialogAdd = savedInstanceState.getBoolean("IS_SHOWING_DIALOG_ADD", false)
             if(isShowingDialogAdd){
@@ -83,29 +64,24 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             }
         }
 
-        SwitchItemsChecked.setOnClickListener {
-            var b = SwitchItemsChecked.isChecked
-            if (b) {
+        SwitchItemsChecked.setOnCheckedChangeListener { compoundButton: CompoundButton, b: Boolean ->
+            if (b){
                 itemsOnList.forEach {
                     var itemModifiedPosition = itemsOnList.indexOf(it)
                     it.isShown = !it.isShown
                     itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
-                    database.updateItem(it)
-                    println("Switch On!!!!!      $itemsOnList")
                 }
-            } else {
+            }
+            else{
                 itemsOnList.forEach {
                     var itemModifiedPosition = itemsOnList.indexOf(it)
                     it.isShown = !it.isShown
                     itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
-                    database.updateItem(it)
-                    println("Switch off!!!!!      $itemsOnList")
                 }
             }
         }
-
         // We set the name of the list
-        nombreListaTextView.text = list?.list.name
+        nombreListaTextView.text = list?.name
 
         //This is for the Drag and Drop ----------------------------------------------------------------------------
 
@@ -135,10 +111,10 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         if (data != null) {
             if (resultCode == 5) {
                 try{
-                    itemModified = database.getSpecificItem(data.getSerializableExtra("item updated") as Long)
+                    itemModified = data.getSerializableExtra("item updated") as Item
                     itemModificadoPos = data.getIntExtra("item position modified", -1)
                     itemsOnList[itemModificadoPos] = itemModified!!
-                    itemsRecyclerView.adapter!!.notifyItemChanged(itemModificadoPos)
+                    itemsRecyclerView.adapter?.notifyItemChanged(itemModificadoPos)
                 }catch (e: Exception){
                     itemsOnList.removeAt(itemModificadoPos)
                     itemsRecyclerView.adapter?.notifyItemRemoved(itemModificadoPos)
@@ -149,14 +125,14 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     }
 
     // We set the items on the list in this activity
-    /*fun createItems(list: ListWithItems){
+    fun createItems(list: ListaItem){
         if (list.items != null) {
             list.items?.forEach {
                 itemsOnList.add(it)
                 itemsRecyclerView.adapter?.notifyItemInserted(itemsOnList.size - 1)
             }
         }
-    }*/
+    }
 
     // Function to add items in the list
     fun anadirItem(view: View){
@@ -189,14 +165,10 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 val formatted = current.format(formatter)
                 shown = !SwitchItemsChecked.isChecked
                 // Here we create the item
-                var newItem = ItemBDD(nameItem = view.itemNameEditText.text.toString(),estado = false,
+                var newItem = Item(nameItem = view.itemNameEditText.text.toString(),estado = false,
                     prioridad= prioritario, plazo= view.plazoEditText.text.toString(),
                     notasItem= view.descripcionEditText.text.toString(),
-                    fechaCreacion= formatted, isShown = shown, id= itemsCounter, listID = list.list.id)
-
-                itemsCounter = database.insertItem(newItem)
-                newItem.id = itemsCounter
-                itemsCounter += 1
+                    fechaCreacion= formatted, isShown = shown)
                 // We add it to the array of items
                 itemsOnList.add(newItem)
                 itemsRecyclerView.adapter?.notifyItemInserted(itemsOnList.size -1)
@@ -226,9 +198,8 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         })
         builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
-                list?.list.name = view.listNameTextView.getText().toString()
-                nombreListaTextView.text = list?.list.name
-                database.updateList(list.list)
+                list?.name = view.listNameTextView.getText().toString()
+                nombreListaTextView.text = list?.name
                 dialog?.dismiss()
                 isShowingDialogEdit = false
             }
@@ -243,23 +214,19 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         val myIntent: Intent = Intent()
         if(SwitchItemsChecked.isChecked) {
             itemsOnList.forEach {
-                //var itemModifiedPosition = itemsOnList.indexOf(it)
+                var itemModifiedPosition = itemsOnList.indexOf(it)
                 it.isShown = !it.isShown
-                //itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
-                database.updateItem(it)
+                itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
             }
         }
-        list = ListWithItems(list!!.list, itemsOnList)
-        database.updateList(list.list)
-
-        myIntent.putExtra("Name List updated", list.list.name)
-        //myIntent.putExtra("listaItems",list as Serializable)
+        list = ListaItem(list!!.name, itemsOnList)
+        myIntent.putExtra("listaItems",list)
         setResult(Activity.RESULT_OK, myIntent)
         finish()
     }
 
     // We update the item if it was clicked
-    override fun onSpecificItemCLicked(result: ItemBDD, check:CheckBox) {
+    override fun onSpecificItemCLicked(result: Item, check:CheckBox) {
         var itemModifiedPosition = itemsOnList.indexOf(result)
         if(result.estado){
             result.estado = check.isChecked
@@ -273,59 +240,34 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         // We save it on the list ot items
         itemsOnList[itemModifiedPosition] = result
         itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
-        database.updateItem(result)
     }
 
     // To go to the item details activity
-    override fun onEyeItemCLicked(result: ItemBDD) {
+    override fun onEyeItemCLicked(result: Item) {
         val intent = Intent(this, ItemDetails::class.java)
         itemModificadoPos = itemsOnList.indexOf(result)
-        intent.putExtra("item to watch", result.id)
+        intent.putExtra("item to watch", result)
         intent.putExtra("Item position", itemModificadoPos)
         startActivityForResult(intent, 4)
     }
 
     // If the state is changed we need to pass the important data to don't lose it
-    /*public override fun onSaveInstanceState(savedInstanceState: Bundle) {
+    public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
-        println("ANTES DE LA ROTACIOOOOOON    $itemsOnList   ${database.getAllItems()}")
-        //savedInstanceState.putSerializable("lista listas",itemsOnList)
-        /*var count = 0
-        itemsOnList.forEach {
-            database.insertItem(it)
-            itemsOnList[count] = it
-            itemsRecyclerView.adapter?.notifyItemChanged(count)
-        }*/
-
+        savedInstanceState.putSerializable("lista listas",itemsOnList)
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG_EDIT", isShowingDialogEdit)
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG_ADD", isShowingDialogAdd)
-    }*/
+    }
 
     // Here we recover the data when the state is changed
-    /*override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
+    override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
         super.onRestoreInstanceState(savedInstanceState)
-        var counter = 0
-        itemsOnList = ArrayList(database.getAllItems())
-        println("Rotando la pantalla!!!!!      $itemsOnList")
-        /*itemsOnList.forEach {
-            if (it.estado && SwitchItemsChecked.isChecked){
-                it.isShown = true
-            }
-            else if(it.estado && !SwitchItemsChecked.isChecked){
-                it.isShown = false
-            }
-            else it.isShown = !(!it.estado && SwitchItemsChecked.isChecked)
-
-            database.insertItem(it)
-            itemsOnList[counter] = it
-            itemsRecyclerView.adapter?.notifyItemChanged(counter)
-        }*/
-        /*copyItemsOnList = savedInstanceState?.getSerializable("lista listas") as ArrayList<ItemBDD>
+        copyItemsOnList = savedInstanceState?.getSerializable("lista listas") as ArrayList<Item>
         copyItemsOnList.forEach {
             itemsOnList.add(it)
             itemsRecyclerView.adapter?.notifyItemInserted(itemsOnList.size - 1)
-        }*/
-    }*/
+        }
+    }
 
     // To maintain the dialog states if the app state is changed
     override fun onPause() {
@@ -343,15 +285,13 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         val myIntent: Intent = Intent()
         if(SwitchItemsChecked.isChecked) {
             itemsOnList.forEach {
-                //var itemModifiedPosition = itemsOnList.indexOf(it)
+                var itemModifiedPosition = itemsOnList.indexOf(it)
                 it.isShown = !it.isShown
-                database.updateItem(it)
-                //itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
+                itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
             }
         }
-        list = ListWithItems(list!!.list, itemsOnList)
-        database.updateList(list.list)
-        //myIntent.putExtra("listaItems",list as Serializable)
+        list = ListaItem(list!!.name, itemsOnList)
+        myIntent.putExtra("listaItems",list)
         setResult(Activity.RESULT_OK, myIntent)
         finish()
         super.onBackPressed()
