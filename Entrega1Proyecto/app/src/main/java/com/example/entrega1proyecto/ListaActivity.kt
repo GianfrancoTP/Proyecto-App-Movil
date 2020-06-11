@@ -37,6 +37,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     var testListaList: ArrayList<ListWithItems> = ArrayList()
     lateinit var adapter: AdaptadorCustom
     var listsCounter: Long = 0
+    val map = hashMapOf<ListaItem, ListBDD>()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,8 +75,10 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
             if (intent?.getSerializableExtra("lista") != null) {
                 validador = true
                 // This is to mantain the list if we change the orientation of the phone
+/*
                 startingListaList = intent.getSerializableExtra("lista")!! as ArrayList<ListaItem>
                 createLists(startingListaList)
+*/
             }
         }
 
@@ -102,7 +105,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         touchHelper.attachToRecyclerView(recycler_view)
         // End of Drag and Drop --------------------------------------------------------------------------------
     }
-
+/*
     // The function to maintain the lists if we rotate the screen or come from the login activity
     private fun createLists(startingListaList: ArrayList<ListaItem>){
         startingListaList.forEach {
@@ -110,14 +113,14 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
             recycler_view.adapter?.notifyItemInserted(listaList.size - 1)
         }
     }
-
+*/
     // Function to go to the activity which contains the items inside a list
     override fun onItemCLicked(result: ListaItem){
         // We keep the List who was clicked
         modified = result
         // Go to the items in a list activity
         val intent = Intent(this, listDetails::class.java)
-        intent.putExtra(LISTS, result)
+        intent.putExtra(LISTS, map[result])
         startActivityForResult(intent, 1)
     }
 
@@ -126,12 +129,15 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         super.onActivityResult(requestCode, resultCode, data)
         if (data != null) {
             if (resultCode == Activity.RESULT_OK){
+                // ACA PUEDE SER QUE NOS FALTE OBTENER LA NUEVA LISTA CON SUS ITEMS (UPDATEAR LA LISTA PARA QUE TENGA SUS NUEVOS ITEMS)
+/*
                 // We get the updated List with all the created items
                 itemsRecibidos = data.getSerializableExtra("listaItems") as ListaItem
                 var x = listaList.indexOf(modified)
                 // We update the changed list inside the array of lists
                 listaList[x] = itemsRecibidos
                 recycler_view.adapter?.notifyItemChanged(x)
+ */
             }
             else if (resultCode == 2){
                 user = data.getSerializableExtra("user details updated") as User
@@ -152,6 +158,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     // Function when we want to delete a list
     override fun onTrashCLicked(result: ListaItem) {
         var pos = listaList.indexOf(result)
+        Trash(this).execute(result)
         listaList.remove(result)
         recycler_view.adapter?.notifyItemRemoved(pos)
     }
@@ -185,10 +192,10 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         // Here we create the new list with null items inside it
         builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
-                listaList.add(ListaItem(view.listNameTextView.text.toString(),null))
-                InsertList(this@ListaActivity).execute(
-                    ListaItem(view.listNameTextView.text.toString(),null))
-                recycler_view.adapter?.notifyItemInserted(listaList.size - 1)
+                val listToBeAdded = ListaItem(view.listNameTextView.text.toString(),ArrayList())
+                listaList.add(listToBeAdded)
+                InsertList(this@ListaActivity).execute(listToBeAdded)
+                adapter.notifyItemInserted(listaList.size - 1)
                 dialog?.dismiss()
                 isShowingDialog = false
             }
@@ -206,7 +213,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         // We give the changed item if the screen is rotated before being saved in the array of lists
         savedInstanceState.putSerializable("ItemModificado",modified)
         // We give the array of lists
-        savedInstanceState.putSerializable("lista listas",listaList)
+        //savedInstanceState.putSerializable("lista listas",listaList)
 
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG", isShowingDialog)
 
@@ -220,12 +227,15 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         user = savedInstanceState?.getSerializable("person") as User
         nombreUsuarioTextView.text = user!!.name
         // Obtain the array list
-        startingListaList = savedInstanceState?.getSerializable("lista listas") as ArrayList<ListaItem>
+        //startingListaList = savedInstanceState?.getSerializable("lista listas") as ArrayList<ListaItem>
         // Obtain the modified items on the list
         modified = savedInstanceState?.getSerializable("ItemModificado") as ListaItem
 
+        adapter.notifyDataSetChanged()
         // if(!validador) {
+/*
         createLists(startingListaList)
+*/
         // }
     }
 
@@ -259,10 +269,6 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 listaActivity.testListaList =
                     ArrayList(listaActivity.database.getListWithItems())
 
-                //Here we notify the adapter that we deleted everything, because we'll search it later
-                listaActivity.listaList = ArrayList()
-                listaActivity.adapter.notifyDataSetChanged()
-
                 return listaActivity.testListaList
             }
 
@@ -275,10 +281,14 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 // Here we add it to the lista list
                 listaActivity.testListaList.forEach{
                     list = ListaItem(it.list.name)
-                    it.items?.forEach {
-                        list.items!!.add(Item(it.nameItem, it.estado, it.prioridad, it.plazo,
-                            it.notasItem, it.fechaCreacion, it.isShown))
+                    if (list.items == null){
+                        list.items = ArrayList()
                     }
+                    it.items?.forEach {x->
+                        list.items!!.add(Item(x.nameItem, x.estado, x.prioridad, x.plazo,
+                            x.notasItem, x.fechaCreacion, x.isShown))
+                    }
+                    listaActivity.map[list] = it.list
                     listaActivity.listaList.add(list)
                 }
                 listaActivity.adapter.setData(listaActivity.listaList)
@@ -289,7 +299,19 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         class InsertList(private val listaActivity: ListaActivity) : AsyncTask<ListaItem, Void, Void>(){
             override fun doInBackground(vararg params: ListaItem?): Void? {
                 // We get the new id to add a new list when we add a list
-                listaActivity.listsCounter = listaActivity.database.insertList(ListBDD(listaActivity.listsCounter,params[0]!!.name)) + 1
+                val listToBeAdded = ListBDD(listaActivity.listsCounter,params[0]!!.name)
+                listaActivity.map[params[0]!!] = listToBeAdded
+                listaActivity.listsCounter = listaActivity.database.insertList(listToBeAdded) + 1
+                return null
+            }
+        }
+
+        // Class when a list is removed
+        class Trash(private val listaActivity: ListaActivity) : AsyncTask<ListaItem, Void, Void>(){
+            override fun doInBackground(vararg params: ListaItem?): Void? {
+                val listaABorrar = listaActivity.map[params[0]!!]
+                listaActivity.database.deleteList(listaABorrar!!)
+                listaActivity.database.deleteListItems(listaABorrar!!.id)
                 return null
             }
         }

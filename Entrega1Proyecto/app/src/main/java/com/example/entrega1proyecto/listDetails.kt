@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
+import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -16,7 +17,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.room.Room
 import com.example.entrega1proyecto.ListaActivity.Companion.LISTS
+import com.example.entrega1proyecto.model.*
 import kotlinx.android.synthetic.main.activity_list_details.*
 import kotlinx.android.synthetic.main.popup.view.*
 import kotlinx.android.synthetic.main.popup_to_create_item.view.*
@@ -30,7 +33,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
 
     var itemsOnList: ArrayList<Item> = ArrayList()
     var copyItemsOnList: ArrayList<Item> = ArrayList()
-    var list: ListaItem = ListaItem("")
+    var list: ListaItem = ListaItem("", ArrayList())
     var prioritario = false
     var shown = false
     var itemModificadoPos = -1
@@ -39,20 +42,38 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     var isShowingDialogEdit = false
     var dialogEdit: Dialog? = null
     var dialogAdd: Dialog? = null
+    // Db
+    lateinit var database: ListDao
+    lateinit var adapter: AdaptadorItemsCustom
+    var listId: Long = (-1).toLong()
+    val map = hashMapOf<Item, ItemBDD>()
+    var itemsCounter = (0).toLong()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_list_details)
         // We set the adapter for his activity
-        itemsRecyclerView.adapter = AdaptadorItemsCustom(itemsOnList, this)
+        adapter = AdaptadorItemsCustom(this)
+        itemsRecyclerView.adapter = adapter
         itemsRecyclerView.layoutManager = LinearLayoutManager(this)
-        // We obtain the array of lists
-        list = intent.getSerializableExtra(LISTS)!! as ListaItem
+
+        // Here we create the db
+        database = Room.databaseBuilder(this, Database::class.java, "ListsBDD")
+            .fallbackToDestructiveMigration().build().ListDao()
+
+        // Here we obtain the id of the list we are inside
+        listId = (intent.getSerializableExtra(LISTS)!! as ListBDD).id
+
+        // We obtain the array of list
+        GetTheList(this).execute(listId)
 
         // If the activity haven't changed the orientation
+/*
         if(savedInstanceState == null) {
             createItems(list!!)
         }
+
+*/
         if(savedInstanceState!=null){
             isShowingDialogAdd = savedInstanceState.getBoolean("IS_SHOWING_DIALOG_ADD", false)
             if(isShowingDialogAdd){
@@ -69,19 +90,17 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 itemsOnList.forEach {
                     var itemModifiedPosition = itemsOnList.indexOf(it)
                     it.isShown = !it.isShown
-                    itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
+                    adapter.notifyItemChanged(itemModifiedPosition)
                 }
             }
             else{
                 itemsOnList.forEach {
                     var itemModifiedPosition = itemsOnList.indexOf(it)
                     it.isShown = !it.isShown
-                    itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
+                    adapter.notifyItemChanged(itemModifiedPosition)
                 }
             }
         }
-        // We set the name of the list
-        nombreListaTextView.text = list?.name
 
         //This is for the Drag and Drop ----------------------------------------------------------------------------
 
@@ -94,7 +113,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 val sourcePosition = viewHolder.adapterPosition
                 val targetPosition = target.adapterPosition
                 Collections.swap(itemsOnList, sourcePosition, targetPosition)
-                itemsRecyclerView.adapter?.notifyItemMoved(sourcePosition, targetPosition)
+                adapter.notifyItemMoved(sourcePosition, targetPosition)
                 return true
             }
 
@@ -114,10 +133,10 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                     itemModified = data.getSerializableExtra("item updated") as Item
                     itemModificadoPos = data.getIntExtra("item position modified", -1)
                     itemsOnList[itemModificadoPos] = itemModified!!
-                    itemsRecyclerView.adapter?.notifyItemChanged(itemModificadoPos)
+                    adapter.notifyItemChanged(itemModificadoPos)
                 }catch (e: Exception){
                     itemsOnList.removeAt(itemModificadoPos)
-                    itemsRecyclerView.adapter?.notifyItemRemoved(itemModificadoPos)
+                    adapter.notifyItemRemoved(itemModificadoPos)
                 }
 
             }
@@ -129,7 +148,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         if (list.items != null) {
             list.items?.forEach {
                 itemsOnList.add(it)
-                itemsRecyclerView.adapter?.notifyItemInserted(itemsOnList.size - 1)
+                adapter.notifyItemInserted(itemsOnList.size - 1)
             }
         }
     }
@@ -169,9 +188,13 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                     prioridad= prioritario, plazo= view.plazoEditText.text.toString(),
                     notasItem= view.descripcionEditText.text.toString(),
                     fechaCreacion= formatted, isShown = shown)
+
+                //Here we add the item to the bdd
+                InsertItem(this@listDetails).execute(newItem)
+
                 // We add it to the array of items
                 itemsOnList.add(newItem)
-                itemsRecyclerView.adapter?.notifyItemInserted(itemsOnList.size -1)
+                adapter.notifyItemInserted(itemsOnList.size -1)
                 dialog?.dismiss()
                 isShowingDialogAdd = false
             }
@@ -216,7 +239,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             itemsOnList.forEach {
                 var itemModifiedPosition = itemsOnList.indexOf(it)
                 it.isShown = !it.isShown
-                itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
+                adapter.notifyItemChanged(itemModifiedPosition)
             }
         }
         list = ListaItem(list!!.name, itemsOnList)
@@ -239,7 +262,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
 
         // We save it on the list ot items
         itemsOnList[itemModifiedPosition] = result
-        itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
+        adapter.notifyItemChanged(itemModifiedPosition)
     }
 
     // To go to the item details activity
@@ -265,7 +288,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         copyItemsOnList = savedInstanceState?.getSerializable("lista listas") as ArrayList<Item>
         copyItemsOnList.forEach {
             itemsOnList.add(it)
-            itemsRecyclerView.adapter?.notifyItemInserted(itemsOnList.size - 1)
+            adapter.notifyItemInserted(itemsOnList.size - 1)
         }
     }
 
@@ -287,7 +310,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             itemsOnList.forEach {
                 var itemModifiedPosition = itemsOnList.indexOf(it)
                 it.isShown = !it.isShown
-                itemsRecyclerView.adapter?.notifyItemChanged(itemModifiedPosition)
+                adapter.notifyItemChanged(itemModifiedPosition)
             }
         }
         list = ListaItem(list!!.name, itemsOnList)
@@ -295,5 +318,47 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         setResult(Activity.RESULT_OK, myIntent)
         finish()
         super.onBackPressed()
+    }
+
+    companion object {
+        class GetTheList(private val listaActivity: listDetails) :
+            AsyncTask<Long, Void, ListWithItems>() {
+            override fun doInBackground(vararg params: Long?): ListWithItems {
+                return listaActivity.database.getSpecificList(params[0]!!)
+            }
+
+            override fun onPostExecute(result: ListWithItems?) {
+                listaActivity.list = ListaItem(result!!.list.name, ArrayList())
+                result!!.items?.forEach {
+                    val itemAdded = Item(it.nameItem, it.estado, it.prioridad, it.plazo,
+                        it.notasItem, it.fechaCreacion, it.isShown)
+                    listaActivity.list.items!!.add(itemAdded)
+                    listaActivity.itemsOnList.add(itemAdded)
+                    listaActivity.map[itemAdded] = it
+                }
+                if (result.items!!.isNotEmpty() && listaActivity.itemsCounter == 0.toLong()) {
+                    listaActivity.itemsCounter = result.items?.get(result.items.size - 1)!!.id + 1
+                }
+                listaActivity.adapter.setData(listaActivity.itemsOnList)
+                // We set the name of the list
+                listaActivity.nombreListaTextView.text = listaActivity.list?.name
+            }
+        }
+
+        class InsertItem(private val listaActivity: listDetails) :
+            AsyncTask<Item, Void, Void>() {
+            override fun doInBackground(vararg params: Item?): Void? {
+                val itemForBDD = ItemBDD(
+                    listaActivity.itemsCounter,
+                    listaActivity.listId, params[0]!!.nameItem, params[0]!!.estado,
+                    params[0]!!.prioridad, params[0]!!.plazo!!,
+                    params[0]!!.notasItem!!,
+                    params[0]!!.fechaCreacion, params[0]!!.isShown
+                )
+                listaActivity.map[params[0]!!] = itemForBDD
+                listaActivity.itemsCounter = listaActivity.database.insertItem(itemForBDD) + 1
+                return null
+            }
+        }
     }
 }

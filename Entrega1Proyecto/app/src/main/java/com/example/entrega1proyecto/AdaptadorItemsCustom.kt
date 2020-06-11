@@ -18,10 +18,17 @@ import java.io.Serializable
 
 
 // This is the adapter of the items on a list
-class AdaptadorItemsCustom(private val items: ArrayList<Item>, private val specificItemClickListener: OnSpecificItemClickListener): RecyclerView.Adapter<AdaptadorItemsCustom.ViewHolder>() {
+class AdaptadorItemsCustom(private val specificItemClickListener: OnSpecificItemClickListener): RecyclerView.Adapter<AdaptadorItemsCustom.ViewHolder>() {
+    private var items = ArrayList<Item>()
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.items_template, parent, false)
         return ViewHolder(view)
+    }
+
+    fun setData(newData: ArrayList<Item>) {
+        this.items = newData
+        notifyDataSetChanged()
     }
 
     override fun getItemCount(): Int {
