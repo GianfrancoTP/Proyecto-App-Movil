@@ -9,15 +9,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import androidx.appcompat.app.AlertDialog
-import androidx.core.view.isVisible
 import androidx.room.Room
 import com.example.entrega1proyecto.model.Database
 import com.example.entrega1proyecto.model.ItemBDD
 import com.example.entrega1proyecto.model.ListDao
 import kotlinx.android.synthetic.main.activity_item_details.*
 import kotlinx.android.synthetic.main.popup.view.*
-import java.io.Serializable
-import kotlin.Exception
 
 class ItemDetails : AppCompatActivity() {
 
@@ -33,21 +30,29 @@ class ItemDetails : AppCompatActivity() {
         database = Room.databaseBuilder(this, Database::class.java,"ListsBDD").allowMainThreadQueries().fallbackToDestructiveMigration().build().ListDao()
 
         try {
-            item = database.getSpecificItem(savedInstanceState?.getSerializable("Item") as Long)
+            getSpecificItem(
+                this
+            ).execute(savedInstanceState?.getSerializable("Item") as Long)
+//            item = database.getSpecificItem(savedInstanceState?.getSerializable("Item") as Long)
             pos = savedInstanceState?.getInt("Item Mod Position")
 
         }
         catch(e: TypeCastException){
             val idItem = intent.getSerializableExtra("item to watch")!! as Long
-            item = database.getSpecificItem(idItem)
+            getSpecificItem(
+                this
+            ).execute(idItem)
+//            item = database.getSpecificItem(idItem)
             pos = intent.getIntExtra("Item position", -1)
 
 
         }
         catch(err: NullPointerException){
             val idItem = intent.getSerializableExtra("item to watch")!! as Long
-
-            item = database.getSpecificItem(idItem)
+            getSpecificItem(
+                this
+            ).execute(idItem)
+ //           item = database.getSpecificItem(idItem)
             pos = intent.getIntExtra("Item position", -1)
 
         }
@@ -59,9 +64,10 @@ class ItemDetails : AppCompatActivity() {
                 editItemName(View(this))
             }
         }
-
+/*
         nombreItemTextView.text = item!!.nameItem
         createdAtTextView.text = item!!.fechaCreacion
+
         if(item!!.plazo == ""){
             fechaPlazoTextView.hint = "Escriba aquí la fecha de plazo"
             fechaPlazoTextView.setText("")
@@ -87,6 +93,8 @@ class ItemDetails : AppCompatActivity() {
             PriorityImageView.visibility = View.GONE
         }
         notasItemEditText.setText(item!!.notasItem)
+        
+ */
     }
 
     // When the back button is pressed, to go back to the other view
@@ -227,5 +235,49 @@ class ItemDetails : AppCompatActivity() {
         setResult(5, myIntent)
         finish()
         super.onBackPressed()
+    }
+
+    companion object {
+        class getSpecificItem(private val itemDetails: ItemDetails) : AsyncTask<Long, Void, ItemBDD>(){
+            override fun doInBackground(vararg params: Long?): ItemBDD {
+                itemDetails.item = itemDetails.database.getSpecificItem(params[0]!!)
+                return itemDetails.item!!
+            }
+
+            override fun onPostExecute(result: ItemBDD?) {
+                itemDetails.nombreItemTextView.text = itemDetails.item!!.nameItem
+                itemDetails.createdAtTextView.text = itemDetails.item!!.fechaCreacion
+
+                if(itemDetails.item!!.plazo == ""){
+                    itemDetails.fechaPlazoTextView.hint = "Escriba aquí la fecha de plazo"
+                    itemDetails.fechaPlazoTextView.setText("")
+                }
+                else{
+                    itemDetails.fechaPlazoTextView.hint = ""
+                    itemDetails.fechaPlazoTextView.setText(itemDetails.item!!.plazo)
+                }
+
+                if (itemDetails.item!!.estado){
+                    itemDetails.button3.text = "Volver a no completado"
+                }
+                else{
+                    itemDetails.button3.text = "Completar"
+                }
+
+                if (itemDetails.item!!.prioridad){
+                    itemDetails.NotPriorityImageView.visibility =
+                        View.GONE
+                    itemDetails.PriorityImageView.visibility =
+                        View.VISIBLE
+                }
+                else{
+                    itemDetails.NotPriorityImageView.visibility =
+                        View.VISIBLE
+                    itemDetails.PriorityImageView.visibility =
+                        View.GONE
+                }
+                itemDetails.notasItemEditText.setText(itemDetails.item!!.notasItem)
+            }
+        }
     }
 }

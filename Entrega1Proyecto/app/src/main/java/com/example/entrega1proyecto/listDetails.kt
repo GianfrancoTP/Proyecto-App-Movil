@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.CheckBox
-import android.widget.CompoundButton
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -17,12 +16,10 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
-import com.example.entrega1proyecto.ListaActivity.Companion.LISTS
 import com.example.entrega1proyecto.model.*
 import kotlinx.android.synthetic.main.activity_list_details.*
 import kotlinx.android.synthetic.main.popup.view.*
 import kotlinx.android.synthetic.main.popup_to_create_item.view.*
-import java.io.Serializable
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -54,8 +51,6 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
 
         database = Room.databaseBuilder(this, Database::class.java,"ListsBDD").allowMainThreadQueries().fallbackToDestructiveMigration().build().ListDao()
         testItemsList = ArrayList(database.getAllItems())
-
-
 
         if (testItemsList.size > 0 && itemsCounter == 0.toLong()) {
             itemsCounter = testItemsList[testItemsList.lastIndex].id

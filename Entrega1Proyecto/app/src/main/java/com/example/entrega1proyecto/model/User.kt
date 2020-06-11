@@ -40,9 +40,6 @@ interface ListDao{
     @Update
     fun updateItem(data:ItemBDD)
 
-    //@Query("SELECT * FROM $TABLE2_NAME")
-    //fun getAllItems(): ArrayList<ItemBDD>
-
     @Transaction
     @Query("SELECT * FROM $TABLE2_NAME Where id = :id")
     fun getSpecificItem(id: Long): ItemBDD

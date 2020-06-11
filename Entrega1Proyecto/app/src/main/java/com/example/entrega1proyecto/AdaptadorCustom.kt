@@ -10,7 +10,9 @@ import java.io.Serializable
 import kotlin.collections.ArrayList
 
 // This is the adapter for the lists
-class AdaptadorCustom(private val items: ArrayList<ListWithItems>, private val itemClickListener: OnItemClickListener, private val trashClickListener: OnTrashClickListener): RecyclerView.Adapter<AdaptadorCustom.ViewHolder>() {
+class AdaptadorCustom(private val itemClickListener: OnItemClickListener, private val trashClickListener: OnTrashClickListener): RecyclerView.Adapter<AdaptadorCustom.ViewHolder>() {
+    private var items = ArrayList<ListWithItems>()
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.template, parent, false)
         return ViewHolder(view)
@@ -23,6 +25,11 @@ class AdaptadorCustom(private val items: ArrayList<ListWithItems>, private val i
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
         holder.bindHistoric(item, itemClickListener, trashClickListener)
+    }
+
+    fun setData(newData: ArrayList<ListWithItems>) {
+        this.items = newData
+        notifyDataSetChanged()
     }
 
     class ViewHolder(private var view: View) : RecyclerView.ViewHolder(view) {
