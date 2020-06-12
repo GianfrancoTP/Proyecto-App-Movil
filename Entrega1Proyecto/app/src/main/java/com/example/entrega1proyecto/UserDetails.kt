@@ -12,9 +12,15 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
+import com.example.entrega1proyecto.configuration.API_KEY
 import com.example.entrega1proyecto.model.User
+import com.example.entrega1proyecto.networking.PersonApi
+import com.example.entrega1proyecto.networking.UserService
 import kotlinx.android.synthetic.main.activity_user_details.*
 import kotlinx.android.synthetic.main.edit_user_popup.view.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.io.Serializable
 
 class UserDetails : AppCompatActivity() {
@@ -30,7 +36,7 @@ class UserDetails : AppCompatActivity() {
         setContentView(R.layout.activity_user_details)
         user = intent.getSerializableExtra("user details")!! as User
 
-        user_name_text_view.text = user!!.name + " " +user!!.last_name
+        user_name_text_view.text = user!!.first_name + " " +user!!.last_name
         user_email_text_view.text = user!!.email
         Glide.with(this).load(user!!.profile_photo).apply(RequestOptions.circleCropTransform())
             .into(banner_picture_user_image_view)
@@ -105,10 +111,10 @@ class UserDetails : AppCompatActivity() {
                 user!!.email = view.emailTextView.text.toString()
                 var fullname = verificador(view.name_text_view)
                 if (fullname.size == 1){
-                    user!!.name = fullname[0]
+                    user!!.first_name = fullname[0]
                 }
                 else{
-                    user!!.name = fullname[0]+" "+fullname[1]
+                    user!!.first_name = fullname[0]+" "+fullname[1]
                 }
                 fullname = verificador(view.last_name_text_view)
                 if (fullname.size == 1){
@@ -124,8 +130,27 @@ class UserDetails : AppCompatActivity() {
                 else{
                     user!!.phone = view.phone_text_view.text.toString()
                 }
-                user_name_text_view.text = user!!.name + " " +user!!.last_name
+                user_name_text_view.text = user!!.first_name + " " +user!!.last_name
                 user_email_text_view.text = user!!.email
+
+                val request = UserService.buildService(PersonApi::class.java)
+                val call = request.updateUser(user!!, API_KEY)
+                call.enqueue(object : Callback<User> {
+                    override fun onResponse(
+                        call: Call<User>,
+                        response: Response<User>
+                    ) {
+                        if (response.isSuccessful()) {
+                            if (response.body() != null) {
+                                println("funciona")
+                            }
+                        }
+                    }
+                    override fun onFailure(call: Call<User>, t: Throwable) {
+                        println("NO FUNCIONA ${t.message}")
+                    }
+                })
+
                 dialog?.dismiss()
                 isShowingDialogProfile = false
             }
@@ -138,7 +163,7 @@ class UserDetails : AppCompatActivity() {
     // Set the data modified to the user
     fun setData(view: View){
         view.emailTextView.text = user!!.email
-        view.name_text_view.setText(user!!.name)
+        view.name_text_view.setText(user!!.first_name)
         view.last_name_text_view.setText(user!!.last_name)
         view.phone_text_view.setText(user!!.phone)
     }

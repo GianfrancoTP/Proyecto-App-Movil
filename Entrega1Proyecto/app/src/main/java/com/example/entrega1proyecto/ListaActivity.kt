@@ -67,7 +67,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         }
 
         user = intent.getSerializableExtra("user details start") as User
-        nombreUsuarioTextView.text = user!!.name
+        nombreUsuarioTextView.text = user!!.first_name
 
         // This is to keep the Lists if we got back to the Log In activity
         if (!validador) {
@@ -144,7 +144,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
             }
             else if (resultCode == 3){
                 user = data.getSerializableExtra("user details update") as User
-                nombreUsuarioTextView.text = user!!.name
+                nombreUsuarioTextView.text = user!!.first_name
             }
         }
     }
@@ -219,7 +219,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         super.onRestoreInstanceState(savedInstanceState)
         // Obtain the username
         user = savedInstanceState?.getSerializable("person") as User
-        nombreUsuarioTextView.text = user!!.name
+        nombreUsuarioTextView.text = user!!.first_name
 
         // Obtain the modified items on the list
         modified = savedInstanceState?.getSerializable("ItemModificado") as ListaItem
@@ -296,6 +296,9 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 val listToBeAdded = ListBDD(listaActivity.listsCounter,params[0]!!.name)
                 listaActivity.map[params[0]!!] = listToBeAdded
                 listaActivity.listsCounter = listaActivity.database.insertList(listToBeAdded) + 1
+
+
+
                 return null
             }
         }

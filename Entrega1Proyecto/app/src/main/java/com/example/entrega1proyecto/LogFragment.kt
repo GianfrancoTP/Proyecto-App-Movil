@@ -10,6 +10,7 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.entrega1proyecto.ListaActivity.Companion.LISTS
+import com.example.entrega1proyecto.configuration.API_KEY
 import com.example.entrega1proyecto.model.User
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
@@ -37,7 +38,7 @@ class LogFragment : Fragment() {
             if (resultCode == Activity.RESULT_OK){
                 user = data.getSerializableExtra("user details finish") as User
                 emailTextView.setText(user!!.email)
-                passwordTextView.setText(user!!.name)
+                passwordTextView.setText(user!!.first_name)
             }
         }
     }
@@ -48,17 +49,17 @@ class LogFragment : Fragment() {
         try{
             user = savedInstanceState?.getSerializable("user details update") as User
             emailTextView.setText(user!!.email)
-            passwordTextView.setText(user!!.name)
+            passwordTextView.setText(user!!.first_name)
         }catch (e: Exception){
             val request = UserService.buildService(PersonApi::class.java)
-            val call = request.getUsers()
+            val call = request.getUsers(API_KEY)
             call.enqueue(object: Callback<User> {
                 override fun onResponse(call: Call<User>, response: Response<User>) {
                     if (response.isSuccessful) {
                         if (response.body() != null) {
                             user = response.body()!!
                             emailTextView.setText(user!!.email)
-                            passwordTextView.setText(user!!.name)
+                            passwordTextView.setText(user!!.first_name)
                         }
                     }
                 }
