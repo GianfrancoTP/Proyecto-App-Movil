@@ -132,14 +132,6 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 adapter.notifyDataSetChanged()
                 GetAllLists(this).execute()
                 // ACA PUEDE SER QUE NOS FALTE OBTENER LA NUEVA LISTA CON SUS ITEMS (UPDATEAR LA LISTA PARA QUE TENGA SUS NUEVOS ITEMS)
-/*
-                // We get the updated List with all the created items
-                itemsRecibidos = data.getSerializableExtra("listaItems") as ListaItem
-                var x = listaList.indexOf(modified)
-                // We update the changed list inside the array of lists
-                listaList[x] = itemsRecibidos
-                recycler_view.adapter?.notifyItemChanged(x)
- */
             }
             else if (resultCode == 2){
                 user = data.getSerializableExtra("user details updated") as User
@@ -228,17 +220,11 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         // Obtain the username
         user = savedInstanceState?.getSerializable("person") as User
         nombreUsuarioTextView.text = user!!.name
-        // Obtain the array list
-        //startingListaList = savedInstanceState?.getSerializable("lista listas") as ArrayList<ListaItem>
+
         // Obtain the modified items on the list
         modified = savedInstanceState?.getSerializable("ItemModificado") as ListaItem
 
         adapter.notifyDataSetChanged()
-        // if(!validador) {
-/*
-        createLists(startingListaList)
-*/
-        // }
     }
 
     // To mantain the dialogs states when the app state is changed
@@ -278,6 +264,9 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
             }
 
             override fun onPostExecute(result: ArrayList<ListWithItems>?) {
+                if (listaActivity.listaList.size != 0){
+                    listaActivity.listaList = ArrayList()
+                }
                 //After getting the elements from the db
                 if (listaActivity.testListaList.size > 0 && listaActivity.listsCounter == 1.toLong()) {
                     listaActivity.listsCounter = listaActivity.testListaList[listaActivity.testListaList.lastIndex].list.id + 1

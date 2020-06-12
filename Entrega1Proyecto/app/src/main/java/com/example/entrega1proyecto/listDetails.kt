@@ -302,20 +302,8 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     // If the state is changed we need to pass the important data to don't lose it
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
-        savedInstanceState.putSerializable("lista listas",itemsOnList)
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG_EDIT", isShowingDialogEdit)
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG_ADD", isShowingDialogAdd)
-    }
-
-    // Here we recover the data when the state is changed
-    override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
-        super.onRestoreInstanceState(savedInstanceState)
-        /*copyItemsOnList = savedInstanceState?.getSerializable("lista listas") as ArrayList<Item>
-        copyItemsOnList.forEach {
-            itemsOnList.add(it)
-            adapter.notifyItemInserted(itemsOnList.size - 1)
-        }
-         */
     }
 
     // To maintain the dialog states if the app state is changed
@@ -331,7 +319,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
 
     // To go back to the lists activity
     override fun onBackPressed() {
-        val myIntent: Intent = Intent()
+        val myIntent = Intent()
         if(SwitchItemsChecked.isChecked) {
             itemsOnList.forEach {
                 var itemModifiedPosition = itemsOnList.indexOf(it)
