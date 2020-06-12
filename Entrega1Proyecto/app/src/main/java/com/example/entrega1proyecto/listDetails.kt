@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.CheckBox
 import android.widget.CompoundButton
+import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -23,6 +24,8 @@ import com.example.entrega1proyecto.model.*
 import kotlinx.android.synthetic.main.activity_list_details.*
 import kotlinx.android.synthetic.main.popup.view.*
 import kotlinx.android.synthetic.main.popup_to_create_item.view.*
+import okhttp3.internal.wait
+import java.io.Serializable
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -46,8 +49,9 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     lateinit var database: ListDao
     lateinit var adapter: AdaptadorItemsCustom
     var listId: Long = (-1).toLong()
-    val map = hashMapOf<Item, ItemBDD>()
-    var itemsCounter = (0).toLong()
+    var map = hashMapOf<Item, ItemBDD>()
+    var itemsCounter = 1.toLong()
+    lateinit var listBeingUsed: ListBDD
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,11 +62,11 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         itemsRecyclerView.layoutManager = LinearLayoutManager(this)
 
         // Here we create the db
-        database = Room.databaseBuilder(this, Database::class.java, "ListsBDD")
-            .fallbackToDestructiveMigration().build().ListDao()
+        database = Room.databaseBuilder(this, Database::class.java, "ListsBDD").build().ListDao()
 
         // Here we obtain the id of the list we are inside
-        listId = (intent.getSerializableExtra(LISTS)!! as ListBDD).id
+        listBeingUsed = intent.getSerializableExtra(LISTS)!! as ListBDD
+        listId = listBeingUsed.id
 
         // We obtain the array of list
         GetTheList(this).execute(listId)
@@ -130,11 +134,17 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         if (data != null) {
             if (resultCode == 5) {
                 try{
+                    if (itemsOnList.size == 0){
+                        itemsOnList= data.getSerializableExtra("all items back") as ArrayList<Item>
+                    }
                     itemModified = data.getSerializableExtra("item updated") as Item
                     itemModificadoPos = data.getIntExtra("item position modified", -1)
                     itemsOnList[itemModificadoPos] = itemModified!!
+                    UpdateMap(this).execute()
                     adapter.notifyItemChanged(itemModificadoPos)
                 }catch (e: Exception){
+                    val copy = data.getSerializableExtra("copy item") as Item
+                    map.remove(copy)
                     itemsOnList.removeAt(itemModificadoPos)
                     adapter.notifyItemRemoved(itemModificadoPos)
                 }
@@ -221,8 +231,10 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         })
         builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
-                list?.name = view.listNameTextView.getText().toString()
+                list?.name = view.listNameTextView.text.toString()
+                listBeingUsed.name = view.listNameTextView.text.toString()
                 nombreListaTextView.text = list?.name
+                UpdateNameList(this@listDetails).execute(list)
                 dialog?.dismiss()
                 isShowingDialogEdit = false
             }
@@ -240,6 +252,8 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 var itemModifiedPosition = itemsOnList.indexOf(it)
                 it.isShown = !it.isShown
                 adapter.notifyItemChanged(itemModifiedPosition)
+                map[it]!!.isShown = it.isShown
+                UpdateSpecificItem(this).execute(map[it])
             }
         }
         list = ListaItem(list!!.name, itemsOnList)
@@ -251,6 +265,10 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     // We update the item if it was clicked
     override fun onSpecificItemCLicked(result: Item, check:CheckBox) {
         var itemModifiedPosition = itemsOnList.indexOf(result)
+        //------------------------------------------------------------------------------------------------------------
+        // Esto no esta funcionando para cuando modificamos un item y luego lo clickeamos para decir que esta terminado
+        var itemBDDModified = map[result]
+        //------------------------------------------------------------------------------------------------------------
         if(result.estado){
             result.estado = check.isChecked
             result.isShown = check.isChecked
@@ -260,9 +278,13 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             result.isShown = !check.isChecked
         }
 
+        itemBDDModified!!.estado = result.estado
+        itemBDDModified!!.isShown = result.isShown
+        map[result] = itemBDDModified
         // We save it on the list ot items
         itemsOnList[itemModifiedPosition] = result
         adapter.notifyItemChanged(itemModifiedPosition)
+        UpdateSpecificItem(this).execute(itemBDDModified)
     }
 
     // To go to the item details activity
@@ -270,7 +292,10 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         val intent = Intent(this, ItemDetails::class.java)
         itemModificadoPos = itemsOnList.indexOf(result)
         intent.putExtra("item to watch", result)
+        intent.putExtra("item recorded", result as Serializable)
+        intent.putExtra("item from db", map[result])
         intent.putExtra("Item position", itemModificadoPos)
+        intent.putExtra("all items", itemsOnList as Serializable)
         startActivityForResult(intent, 4)
     }
 
@@ -285,11 +310,12 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     // Here we recover the data when the state is changed
     override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
         super.onRestoreInstanceState(savedInstanceState)
-        copyItemsOnList = savedInstanceState?.getSerializable("lista listas") as ArrayList<Item>
+        /*copyItemsOnList = savedInstanceState?.getSerializable("lista listas") as ArrayList<Item>
         copyItemsOnList.forEach {
             itemsOnList.add(it)
             adapter.notifyItemInserted(itemsOnList.size - 1)
         }
+         */
     }
 
     // To maintain the dialog states if the app state is changed
@@ -311,6 +337,8 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 var itemModifiedPosition = itemsOnList.indexOf(it)
                 it.isShown = !it.isShown
                 adapter.notifyItemChanged(itemModifiedPosition)
+                map[it]!!.isShown = it.isShown
+                UpdateSpecificItem(this).execute(map[it])
             }
         }
         list = ListaItem(list!!.name, itemsOnList)
@@ -324,20 +352,34 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         class GetTheList(private val listaActivity: listDetails) :
             AsyncTask<Long, Void, ListWithItems>() {
             override fun doInBackground(vararg params: Long?): ListWithItems {
-                return listaActivity.database.getSpecificList(params[0]!!)
+                val idBUsc = params[0]!!
+                println("${listaActivity.database.getListWithItems()}")
+                val x = listaActivity.database.getSpecificList(idBUsc)
+
+                val testItemsList = ArrayList(listaActivity.database.getAllItems())
+
+                if (testItemsList.size > 0 && listaActivity.itemsCounter == 1.toLong()) {
+                    listaActivity.itemsCounter = testItemsList[testItemsList.lastIndex].id + 1
+                }
+
+                return x
             }
 
             override fun onPostExecute(result: ListWithItems?) {
-                listaActivity.list = ListaItem(result!!.list.name, ArrayList())
-                result!!.items?.forEach {
-                    val itemAdded = Item(it.nameItem, it.estado, it.prioridad, it.plazo,
-                        it.notasItem, it.fechaCreacion, it.isShown)
-                    listaActivity.list.items!!.add(itemAdded)
-                    listaActivity.itemsOnList.add(itemAdded)
-                    listaActivity.map[itemAdded] = it
-                }
-                if (result.items!!.isNotEmpty() && listaActivity.itemsCounter == 0.toLong()) {
-                    listaActivity.itemsCounter = result.items?.get(result.items.size - 1)!!.id + 1
+                if (result != null) {
+                    if (listaActivity.itemsOnList.size != 0){
+                        listaActivity.itemsOnList = ArrayList()
+                    }
+                    listaActivity.list = ListaItem(result!!.list.name, ArrayList())
+                    result!!.items?.forEach {
+                        val itemAdded = Item(
+                            it.nameItem, it.estado, it.prioridad, it.plazo,
+                            it.notasItem, it.fechaCreacion, it.isShown
+                        )
+                        listaActivity.list.items!!.add(itemAdded)
+                        listaActivity.itemsOnList.add(itemAdded)
+                        listaActivity.map[itemAdded] = it
+                    }
                 }
                 listaActivity.adapter.setData(listaActivity.itemsOnList)
                 // We set the name of the list
@@ -359,6 +401,39 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 listaActivity.itemsCounter = listaActivity.database.insertItem(itemForBDD) + 1
                 return null
             }
+        }
+
+        class UpdateNameList(private val listaActivity: listDetails):
+                AsyncTask<ListaItem, Void, Void>(){
+            override fun doInBackground(vararg params: ListaItem?): Void? {
+                listaActivity.database.updateList(listaActivity.listBeingUsed)
+                return null
+            }
+        }
+
+        class UpdateSpecificItem(private val listaActivity: listDetails):
+            AsyncTask<ItemBDD, Void, Void>() {
+            override fun doInBackground(vararg params: ItemBDD?): Void? {
+                listaActivity.database.updateItem(params[0]!!)
+                return null
+            }
+        }
+
+        class UpdateMap(private val listaActivity: listDetails):
+            AsyncTask<Void, Void, List<ItemBDD>?>(){
+            override fun doInBackground(vararg params: Void?): List<ItemBDD>? {
+                listaActivity.map = hashMapOf()
+                return listaActivity.database.getAllItems()
+            }
+
+            override fun onPostExecute(result: List<ItemBDD>?) {
+                var count = 0
+                result!!.forEach{
+                    listaActivity.map[listaActivity.itemsOnList[count]] = it
+                    count += 1
+                }
+            }
+
         }
     }
 }

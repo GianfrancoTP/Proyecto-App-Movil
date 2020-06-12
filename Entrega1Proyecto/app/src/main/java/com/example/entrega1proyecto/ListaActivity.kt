@@ -36,7 +36,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     lateinit var database: ListDao
     var testListaList: ArrayList<ListWithItems> = ArrayList()
     lateinit var adapter: AdaptadorCustom
-    var listsCounter: Long = 0
+    var listsCounter: Long = 1
     val map = hashMapOf<ListaItem, ListBDD>()
 
 
@@ -50,8 +50,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         recycler_view.layoutManager = LinearLayoutManager(this)
 
         // Here we create the db
-        database = Room.databaseBuilder(this, Database::class.java, "ListsBDD")
-            .fallbackToDestructiveMigration().build().ListDao()
+        database = Room.databaseBuilder(this, Database::class.java, "ListsBDD").build().ListDao()
 
         // We get all the lists from the db
         GetAllLists(this).execute()
@@ -129,6 +128,9 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         super.onActivityResult(requestCode, resultCode, data)
         if (data != null) {
             if (resultCode == Activity.RESULT_OK){
+                listaList = ArrayList()
+                adapter.notifyDataSetChanged()
+                GetAllLists(this).execute()
                 // ACA PUEDE SER QUE NOS FALTE OBTENER LA NUEVA LISTA CON SUS ITEMS (UPDATEAR LA LISTA PARA QUE TENGA SUS NUEVOS ITEMS)
 /*
                 // We get the updated List with all the created items
@@ -268,13 +270,16 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 // Here we get the elements from the database
                 listaActivity.testListaList =
                     ArrayList(listaActivity.database.getListWithItems())
+                if (listaActivity.listsCounter == 1.toLong() && listaActivity.testListaList.size != 0){
+                    listaActivity.listsCounter = listaActivity.testListaList[listaActivity.testListaList.size -1].list.id + 1
+                }
 
                 return listaActivity.testListaList
             }
 
             override fun onPostExecute(result: ArrayList<ListWithItems>?) {
                 //After getting the elements from the db
-                if (listaActivity.testListaList.size > 0 && listaActivity.listsCounter == 0.toLong()) {
+                if (listaActivity.testListaList.size > 0 && listaActivity.listsCounter == 1.toLong()) {
                     listaActivity.listsCounter = listaActivity.testListaList[listaActivity.testListaList.lastIndex].list.id + 1
                 }
 

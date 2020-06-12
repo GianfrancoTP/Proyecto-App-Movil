@@ -3,12 +3,17 @@ package com.example.entrega1proyecto
 import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
+import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
+import androidx.room.Room
+import com.example.entrega1proyecto.model.Database
+import com.example.entrega1proyecto.model.ItemBDD
+import com.example.entrega1proyecto.model.ListDao
 import kotlinx.android.synthetic.main.activity_item_details.*
 import kotlinx.android.synthetic.main.popup.view.*
 import java.io.Serializable
@@ -20,18 +25,29 @@ class ItemDetails : AppCompatActivity() {
     var pos = -1
     var isShowingDialog = false
     var dialog: Dialog? = null
+    // Db
+    lateinit var database: ListDao
+    lateinit var itemDb: ItemBDD
+    lateinit var copyOfItem: Item
+    lateinit var allItems: ArrayList<Item>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_item_details)
 
+        database = Room.databaseBuilder(this, Database::class.java, "ListsBDD").build().ListDao()
+
         try {
             item = savedInstanceState?.getSerializable("Item") as Item
             pos = savedInstanceState?.getInt("Item Mod Position")
+            itemDb = savedInstanceState?.getSerializable("item from db") as ItemBDD
         }
         catch(e:Exception){
             item = intent.getSerializableExtra("item to watch")!! as Item
+            copyOfItem = intent.getSerializableExtra("item recorded")!! as Item
             pos = intent.getIntExtra("Item position", -1)
+            allItems = intent.getSerializableExtra("all items") as ArrayList<Item>
+            itemDb = intent.getSerializableExtra("item from db") as ItemBDD
         }
 
         if(savedInstanceState!=null){
@@ -76,6 +92,8 @@ class ItemDetails : AppCompatActivity() {
         updateItem()
         myIntent.putExtra("item updated",item as Serializable)
         myIntent.putExtra("item position modified", pos)
+        myIntent.putExtra("copy item", copyOfItem as Serializable)
+        myIntent.putExtra("all items back", allItems as Serializable)
         setResult(5, myIntent)
         finish()
     }
@@ -83,8 +101,9 @@ class ItemDetails : AppCompatActivity() {
     // To delete the specific item
     fun deleteItem(view: View){
         val myIntent: Intent = Intent()
-        updateItem()
+        EraseItem(this).execute(itemDb)
         myIntent.putExtra("item updated","NONE")
+        myIntent.putExtra("copy item", copyOfItem)
         setResult(5, myIntent)
         finish()
     }
@@ -92,9 +111,17 @@ class ItemDetails : AppCompatActivity() {
     // When we end modifying the item
     fun updateItem(){
         item!!.nameItem =  nombreItemTextView.text.toString()
+        itemDb.nameItem = nombreItemTextView.text.toString()
+
         item!!.plazo = fechaPlazoTextView.text.toString()
+        itemDb.plazo = fechaPlazoTextView.text.toString()
+
         item!!.prioridad = NotPriorityImageView.visibility != View.VISIBLE
+        itemDb.prioridad = NotPriorityImageView.visibility != View.VISIBLE
+
         item!!.notasItem = notasItemEditText.text.toString()
+        itemDb.notasItem = notasItemEditText.text.toString()
+
         if (button3.text == "Volver a no completado"){
             if(!item!!.estado) {
                 item!!.isShown = false
@@ -108,6 +135,9 @@ class ItemDetails : AppCompatActivity() {
                 item!!.estado = false
             }
         }
+        itemDb.estado = item!!.estado
+        itemDb.isShown = item!!.isShown
+        UpdateItem(this).execute()
     }
 
     // To change the state from being completed or not completed
@@ -138,7 +168,9 @@ class ItemDetails : AppCompatActivity() {
         })
         builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
-                item?.nameItem = view.listNameTextView.getText().toString()
+                item?.nameItem = view.listNameTextView.text.toString()
+                itemDb.nameItem = view.listNameTextView.text.toString()
+                UpdateItem(this@ItemDetails).execute()
                 nombreItemTextView.text = item?.nameItem
                 dialog?.dismiss()
                 isShowingDialog = false
@@ -193,8 +225,26 @@ class ItemDetails : AppCompatActivity() {
         updateItem()
         myIntent.putExtra("item updated",item as Serializable)
         myIntent.putExtra("item position modified", pos)
+        myIntent.putExtra("copy item", copyOfItem as Serializable)
         setResult(5, myIntent)
         finish()
         super.onBackPressed()
+    }
+
+    companion object{
+        class UpdateItem(private val listaActivity: ItemDetails):
+            AsyncTask<Void, Void, Void>() {
+            override fun doInBackground(vararg params: Void?): Void? {
+                listaActivity.database.updateItem(listaActivity.itemDb)
+                return null
+            }
+        }
+        class EraseItem(private val listaActivity: ItemDetails):
+            AsyncTask<ItemBDD, Void, Void>() {
+            override fun doInBackground(vararg params: ItemBDD?): Void? {
+                listaActivity.database.deleteItem(params[0]!!)
+                return null
+            }
+        }
     }
 }
