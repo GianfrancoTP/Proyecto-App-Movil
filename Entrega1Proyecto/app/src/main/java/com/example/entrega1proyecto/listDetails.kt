@@ -100,12 +100,20 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                     it.isShown = !it.isShown
                     adapter.notifyItemChanged(itemModifiedPosition)
                 }
+                map.values.forEach {
+                    it.isShown = !it.isShown
+                    UpdateSpecificItem(this).execute(it)
+                }
             }
             else{
                 itemsOnList.forEach {
                     var itemModifiedPosition = itemsOnList.indexOf(it)
                     it.isShown = !it.isShown
                     adapter.notifyItemChanged(itemModifiedPosition)
+                }
+                map.values.forEach {
+                    it.isShown = !it.isShown
+                    UpdateSpecificItem(this).execute(it)
                 }
             }
         }
@@ -316,17 +324,9 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     // If the state is changed we need to pass the important data to don't lose it
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
+
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG_EDIT", isShowingDialogEdit)
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG_ADD", isShowingDialogAdd)
-        if(SwitchItemsChecked.isChecked) {
-            itemsOnList.forEach {
-                var itemModifiedPosition = itemsOnList.indexOf(it)
-                it.isShown = !it.isShown
-                adapter.notifyItemChanged(itemModifiedPosition)
-                map[it]!!.isShown = !it.isShown
-                UpdateSpecificItem(this).execute(map[it])
-            }
-        }
     }
 
     // To maintain the dialog states if the app state is changed
