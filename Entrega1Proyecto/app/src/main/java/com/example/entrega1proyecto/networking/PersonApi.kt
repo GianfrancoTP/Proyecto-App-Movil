@@ -1,5 +1,8 @@
 package com.example.entrega1proyecto.networking
 
+import com.example.entrega1proyecto.ItemAPI
+import com.example.entrega1proyecto.model.ItemBDD
+import com.example.entrega1proyecto.model.ListBDD
 import com.example.entrega1proyecto.model.User
 import retrofit2.Call
 import retrofit2.http.*
@@ -15,42 +18,42 @@ interface PersonApi {
                    @Header("token") api_key: String?
     ) :Call<User>
 
-    /*
+
     //Create List
     @POST("lists/")
-    fun postList(@Body list: Lists,
+    fun postList(@Body list: ListBDD,
                  @Header("token")  api_key: String?
-    ): Call<Lists>
+    ): Call<ListBDD>
 
     //Update list by ID
     @PUT("lists/{list_id}")
     fun updateList(@Path("list_id") id: Int,
-                   @Body list: Lists,
+                   @Body list: ListBDD,
                    @Header("token")  api_key: String?
-    ): Call<Lists>
+    ): Call<ListBDD>
+    /*
+        //Get list information by ID
+        @GET("lists/{list_id}")
+        fun getList(@Path("list_id") id: Int,
+                    @Header("token")  api_key: String?
+        ): Call<Lists>
 
-    //Get list information by ID
-    @GET("lists/{list_id}")
-    fun getList(@Path("list_id") id: Int,
-                @Header("token")  api_key: String?
-    ): Call<Lists>
-
-    //Get all list information
-    @GET("lists/")
-    fun getAllList(@Header("token")  api_key: String?): Call<List<Lists>>
-
-    //Delete list bi ID
+        //Get all list information
+        @GET("lists/")
+        fun getAllList(@Header("token")  api_key: String?): Call<List<Lists>>
+    */
+    //Delete list by ID
     @DELETE("lists/{list_id}")
     fun deleteList(@Path("list_id") id: Int,
                    @Header("token")  api_key: String?
-    ): Call<Lists>
+    ): Call<ListBDD>
 
     //Create item
     @POST("items")
-    fun postItem(@Body item: ListItems,
+    fun postItem(@Body item: ItemAPI,
                  @Header("token")  api_key: String?
-    ): Call<List<Items>>
-
+    ): Call<List<ItemBDD>>
+/*
     //Update item by ID
     @PUT("items/{id}")
     fun updateItem(@Path("id") id: Int,

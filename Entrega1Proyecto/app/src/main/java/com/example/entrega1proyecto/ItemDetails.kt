@@ -111,16 +111,16 @@ class ItemDetails : AppCompatActivity() {
     // When we end modifying the item
     fun updateItem(){
         item!!.nameItem =  nombreItemTextView.text.toString()
-        itemDb.nameItem = nombreItemTextView.text.toString()
+        itemDb.name = nombreItemTextView.text.toString()
 
         item!!.plazo = fechaPlazoTextView.text.toString()
-        itemDb.plazo = fechaPlazoTextView.text.toString()
+        itemDb.due_date = fechaPlazoTextView.text.toString()
 
         item!!.prioridad = NotPriorityImageView.visibility != View.VISIBLE
-        itemDb.prioridad = NotPriorityImageView.visibility != View.VISIBLE
+        itemDb.starred = NotPriorityImageView.visibility != View.VISIBLE
 
         item!!.notasItem = notasItemEditText.text.toString()
-        itemDb.notasItem = notasItemEditText.text.toString()
+        itemDb.notes = notasItemEditText.text.toString()
 
         if (button3.text == "Volver a no completado"){
             if(!item!!.estado) {
@@ -135,7 +135,7 @@ class ItemDetails : AppCompatActivity() {
                 item!!.estado = false
             }
         }
-        itemDb.estado = item!!.estado
+        itemDb.done = item!!.estado
         itemDb.isShown = item!!.isShown
         UpdateItem(this).execute()
     }
@@ -169,7 +169,7 @@ class ItemDetails : AppCompatActivity() {
         builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
                 item?.nameItem = view.listNameTextView.text.toString()
-                itemDb.nameItem = view.listNameTextView.text.toString()
+                itemDb.name = view.listNameTextView.text.toString()
                 UpdateItem(this@ItemDetails).execute()
                 nombreItemTextView.text = item?.nameItem
                 dialog?.dismiss()

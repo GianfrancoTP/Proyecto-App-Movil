@@ -20,7 +20,7 @@ interface ListDao{
     fun updateList(data: ListBDD)
 
     @Transaction
-    @Query("SELECT * FROM $TABLE_NAME")
+    @Query("SELECT * FROM $TABLE_NAME ORDER BY position")
     fun getListWithItems(): List<ListWithItems>
 
     @Transaction
@@ -57,12 +57,15 @@ data class ListBDD(
     @ColumnInfo(name = ID)
     var id: Long,
     @ColumnInfo(name = NAME)
-    var name: String
+    var name: String,
+    @ColumnInfo(name= POSITION)
+    var position: Int
 ):Serializable{
     companion object{
         const val TABLE_NAME = "ListBDD"
         const val ID = "id"
         const val NAME = "title"
+        const val POSITION = "position"
     }
 }
 
@@ -72,19 +75,21 @@ data class ItemBDD(
     @ColumnInfo(name = ID)
     var id: Long,
     @ColumnInfo(name = LIST_ID)
-    var listID: Long,
+    var list_id: Long,
     @ColumnInfo(name = NAME_ITEMS)
-    var nameItem: String,
+    var name: String,
     @ColumnInfo(name = ESTADO)
-    var estado: Boolean,
+    var done: Boolean,
     @ColumnInfo(name = PRIORIDAD)
-    var prioridad: Boolean,
+    var starred: Boolean,
     @ColumnInfo(name = PLAZO)
-    var plazo: String,
+    var due_date: String,
     @ColumnInfo(name = NOTAS_ITEM)
-    var notasItem: String,
+    var notes: String,
     @ColumnInfo(name = FECHA_CREACION)
-    var fechaCreacion: String,
+    var created_at: String,
+    @ColumnInfo(name = POSITION)
+    var position: Int,
     @ColumnInfo(name = IS_SHOWN)
     var isShown: Boolean
 ):Serializable{
@@ -98,6 +103,7 @@ data class ItemBDD(
         const val PLAZO = "plazo"
         const val NOTAS_ITEM = "notasItem"
         const val FECHA_CREACION = "fechaCreacion"
+        const val POSITION = "position"
         const val IS_SHOWN = "isShown"
     }
 }

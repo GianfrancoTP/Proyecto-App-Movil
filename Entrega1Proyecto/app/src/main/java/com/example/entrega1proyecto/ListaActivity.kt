@@ -14,9 +14,15 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
+import com.example.entrega1proyecto.configuration.API_KEY
 import com.example.entrega1proyecto.model.*
+import com.example.entrega1proyecto.networking.PersonApi
+import com.example.entrega1proyecto.networking.UserService
 import kotlinx.android.synthetic.main.activity_lista.*
 import kotlinx.android.synthetic.main.popup.view.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.io.Serializable
 import java.util.*
 import kotlin.collections.ArrayList
@@ -93,6 +99,8 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 val sourcePosition = viewHolder.adapterPosition
                 val targetPosition = target.adapterPosition
                 Collections.swap(listaList, sourcePosition, targetPosition)
+                ModifyPos(this@ListaActivity).execute(listaList[sourcePosition], listaList[targetPosition])
+
                 recycler_view.adapter?.notifyItemMoved(sourcePosition, targetPosition)
                 return true
             }
@@ -104,15 +112,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         touchHelper.attachToRecyclerView(recycler_view)
         // End of Drag and Drop --------------------------------------------------------------------------------
     }
-/*
-    // The function to maintain the lists if we rotate the screen or come from the login activity
-    private fun createLists(startingListaList: ArrayList<ListaItem>){
-        startingListaList.forEach {
-            listaList.add(it)
-            recycler_view.adapter?.notifyItemInserted(listaList.size - 1)
-        }
-    }
-*/
+
     // Function to go to the activity which contains the items inside a list
     override fun onItemCLicked(result: ListaItem){
         // We keep the List who was clicked
@@ -279,8 +279,8 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                         list.items = ArrayList()
                     }
                     it.items?.forEach {x->
-                        list.items!!.add(Item(x.nameItem, x.estado, x.prioridad, x.plazo,
-                            x.notasItem, x.fechaCreacion, x.isShown))
+                        list.items!!.add(Item(x.name, x.done, x.starred, x.due_date,
+                            x.notes, x.created_at, x.isShown))
                     }
                     listaActivity.map[list] = it.list
                     listaActivity.listaList.add(list)
@@ -291,15 +291,41 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
 
         // Class to insert items into the db
         class InsertList(private val listaActivity: ListaActivity) : AsyncTask<ListaItem, Void, Void>(){
+            lateinit var listaIt: ListaItem
             override fun doInBackground(vararg params: ListaItem?): Void? {
                 // We get the new id to add a new list when we add a list
-                val listToBeAdded = ListBDD(listaActivity.listsCounter,params[0]!!.name)
-                listaActivity.map[params[0]!!] = listToBeAdded
-                listaActivity.listsCounter = listaActivity.database.insertList(listToBeAdded) + 1
+                listaIt = params[0]!!
+                val listToBeAdded = ListBDD(listaActivity.listsCounter,params[0]!!.name, listaActivity.listaList.indexOf(params[0]!!))
 
-
+                val request = UserService.buildService(PersonApi::class.java)
+                val call = request.postList(listToBeAdded, API_KEY)
+                call.enqueue(object : Callback<ListBDD> {
+                    override fun onResponse(
+                        call: Call<ListBDD>,
+                        response: Response<ListBDD>
+                    ) {
+                        print(response)
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                listToBeAdded.id = response.body()!!.id
+                                InsertDB(this@InsertList, listaActivity).execute(listToBeAdded)
+                            }
+                        }
+                    }
+                    override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                        InsertDB(this@InsertList, listaActivity).execute(listToBeAdded)
+                    }
+                })
 
                 return null
+            }
+            class InsertDB(private val listaActivity: InsertList, private val listaAct: ListaActivity):AsyncTask<ListBDD, Void, Void>(){
+                override fun doInBackground(vararg params: ListBDD?): Void? {
+                    listaAct.map[listaActivity.listaIt] = params[0]!!
+                    listaAct.listsCounter = listaAct.database.insertList(params[0]!!) + 1
+                    return null
+                }
+
             }
         }
 
@@ -309,8 +335,83 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 val listaABorrar = listaActivity.map[params[0]!!]
                 listaActivity.database.deleteList(listaABorrar!!)
                 listaActivity.database.deleteListItems(listaABorrar!!.id)
+
+                val request = UserService.buildService(PersonApi::class.java)
+                val call = request.deleteList(listaABorrar!!.id.toInt(), API_KEY)
+                call.enqueue(object : Callback<ListBDD> {
+                    override fun onResponse(
+                        call: Call<ListBDD>,
+                        response: Response<ListBDD>
+                    ) {
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                println(response.body())
+                            }
+                        }
+                    }
+                    override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                        println("NO FUNCIONA ${t.message}")
+                    }
+                })
+
                 return null
             }
+        }
+
+        class ModifyPos(private val listaActivity: ListaActivity) : AsyncTask<ListaItem, Void, Void>(){
+            override fun doInBackground(vararg params: ListaItem?): Void? {
+                var item1 = listaActivity.map[params[0]!!]
+                var item2 = listaActivity.map[params[1]!!]
+
+                val pos = item1!!.position
+                item1!!.position = item2!!.position
+                item2!!.position = pos
+                listaActivity.map[params[0]!!] = item1
+                listaActivity.map[params[1]!!] = item2
+
+                listaActivity.database.updateList(item1)
+                listaActivity.database.updateList(item2)
+
+                val request = UserService.buildService(PersonApi::class.java)
+                val call = request.updateList(item1.id.toInt(),item1, API_KEY)
+                call.enqueue(object : Callback<ListBDD> {
+                    override fun onResponse(
+                        call: Call<ListBDD>,
+                        response: Response<ListBDD>
+                    ) {
+                        println(response)
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                println("funciona")
+                            }
+                        }
+                    }
+                    override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                        println("NO FUNCIONA ${t.message}")
+                    }
+                })
+
+                val call2 = request.updateList(item2.id.toInt(),item2, API_KEY)
+                call2.enqueue(object : Callback<ListBDD> {
+                    override fun onResponse(
+                        call: Call<ListBDD>,
+                        response: Response<ListBDD>
+                    ) {
+                        println(response)
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                println("funciona")
+                            }
+                        }
+                    }
+                    override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                        println("NO FUNCIONA ${t.message}")
+                    }
+                })
+
+                return null
+            }
+
         }
     }
 }

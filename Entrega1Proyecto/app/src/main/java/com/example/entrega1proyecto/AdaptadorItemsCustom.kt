@@ -13,6 +13,7 @@ import android.widget.CheckBox
 import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
+import com.example.entrega1proyecto.model.ItemBDD
 import kotlinx.android.synthetic.main.items_template.view.*
 import java.io.Serializable
 
@@ -107,3 +108,5 @@ interface OnSpecificItemClickListener{
 }
 class Item(var nameItem: String, var estado: Boolean, var prioridad:Boolean, var plazo: String?, var notasItem: String?,
            var fechaCreacion: String, var isShown: Boolean): Serializable {}
+
+class ItemAPI(var items: List<ItemBDD>)

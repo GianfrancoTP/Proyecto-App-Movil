@@ -20,11 +20,17 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
 import com.example.entrega1proyecto.ListaActivity.Companion.LISTS
+import com.example.entrega1proyecto.configuration.API_KEY
 import com.example.entrega1proyecto.model.*
+import com.example.entrega1proyecto.networking.PersonApi
+import com.example.entrega1proyecto.networking.UserService
 import kotlinx.android.synthetic.main.activity_list_details.*
 import kotlinx.android.synthetic.main.popup.view.*
 import kotlinx.android.synthetic.main.popup_to_create_item.view.*
 import okhttp3.internal.wait
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.io.Serializable
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -278,7 +284,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             result.isShown = !check.isChecked
         }
 
-        itemBDDModified!!.estado = result.estado
+        itemBDDModified!!.done = result.estado
         itemBDDModified!!.isShown = result.isShown
         map[result] = itemBDDModified
         // We save it on the list ot items
@@ -359,10 +365,11 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                         listaActivity.itemsOnList = ArrayList()
                     }
                     listaActivity.list = ListaItem(result!!.list.name, ArrayList())
-                    result!!.items?.forEach {
+                    val x = result.items?.sortedByDescending { it.position }
+                    x?.forEach {
                         val itemAdded = Item(
-                            it.nameItem, it.estado, it.prioridad, it.plazo,
-                            it.notasItem, it.fechaCreacion, it.isShown
+                            it.name, it.done, it.starred, it.due_date,
+                            it.notes, it.created_at, it.isShown
                         )
                         listaActivity.list.items!!.add(itemAdded)
                         listaActivity.itemsOnList.add(itemAdded)
@@ -377,17 +384,47 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
 
         class InsertItem(private val listaActivity: listDetails) :
             AsyncTask<Item, Void, Void>() {
+            lateinit var listaIt: Item
             override fun doInBackground(vararg params: Item?): Void? {
+                listaIt = params[0]!!
                 val itemForBDD = ItemBDD(
                     listaActivity.itemsCounter,
                     listaActivity.listId, params[0]!!.nameItem, params[0]!!.estado,
                     params[0]!!.prioridad, params[0]!!.plazo!!,
                     params[0]!!.notasItem!!,
-                    params[0]!!.fechaCreacion, params[0]!!.isShown
+                    params[0]!!.fechaCreacion, listaActivity.itemsOnList.indexOf(params[0]),params[0]!!.isShown
                 )
-                listaActivity.map[params[0]!!] = itemForBDD
-                listaActivity.itemsCounter = listaActivity.database.insertItem(itemForBDD) + 1
+
+                val request = UserService.buildService(PersonApi::class.java)
+                val itemApi = ItemAPI(listOf(itemForBDD))
+                val call = request.postItem(itemApi, API_KEY)
+                call.enqueue(object : Callback<List<ItemBDD>> {
+                    override fun onResponse(
+                        call: Call<List<ItemBDD>>,
+                        response: Response<List<ItemBDD>>
+                    ) {
+                        println(response)
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                itemForBDD.id = response.body()!![0].id
+                                InsertItemDB(this@InsertItem, listaActivity).execute(itemForBDD)
+                            }
+                        }
+                    }
+                    override fun onFailure(call: Call<List<ItemBDD>>, t: Throwable) {
+                        println("NO FUNCIONA ${t.message}")
+                        InsertItemDB(this@InsertItem, listaActivity).execute(itemForBDD)
+                    }
+                })
                 return null
+            }
+            class InsertItemDB(private val listaActivity: listDetails.Companion.InsertItem, private val listaAct: listDetails):AsyncTask<ItemBDD, Void, Void>(){
+                override fun doInBackground(vararg params: ItemBDD?): Void? {
+                    listaAct.map[listaActivity.listaIt] = params[0]!!
+                    listaAct.itemsCounter = listaAct.database.insertItem(params[0]!!) + 1
+                    return null
+                }
+
             }
         }
 
