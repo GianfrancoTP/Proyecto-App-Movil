@@ -83,9 +83,9 @@ data class ItemBDD(
     @ColumnInfo(name = PRIORIDAD)
     var starred: Boolean,
     @ColumnInfo(name = PLAZO)
-    var due_date: String,
+    var due_date: String?,
     @ColumnInfo(name = NOTAS_ITEM)
-    var notes: String,
+    var notes: String?,
     @ColumnInfo(name = FECHA_CREACION)
     var created_at: String,
     @ColumnInfo(name = POSITION)

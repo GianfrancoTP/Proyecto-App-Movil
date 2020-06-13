@@ -11,11 +11,17 @@ import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.room.Room
+import com.example.entrega1proyecto.configuration.API_KEY
 import com.example.entrega1proyecto.model.Database
 import com.example.entrega1proyecto.model.ItemBDD
 import com.example.entrega1proyecto.model.ListDao
+import com.example.entrega1proyecto.networking.PersonApi
+import com.example.entrega1proyecto.networking.UserService
 import kotlinx.android.synthetic.main.activity_item_details.*
 import kotlinx.android.synthetic.main.popup.view.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.io.Serializable
 import java.lang.Exception
 
@@ -236,6 +242,27 @@ class ItemDetails : AppCompatActivity() {
             AsyncTask<Void, Void, Void>() {
             override fun doInBackground(vararg params: Void?): Void? {
                 listaActivity.database.updateItem(listaActivity.itemDb)
+
+                val request = UserService.buildService(PersonApi::class.java)
+                val call = request.updateItem(listaActivity.itemDb.id.toInt(), listaActivity.itemDb, API_KEY)
+                call.enqueue(object : Callback<ItemBDD> {
+                    override fun onResponse(
+                        call: Call<ItemBDD>,
+                        response: Response<ItemBDD>
+                    ) {
+                        println(response)
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                println("funciona")
+                                println(response.body())
+                            }
+                        }
+                    }
+                    override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
+                        println("NO FUNCIONA ${t.message}")
+                    }
+                })
+
                 return null
             }
         }
@@ -243,6 +270,25 @@ class ItemDetails : AppCompatActivity() {
             AsyncTask<ItemBDD, Void, Void>() {
             override fun doInBackground(vararg params: ItemBDD?): Void? {
                 listaActivity.database.deleteItem(params[0]!!)
+                val request = UserService.buildService(PersonApi::class.java)
+                val call = request.deleteItem(params[0]!!.id.toInt(), API_KEY)
+                call.enqueue(object : Callback<ItemBDD> {
+                    override fun onResponse(
+                        call: Call<ItemBDD>,
+                        response: Response<ItemBDD>
+                    ) {
+                        println(response)
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                println("funciona")
+                                println(response.body())
+                            }
+                        }
+                    }
+                    override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
+                        println("NO FUNCIONA ${t.message}")
+                    }
+                })
                 return null
             }
         }

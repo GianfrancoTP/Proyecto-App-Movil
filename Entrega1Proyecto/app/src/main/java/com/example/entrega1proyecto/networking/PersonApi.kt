@@ -1,9 +1,7 @@
 package com.example.entrega1proyecto.networking
 
-import com.example.entrega1proyecto.ItemAPI
-import com.example.entrega1proyecto.model.ItemBDD
-import com.example.entrega1proyecto.model.ListBDD
-import com.example.entrega1proyecto.model.User
+import com.example.entrega1proyecto.ListItems
+import com.example.entrega1proyecto.model.*
 import retrofit2.Call
 import retrofit2.http.*
 
@@ -50,33 +48,33 @@ interface PersonApi {
 
     //Create item
     @POST("items")
-    fun postItem(@Body item: ItemAPI,
+    fun postItem(@Body item: ListItems,
                  @Header("token")  api_key: String?
     ): Call<List<ItemBDD>>
-/*
+
     //Update item by ID
     @PUT("items/{id}")
     fun updateItem(@Path("id") id: Int,
-                   @Body item: Items,
+                   @Body item: ItemBDD,
                    @Header("token")  api_key: String?
-    ): Call<Items>
+    ): Call<ItemBDD>
+    /*
+        //Get item information by ID
+        @GET("items/{id}")
+        fun getItem(@Path("id") id: Int,
+                    @Header("token")  api_key: String?
+        ): Call<Items>
 
-    //Get item information by ID
-    @GET("items/{id}")
-    fun getItem(@Path("id") id: Int,
-                @Header("token")  api_key: String?
-    ): Call<Items>
-
-    //Get all items information
-    @GET("items/")
-    fun getAllItem(@Query("list_id") id: Int,
-                   @Header("token")  api_key: String?
-    ): Call<List<Items>>
-
+        //Get all items information
+        @GET("items/")
+        fun getAllItem(@Query("list_id") id: Int,
+                       @Header("token")  api_key: String?
+        ): Call<List<Items>>
+    */
     //Delete item bi ID
     @DELETE("items/{item_id}")
     fun deleteItem(@Path("item_id") id: Int,
                    @Header("token")  api_key: String?
-    ): Call<Items>
-     */
+    ): Call<ItemBDD>
+
 }

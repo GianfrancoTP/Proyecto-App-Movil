@@ -11,7 +11,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.CheckBox
 import android.widget.CompoundButton
-import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -27,7 +26,6 @@ import com.example.entrega1proyecto.networking.UserService
 import kotlinx.android.synthetic.main.activity_list_details.*
 import kotlinx.android.synthetic.main.popup.view.*
 import kotlinx.android.synthetic.main.popup_to_create_item.view.*
-import okhttp3.internal.wait
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -124,6 +122,8 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 val targetPosition = target.adapterPosition
                 Collections.swap(itemsOnList, sourcePosition, targetPosition)
                 adapter.notifyItemMoved(sourcePosition, targetPosition)
+                ModifyPositionItems(this@listDetails)
+                    .execute(itemsOnList[sourcePosition], itemsOnList[targetPosition])
                 return true
             }
 
@@ -151,6 +151,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 }catch (e: Exception){
                     val copy = data.getSerializableExtra("copy item") as Item
                     map.remove(copy)
+
                     itemsOnList.removeAt(itemModificadoPos)
                     adapter.notifyItemRemoved(itemModificadoPos)
                 }
@@ -198,10 +199,19 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 val current = LocalDateTime.now()
                 val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                 val formatted = current.format(formatter)
+                var output: String? = null
+                if (view.plazoEditText.text.toString() != ""){
+                    val localDateTime =
+                        LocalDateTime.parse(view.plazoEditText.text.toString())
+                    val formatter2 =
+                        DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
+                    output = formatter2.format(localDateTime)
+                }
+
                 shown = !SwitchItemsChecked.isChecked
                 // Here we create the item
                 var newItem = Item(nameItem = view.itemNameEditText.text.toString(),estado = false,
-                    prioridad= prioritario, plazo= view.plazoEditText.text.toString(),
+                    prioridad= prioritario, plazo= output,
                     notasItem= view.descripcionEditText.text.toString(),
                     fechaCreacion= formatted, isShown = shown)
 
@@ -365,7 +375,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                         listaActivity.itemsOnList = ArrayList()
                     }
                     listaActivity.list = ListaItem(result!!.list.name, ArrayList())
-                    val x = result.items?.sortedByDescending { it.position }
+                    val x = result.items?.sortedBy { it.position }
                     x?.forEach {
                         val itemAdded = Item(
                             it.name, it.done, it.starred, it.due_date,
@@ -390,14 +400,15 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 val itemForBDD = ItemBDD(
                     listaActivity.itemsCounter,
                     listaActivity.listId, params[0]!!.nameItem, params[0]!!.estado,
-                    params[0]!!.prioridad, params[0]!!.plazo!!,
-                    params[0]!!.notasItem!!,
+                    params[0]!!.prioridad, params[0]!!.plazo,
+                    params[0]!!.notasItem,
                     params[0]!!.fechaCreacion, listaActivity.itemsOnList.indexOf(params[0]),params[0]!!.isShown
                 )
 
                 val request = UserService.buildService(PersonApi::class.java)
-                val itemApi = ItemAPI(listOf(itemForBDD))
-                val call = request.postItem(itemApi, API_KEY)
+                val itemTest = ListItems(listOf(itemForBDD))
+
+                val call = request.postItem(itemTest, API_KEY)
                 call.enqueue(object : Callback<List<ItemBDD>> {
                     override fun onResponse(
                         call: Call<List<ItemBDD>>,
@@ -432,6 +443,26 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 AsyncTask<ListaItem, Void, Void>(){
             override fun doInBackground(vararg params: ListaItem?): Void? {
                 listaActivity.database.updateList(listaActivity.listBeingUsed)
+
+                val request = UserService.buildService(PersonApi::class.java)
+                val call = request.updateList(listaActivity.listBeingUsed.id.toInt(),listaActivity.listBeingUsed, API_KEY)
+                call.enqueue(object : Callback<ListBDD> {
+                    override fun onResponse(
+                        call: Call<ListBDD>,
+                        response: Response<ListBDD>
+                    ) {
+                        println(response)
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                println("funciona")
+                            }
+                        }
+                    }
+                    override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                        println("NO FUNCIONA ${t.message}")
+                    }
+                })
+
                 return null
             }
         }
@@ -440,6 +471,26 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             AsyncTask<ItemBDD, Void, Void>() {
             override fun doInBackground(vararg params: ItemBDD?): Void? {
                 listaActivity.database.updateItem(params[0]!!)
+
+                val request = UserService.buildService(PersonApi::class.java)
+                val call = request.updateItem(params[0]!!.id.toInt(), params[0]!!, API_KEY)
+                call.enqueue(object : Callback<ItemBDD> {
+                    override fun onResponse(
+                        call: Call<ItemBDD>,
+                        response: Response<ItemBDD>
+                    ) {
+                        println(response)
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                println("funciona")
+                                println(response.body())
+                            }
+                        }
+                    }
+                    override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
+                        println("NO FUNCIONA ${t.message}")
+                    }
+                })
                 return null
             }
         }
@@ -458,7 +509,63 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                     count += 1
                 }
             }
+        }
+
+        class ModifyPositionItems(private val listaActivity: listDetails) : AsyncTask<Item, Void, Void>(){
+            override fun doInBackground(vararg params: Item?): Void? {
+                var item1 = listaActivity.map[params[0]!!]
+                var item2 = listaActivity.map[params[1]!!]
+
+                val pos = item1!!.position
+                item1!!.position = item2!!.position
+                item2!!.position = pos
+                listaActivity.map[params[0]!!] = item1
+                listaActivity.map[params[1]!!] = item2
+
+                listaActivity.database.updateItem(item1)
+                listaActivity.database.updateItem(item2)
+
+                val request = UserService.buildService(PersonApi::class.java)
+                val call = request.updateItem(item1.id.toInt(),item1, API_KEY)
+                call.enqueue(object : Callback<ItemBDD> {
+                    override fun onResponse(
+                        call: Call<ItemBDD>,
+                        response: Response<ItemBDD>
+                    ) {
+                        println(response)
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                println("funciona")
+                            }
+                        }
+                    }
+                    override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
+                        println("NO FUNCIONA ${t.message}")
+                    }
+                })
+
+                val call2 = request.updateItem(item2.id.toInt(),item2, API_KEY)
+                call2.enqueue(object : Callback<ItemBDD> {
+                    override fun onResponse(
+                        call: Call<ItemBDD>,
+                        response: Response<ItemBDD>
+                    ) {
+                        println(response)
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                println("funciona")
+                            }
+                        }
+                    }
+                    override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
+                        println("NO FUNCIONA ${t.message}")
+                    }
+                })
+
+                return null
+            }
 
         }
+
     }
 }
