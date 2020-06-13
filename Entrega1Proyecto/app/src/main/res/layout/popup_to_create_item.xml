@@ -49,7 +49,6 @@
         android:layout_marginEnd="20dp"
         android:hint="Fecha de plazo (YYYY-MM-DD HH:MM:SS)"
         android:ems="10"
-        android:inputType="date"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/priorityCheckBox"/>

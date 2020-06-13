@@ -159,7 +159,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             }
         }
     }
-
+/*
     // We set the items on the list in this activity
     fun createItems(list: ListaItem){
         if (list.items != null) {
@@ -169,7 +169,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             }
         }
     }
-
+*/
     // Function to add items in the list
     fun anadirItem(view: View){
         // We show a popup asking the specific things that need to contain an item
@@ -201,11 +201,9 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 val formatted = current.format(formatter)
                 var output: String? = null
                 if (view.plazoEditText.text.toString() != ""){
-                    val localDateTime =
-                        LocalDateTime.parse(view.plazoEditText.text.toString())
-                    val formatter2 =
-                        DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
-                    output = formatter2.format(localDateTime)
+                    val formatter2 = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    val dateTime = LocalDateTime.parse(view.plazoEditText.text.toString(), formatter2);
+                    output = formatter2.format(dateTime)
                 }
 
                 shown = !SwitchItemsChecked.isChecked
@@ -320,6 +318,15 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         super.onSaveInstanceState(savedInstanceState)
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG_EDIT", isShowingDialogEdit)
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG_ADD", isShowingDialogAdd)
+        if(SwitchItemsChecked.isChecked) {
+            itemsOnList.forEach {
+                var itemModifiedPosition = itemsOnList.indexOf(it)
+                it.isShown = !it.isShown
+                adapter.notifyItemChanged(itemModifiedPosition)
+                map[it]!!.isShown = !it.isShown
+                UpdateSpecificItem(this).execute(map[it])
+            }
+        }
     }
 
     // To maintain the dialog states if the app state is changed

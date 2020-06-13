@@ -2,6 +2,7 @@ package com.example.entrega1proyecto
 
 import android.app.Activity
 import android.content.Intent
+import android.os.AsyncTask
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -51,27 +52,44 @@ class LogFragment : Fragment() {
             emailTextView.setText(user!!.email)
             passwordTextView.setText(user!!.first_name)
         }catch (e: Exception){
-            val request = UserService.buildService(PersonApi::class.java)
-            val call = request.getUsers(API_KEY)
-            call.enqueue(object: Callback<User> {
-                override fun onResponse(call: Call<User>, response: Response<User>) {
-                    if (response.isSuccessful) {
-                        if (response.body() != null) {
-                            user = response.body()!!
-                            emailTextView.setText(user!!.email)
-                            passwordTextView.setText(user!!.first_name)
-                        }
-                    }
-                }
-
-                override fun onFailure(call: Call<User>, t: Throwable) {
-                    Toast.makeText(activity!!.applicationContext, "${t.message}", Toast.LENGTH_SHORT).show()
-                }
-            })
+            GetUserFromApi(this).execute()
+            GetListsAndItemsFromApi(this).execute()
         }
 
         button.setOnClickListener { goToList() }
         return rootView
     }
 
+    class GetUserFromApi(private val listaActivity: LogFragment) : AsyncTask<Void, Void, Void>() {
+        override fun doInBackground(vararg params: Void?): Void? {
+            val request = UserService.buildService(PersonApi::class.java)
+            val call = request.getUsers(API_KEY)
+            call.enqueue(object : Callback<User> {
+                override fun onResponse(call: Call<User>, response: Response<User>) {
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                            listaActivity.user = response.body()!!
+                            listaActivity.emailTextView.setText(listaActivity.user!!.email)
+                            listaActivity.passwordTextView.setText(listaActivity.user!!.first_name)
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<User>, t: Throwable) {
+                    Toast.makeText(
+                        listaActivity.activity!!.applicationContext,
+                        "${t.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            })
+            return null
+        }
+    }
+
+    class GetListsAndItemsFromApi(private val listaActivity: LogFragment) : AsyncTask<Void, Void, Void>() {
+        override fun doInBackground(vararg params: Void?): Void? {
+            return null
+        }
+    }
 }
