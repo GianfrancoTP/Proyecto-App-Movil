@@ -10,9 +10,10 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.room.Room
 import com.example.entrega1proyecto.ListaActivity.Companion.LISTS
 import com.example.entrega1proyecto.configuration.API_KEY
-import com.example.entrega1proyecto.model.User
+import com.example.entrega1proyecto.model.*
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
 import kotlinx.android.synthetic.main.fragment_log.*
@@ -23,6 +24,8 @@ import java.io.Serializable
 
 class LogFragment : Fragment() {
     var user: User? = null
+    // Db
+    lateinit var database: ListDao
 
     fun goToList(){
         val intent = Intent(activity, ListaActivity::class.java)
@@ -46,6 +49,8 @@ class LogFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val rootView = inflater.inflate(R.layout.fragment_log, container, false)
         val button = rootView.findViewById<Button>(R.id.IngresarButton)
+        // Here we create the db
+        database = Room.databaseBuilder(activity!!.applicationContext, Database::class.java, "ListsBDD").build().ListDao()
 
         try{
             user = savedInstanceState?.getSerializable("user details update") as User
@@ -53,7 +58,7 @@ class LogFragment : Fragment() {
             passwordTextView.setText(user!!.first_name)
         }catch (e: Exception){
             GetUserFromApi(this).execute()
-            GetListsAndItemsFromApi(this).execute()
+            GetListsFromApi(this).execute()
         }
 
         button.setOnClickListener { goToList() }
@@ -87,8 +92,72 @@ class LogFragment : Fragment() {
         }
     }
 
-    class GetListsAndItemsFromApi(private val listaActivity: LogFragment) : AsyncTask<Void, Void, Void>() {
+    class GetListsFromApi(private val listaActivity: LogFragment) : AsyncTask<Void, Void, Void>() {
         override fun doInBackground(vararg params: Void?): Void? {
+            val request = UserService.buildService(PersonApi::class.java)
+            val call = request.getAllList(API_KEY)
+            call.enqueue(object : Callback<List<ListBDD>> {
+                override fun onResponse(
+                    call: Call<List<ListBDD>>,
+                    response: Response<List<ListBDD>>
+                ) {
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                            LoadListsToBD(listaActivity).execute(response.body())
+                        }
+                    }
+                }
+                override fun onFailure(call: Call<List<ListBDD>>, t: Throwable) {
+                    println("NO FUNCIONA ${t.message}")
+                }
+            })
+            return null
+        }
+    }
+
+    class LoadListsToBD(private val listaActivity: LogFragment) : AsyncTask<List<ListBDD>, Void, Void>() {
+        override fun doInBackground(vararg params: List<ListBDD>?): Void? {
+            params[0]!!.forEach {
+                listaActivity.database.insertList(it)
+                GetItemsFromApi(listaActivity).execute(it)
+            }
+            return null
+        }
+
+    }
+
+    class GetItemsFromApi(private val listaActivity: LogFragment) : AsyncTask<ListBDD, Void, Void>() {
+        override fun doInBackground(vararg params: ListBDD?): Void? {
+            val request = UserService.buildService(PersonApi::class.java)
+            val call = request.getAllItem(params[0]!!.id.toInt(), API_KEY)
+            call.enqueue(object : Callback<List<ItemBDD>> {
+                override fun onResponse(
+                    call: Call<List<ItemBDD>>,
+                    response: Response<List<ItemBDD>>
+                ) {
+                    println(response)
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                            LoadItemsToBD(listaActivity).execute(response.body())
+                            println(response.body())
+                        }
+                    }
+                }
+                override fun onFailure(call: Call<List<ItemBDD>>, t: Throwable) {
+                    println("NO FUNCIONA ${t.message}")
+                }
+            })
+            return null
+        }
+    }
+
+    class LoadItemsToBD(private val listaActivity: LogFragment) : AsyncTask<List<ItemBDD>, Void, Void>() {
+        override fun doInBackground(vararg params: List<ItemBDD>?): Void? {
+            params[0]!!.forEach {
+                val h = it
+                h.isShown = !it.done
+                listaActivity.database.insertItem(h)
+            }
             return null
         }
     }
