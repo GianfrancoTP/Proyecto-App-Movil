@@ -4,10 +4,12 @@ import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.os.AsyncTask
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.room.Room
@@ -24,6 +26,9 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.io.Serializable
 import java.lang.Exception
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 class ItemDetails : AppCompatActivity() {
 
@@ -241,7 +246,6 @@ class ItemDetails : AppCompatActivity() {
         class UpdateItem(private val listaActivity: ItemDetails):
             AsyncTask<Void, Void, Void>() {
             override fun doInBackground(vararg params: Void?): Void? {
-                listaActivity.database.updateItem(listaActivity.itemDb)
 
                 val request = UserService.buildService(PersonApi::class.java)
                 val call = request.updateItem(listaActivity.itemDb.id.toInt(), listaActivity.itemDb, API_KEY)
@@ -253,12 +257,20 @@ class ItemDetails : AppCompatActivity() {
                         println(response)
                         if (response.isSuccessful) {
                             if (response.body() != null) {
-                                println("funciona")
+                                listaActivity.itemDb.updated_at = response.body()!!.updated_at
+                                listaActivity.database.updateItem(listaActivity.itemDb)
                                 println(response.body())
                             }
                         }
                     }
+                    @RequiresApi(Build.VERSION_CODES.O)
                     override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
+                        val current = LocalDateTime.now()
+                        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                        val formatted = current.format(formatter)
+
+                        listaActivity.itemDb.updated_at = formatted
+                        listaActivity.database.updateItem(listaActivity.itemDb)
                         println("NO FUNCIONA ${t.message}")
                     }
                 })

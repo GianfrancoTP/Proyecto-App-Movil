@@ -5,9 +5,11 @@ import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.os.AsyncTask
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -24,6 +26,9 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.io.Serializable
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -295,7 +300,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
             override fun doInBackground(vararg params: ListaItem?): Void? {
                 // We get the new id to add a new list when we add a list
                 listaIt = params[0]!!
-                val listToBeAdded = ListBDD(listaActivity.listsCounter,params[0]!!.name, listaActivity.listaList.indexOf(params[0]!!))
+                val listToBeAdded = ListBDD(listaActivity.listsCounter,params[0]!!.name, listaActivity.listaList.indexOf(params[0]!!), "0")
 
                 val request = UserService.buildService(PersonApi::class.java)
                 val call = request.postList(listToBeAdded, API_KEY)
@@ -308,11 +313,18 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                         if (response.isSuccessful) {
                             if (response.body() != null) {
                                 listToBeAdded.id = response.body()!!.id
+                                listToBeAdded.updated_at = response.body()!!.updated_at
                                 InsertDB(this@InsertList, listaActivity).execute(listToBeAdded)
                             }
                         }
                     }
+                    @RequiresApi(Build.VERSION_CODES.O)
                     override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                        val current = LocalDateTime.now()
+                        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                        val formatted = current.format(formatter)
+
+                        listToBeAdded.updated_at = formatted
                         InsertDB(this@InsertList, listaActivity).execute(listToBeAdded)
                     }
                 })
@@ -366,11 +378,6 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 val pos = item1!!.position
                 item1!!.position = item2!!.position
                 item2!!.position = pos
-                listaActivity.map[params[0]!!] = item1
-                listaActivity.map[params[1]!!] = item2
-
-                listaActivity.database.updateList(item1)
-                listaActivity.database.updateList(item2)
 
                 val request = UserService.buildService(PersonApi::class.java)
                 val call = request.updateList(item1.id.toInt(),item1, API_KEY)
@@ -382,11 +389,21 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                         println(response)
                         if (response.isSuccessful) {
                             if (response.body() != null) {
-                                println("funciona")
+                                item1!!.updated_at = response.body()!!.updated_at
+                                listaActivity.map[params[0]!!] = item1
+                                listaActivity.database.updateList(item1)
                             }
                         }
                     }
+                    @RequiresApi(Build.VERSION_CODES.O)
                     override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                        val current = LocalDateTime.now()
+                        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                        val formatted = current.format(formatter)
+
+                        item1!!.updated_at = formatted
+                        listaActivity.map[params[0]!!] = item1
+                        listaActivity.database.updateList(item1)
                         println("NO FUNCIONA ${t.message}")
                     }
                 })
@@ -400,11 +417,21 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                         println(response)
                         if (response.isSuccessful) {
                             if (response.body() != null) {
-                                println("funciona")
+                                item2!!.updated_at = response.body()!!.updated_at
+                                listaActivity.map[params[1]!!] = item2
+                                listaActivity.database.updateList(item2)
                             }
                         }
                     }
+                    @RequiresApi(Build.VERSION_CODES.O)
                     override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                        val current = LocalDateTime.now()
+                        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                        val formatted = current.format(formatter)
+
+                        item2!!.updated_at = formatted
+                        listaActivity.map[params[1]!!] = item2
+                        listaActivity.database.updateList(item2)
                         println("NO FUNCIONA ${t.message}")
                     }
                 })

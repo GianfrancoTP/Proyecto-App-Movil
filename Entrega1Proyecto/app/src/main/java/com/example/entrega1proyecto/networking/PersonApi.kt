@@ -36,9 +36,9 @@ interface PersonApi {
                     @Header("token")  api_key: String?
         ): Call<Lists>
 */
-        //Get all list information
-        @GET("lists/")
-        fun getAllList(@Header("token")  api_key: String?): Call<List<ListBDD>>
+    //Get all list information
+    @GET("lists/")
+    fun getAllList(@Header("token")  api_key: String?): Call<List<ListBDD>>
 
     //Delete list by ID
     @DELETE("lists/{list_id}")
@@ -65,11 +65,11 @@ interface PersonApi {
                     @Header("token")  api_key: String?
         ): Call<Items>
  */
-        //Get all items information
-        @GET("items/")
-        fun getAllItem(@Query("list_id") id: Int,
-                       @Header("token")  api_key: String?
-        ): Call<List<ItemBDD>>
+    //Get all items information
+    @GET("items/")
+    fun getAllItem(@Query("list_id") id: Int,
+                   @Header("token")  api_key: String?
+    ): Call<List<ItemBDD>>
 
     //Delete item bi ID
     @DELETE("items/{item_id}")

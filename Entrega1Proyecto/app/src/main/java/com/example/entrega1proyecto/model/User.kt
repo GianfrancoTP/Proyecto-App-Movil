@@ -4,6 +4,7 @@ import androidx.room.*
 import androidx.room.ForeignKey.CASCADE
 import com.example.entrega1proyecto.model.ItemBDD.Companion.TABLE2_NAME
 import com.example.entrega1proyecto.model.ListBDD.Companion.TABLE_NAME
+import com.example.entrega1proyecto.model.UserBBDD.Companion.TABLE3_NAME
 import java.io.Serializable
 
 
@@ -12,6 +13,16 @@ data class User(var email:String, var first_name:String, var last_name:String, v
 
 @Dao
 interface ListDao{
+    // Esto es para crear, updatear, obtener o eliminar un usuario
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertUser(data: UserBBDD): Long
+
+    @Update
+    fun updateUser(data: UserBBDD)
+
+    @Query("SELECT * FROM $TABLE3_NAME")
+    fun getUser(): UserBBDD
+
     // Esto es para crear, updatear, obtener o eliminar una lista
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertList(data: ListBDD): Long
@@ -59,13 +70,16 @@ data class ListBDD(
     @ColumnInfo(name = NAME)
     var name: String,
     @ColumnInfo(name= POSITION)
-    var position: Int
+    var position: Int,
+    @ColumnInfo(name= UPDATEDAT)
+    var updated_at: String
 ):Serializable{
     companion object{
         const val TABLE_NAME = "ListBDD"
         const val ID = "id"
         const val NAME = "title"
         const val POSITION = "position"
+        const val UPDATEDAT = "updated_at"
     }
 }
 
@@ -91,7 +105,9 @@ data class ItemBDD(
     @ColumnInfo(name = POSITION)
     var position: Int,
     @ColumnInfo(name = IS_SHOWN)
-    var isShown: Boolean
+    var isShown: Boolean,
+    @ColumnInfo(name= UPDATEDAT)
+    var updated_at: String
 ):Serializable{
     companion object{
         const val TABLE2_NAME = "ItemBDD"
@@ -105,6 +121,7 @@ data class ItemBDD(
         const val FECHA_CREACION = "fechaCreacion"
         const val POSITION = "position"
         const val IS_SHOWN = "isShown"
+        const val UPDATEDAT = "updated_at"
     }
 }
 
@@ -116,3 +133,30 @@ data class ListWithItems(
     )
     val items: List<ItemBDD>?
 ):Serializable
+
+@Entity(tableName = TABLE3_NAME)
+data class UserBBDD(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = ID)
+    var id: Long,
+    @ColumnInfo(name = FIRSTNAME)
+    var first_name: String,
+    @ColumnInfo(name = LASTNAME)
+    var last_name: String,
+    @ColumnInfo(name = EMAIL)
+    var email: String,
+    @ColumnInfo(name = PHONE)
+    var phone: String,
+    @ColumnInfo(name = PROFILEPHOTO)
+    var profile_photo: String
+):Serializable{
+    companion object{
+        const val TABLE3_NAME = "UserBDD"
+        const val ID = "id"
+        const val FIRSTNAME = "first_name"
+        const val LASTNAME = "last_name"
+        const val EMAIL = "email"
+        const val PHONE = "phone"
+        const val PROFILEPHOTO = "profile_photo"
+    }
+}
