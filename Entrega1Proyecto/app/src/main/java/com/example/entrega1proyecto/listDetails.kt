@@ -56,10 +56,21 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     var map = hashMapOf<Item, ItemBDD>()
     var itemsCounter = 1.toLong()
     lateinit var listBeingUsed: ListBDD
+    var online = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_list_details)
+
+        online = intent.getBooleanExtra("online1", false)
+        online = online || intent.getBooleanExtra("online",false)
+
+        if(isOnline(this) && !online){
+            online = true
+            //LogFragment.GetUserFromApi(LogFragment()).execute()
+            GetListsFromApi(applicationContext).execute()
+        }
+
         // We set the adapter for his activity
         adapter = AdaptadorItemsCustom(this)
         itemsRecyclerView.adapter = adapter
@@ -97,23 +108,47 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             if (b){
                 itemsOnList.forEach {
                     var itemModifiedPosition = itemsOnList.indexOf(it)
-                    it.isShown = !it.isShown
-                    adapter.notifyItemChanged(itemModifiedPosition)
+                    if (it.estado) {
+                        it.isShown = true
+                        adapter.notifyItemChanged(itemModifiedPosition)
+                    }
+                    else{
+                        it.isShown = false
+                        adapter.notifyItemChanged(itemModifiedPosition)
+                    }
                 }
                 map.values.forEach {
-                    it.isShown = !it.isShown
-                    UpdateSpecificItem(this).execute(it)
+                    if(it.done) {
+                        it.isShown = true
+                        UpdateSpecificItem(this).execute(it)
+                    }
+                    else{
+                        it.isShown = false
+                        UpdateSpecificItem(this).execute(it)
+                    }
                 }
             }
             else{
                 itemsOnList.forEach {
                     var itemModifiedPosition = itemsOnList.indexOf(it)
-                    it.isShown = !it.isShown
-                    adapter.notifyItemChanged(itemModifiedPosition)
+                    if(it.estado) {
+                        it.isShown = false
+                        adapter.notifyItemChanged(itemModifiedPosition)
+                    }
+                    else{
+                        it.isShown = true
+                        adapter.notifyItemChanged(itemModifiedPosition)
+                    }
                 }
                 map.values.forEach {
-                    it.isShown = !it.isShown
-                    UpdateSpecificItem(this).execute(it)
+                    if(it.done) {
+                        it.isShown = false
+                        UpdateSpecificItem(this).execute(it)
+                    }
+                    else{
+                        it.isShown = true
+                        UpdateSpecificItem(this).execute(it)
+                    }
                 }
             }
         }
@@ -151,6 +186,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                     if (itemsOnList.size == 0){
                         itemsOnList= data.getSerializableExtra("all items back") as ArrayList<Item>
                     }
+                    online = data.getBooleanExtra("online", false)
                     itemModified = data.getSerializableExtra("item updated") as Item
                     itemModificadoPos = data.getIntExtra("item position modified", -1)
                     itemsOnList[itemModificadoPos] = itemModified!!
@@ -279,6 +315,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             }
         }
         list = ListaItem(list!!.name, itemsOnList)
+        myIntent.putExtra("online", online)
         myIntent.putExtra("listaItems",list)
         setResult(Activity.RESULT_OK, myIntent)
         finish()
@@ -313,6 +350,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     override fun onEyeItemCLicked(result: Item) {
         val intent = Intent(this, ItemDetails::class.java)
         itemModificadoPos = itemsOnList.indexOf(result)
+        intent.putExtra("online", online)
         intent.putExtra("item to watch", result)
         intent.putExtra("item recorded", result as Serializable)
         intent.putExtra("item from db", map[result])
@@ -324,7 +362,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     // If the state is changed we need to pass the important data to don't lose it
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
-
+        savedInstanceState.putBoolean("online1", online)
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG_EDIT", isShowingDialogEdit)
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG_ADD", isShowingDialogAdd)
     }
@@ -360,6 +398,8 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     }
 
     companion object {
+
+
         class GetTheList(private val listaActivity: listDetails) :
             AsyncTask<Long, Void, ListWithItems>() {
             override fun doInBackground(vararg params: Long?): ListWithItems {
@@ -388,6 +428,12 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                             it.name, it.done, it.starred, it.due_date,
                             it.notes, it.created_at, it.isShown
                         )
+                        if (listaActivity.SwitchItemsChecked.isChecked){
+                            itemAdded.isShown = it.done
+                        }
+                        else{
+                            itemAdded.isShown = !it.done
+                        }
                         listaActivity.list.items!!.add(itemAdded)
                         listaActivity.itemsOnList.add(itemAdded)
                         listaActivity.map[itemAdded] = it
@@ -536,7 +582,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             AsyncTask<Void, Void, List<ItemBDD>?>(){
             override fun doInBackground(vararg params: Void?): List<ItemBDD>? {
                 listaActivity.map = hashMapOf()
-                return listaActivity.database.getAllItems()
+                return listaActivity.database.getSpecificList(listaActivity.listId).items
             }
 
             override fun onPostExecute(result: List<ItemBDD>?) {
@@ -570,8 +616,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                             if (response.body() != null) {
                                 item1!!.updated_at = response.body()!!.updated_at
                                 listaActivity.map[params[0]!!] = item1
-                                listaActivity.database.updateItem(item1)
-
+                                UpdateItemDb(listaActivity).execute(item1)
                             }
                         }
                     }
@@ -598,7 +643,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                             if (response.body() != null) {
                                 item2!!.updated_at = response.body()!!.updated_at
                                 listaActivity.map[params[1]!!] = item2
-                                listaActivity.database.updateItem(item2)
+                                UpdateItemDb(listaActivity).execute(item2)
                             }
                         }
                     }

@@ -26,6 +26,7 @@ class LogFragment : Fragment() {
 
     // Db
     lateinit var database: ListDao
+    var online = false
 
     fun goToList() {
 
@@ -33,6 +34,7 @@ class LogFragment : Fragment() {
             val intent = Intent(activity, ListaActivity::class.java)
             intent.putExtra("coming from Log In", true)
             intent.putExtra("user details start", user as Serializable)
+            intent.putExtra("online", online)
             startActivityForResult(intent, 2)
         } else {
             Toast.makeText(context, "Debe tener internet para hacer Log In!", Toast.LENGTH_LONG)
@@ -61,7 +63,7 @@ class LogFragment : Fragment() {
         val rootView = inflater.inflate(R.layout.fragment_log, container, false)
         val button = rootView.findViewById<Button>(R.id.IngresarButton)
         // Here we create the db
-        CheckConnection(this).execute()
+
         database =
             Room.databaseBuilder(activity!!.applicationContext, Database::class.java, "ListsBDD")
                 .build().ListDao()
@@ -72,24 +74,17 @@ class LogFragment : Fragment() {
             emailTextView.setText(user!!.email)
             passwordTextView.setText(user!!.first_name)
         } catch (e: Exception) {
-            GetUserFromApi(this).execute()
-            GetListsFromApi(this).execute()
+            ObtainUserFromDB(this).execute()
+            if(isOnline(context!!)){
+                online = true
+                GetUserFromApi(this).execute()
+                //GetListsFromApi(this).execute()
+                GetListsFromApi(this.context!!).execute()
+            }
         }
 
         button.setOnClickListener { goToList() }
         return rootView
-    }
-
-    class CheckConnection(private val listaActivity: LogFragment) : AsyncTask<Void, Void, Void>() {
-        override fun doInBackground(vararg params: Void?): Void? {
-            while (!isOnline(listaActivity.context!!)) {
-            }
-            return null
-        }
-
-        override fun onPostExecute(result: Void?) {
-            GetUserFromApi(listaActivity).execute()
-        }
     }
 
 /*
@@ -152,6 +147,30 @@ class LogFragment : Fragment() {
         }
     }
 
+    class ObtainUserFromDB(private val listaActivity: LogFragment) : AsyncTask<Void, Void, User?>() {
+        override fun doInBackground(vararg params: Void?): User? {
+            var userBd = listaActivity.database.getUser()
+            if (userBd != null){
+                listaActivity.user = User(
+                    userBd.email,
+                    userBd.first_name,
+                    userBd.last_name,
+                    userBd.phone,
+                    userBd.profile_photo
+                )
+                return listaActivity.user
+            }
+            return null
+        }
+
+        override fun onPostExecute(result: User?) {
+            if (result != null) {
+                listaActivity.emailTextView.setText(listaActivity.user!!.email)
+                listaActivity.passwordTextView.setText(listaActivity.user!!.first_name)
+            }
+        }
+    }
+/*
     // Obtain All lists from the api
     class GetListsFromApi(private val listaActivity: LogFragment) : AsyncTask<Void, Void, Void>() {
         override fun doInBackground(vararg params: Void?): Void? {
@@ -247,7 +266,8 @@ class LogFragment : Fragment() {
                     print(response)
                     if (response.isSuccessful) {
                         if (response.body() != null) {
-
+                            params[0]!!.id = response.body()!!.id
+                            UpdateListsToDBB(listaActivity).execute(params[0]!!)
                         }
                     }
                 }
@@ -281,7 +301,8 @@ class LogFragment : Fragment() {
                 ) {
                     if (response.isSuccessful) {
                         if (response.body() != null) {
-                            println(response)
+                            params[0]!!.id = response.body()!!.id
+                            UpdateListsToDBB(listaActivity).execute(params[0]!!)
                         }
                     }
                 }
@@ -306,7 +327,9 @@ class LogFragment : Fragment() {
                 ) {
                     if (response.isSuccessful) {
                         if (response.body() != null) {
-                            LoadItemsToBD(listaActivity).execute(response.body())
+                            if (response.body()!!.isNotEmpty()) {
+                                LoadItemsToBD(listaActivity).execute(response.body())
+                            }
                             println(response.body())
                         }
                     }
@@ -389,7 +412,8 @@ class LogFragment : Fragment() {
                     print(response)
                     if (response.isSuccessful) {
                         if (response.body() != null) {
-
+                            params[0]!!.id = response.body()!![0].id
+                            UpdateItemToDBB(listaActivity).execute(params[0]!!)
                         }
                     }
                 }
@@ -422,7 +446,8 @@ class LogFragment : Fragment() {
                 ) {
                     if (response.isSuccessful) {
                         if (response.body() != null) {
-                            println(response)
+                            params[0]!!.id = response.body()!!.id
+                            UpdateItemToDBB(listaActivity).execute(params[0]!!)
                         }
                     }
                 }
@@ -434,5 +459,5 @@ class LogFragment : Fragment() {
             return null
         }
     }
-
+*/
 }

@@ -49,11 +49,21 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     lateinit var adapter: AdaptadorCustom
     var listsCounter: Long = 1
     val map = hashMapOf<ListaItem, ListBDD>()
+    var online = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_lista)
+
+        online = intent.getBooleanExtra("online1", false)
+        online = online || intent.getBooleanExtra("online",false)
+
+        if(isOnline(this) && !online){
+            online = true
+            //LogFragment.GetUserFromApi(LogFragment()).execute()
+            GetListsFromApi(applicationContext).execute()
+        }
 
         // The recycler view for the Activity that contains the lists
         adapter = AdaptadorCustom(this, this)
@@ -125,6 +135,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         // Go to the items in a list activity
         val intent = Intent(this, listDetails::class.java)
         intent.putExtra(LISTS, map[result])
+        intent.putExtra("online", online)
         startActivityForResult(intent, 1)
     }
 
@@ -135,6 +146,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
             if (resultCode == Activity.RESULT_OK){
                 listaList = ArrayList()
                 adapter.notifyDataSetChanged()
+                online = data.getBooleanExtra("online", false)
                 GetAllLists(this).execute()
                 // ACA PUEDE SER QUE NOS FALTE OBTENER LA NUEVA LISTA CON SUS ITEMS (UPDATEAR LA LISTA PARA QUE TENGA SUS NUEVOS ITEMS)
             }
@@ -142,12 +154,15 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 user = data.getSerializableExtra("user details updated") as User
                 val endIntent = Intent()
                 // We give the result to the Log in activity to maintain the information
+                online = data.getBooleanExtra("online", false)
+                endIntent.putExtra("online", online)
                 endIntent.putExtra("lista de listas",listaList as Serializable)
                 endIntent.putExtra("user details finish",user as Serializable)
                 setResult(Activity.RESULT_OK, endIntent)
                 finish()
             }
             else if (resultCode == 3){
+                online = data.getBooleanExtra("online", false)
                 user = data.getSerializableExtra("user details update") as User
                 nombreUsuarioTextView.text = user!!.first_name
             }
@@ -193,8 +208,8 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
             override fun onClick(dialog: DialogInterface?, which: Int) {
                 val listToBeAdded = ListaItem(view.listNameTextView.text.toString(),ArrayList())
                 listaList.add(listToBeAdded)
-                InsertList(this@ListaActivity).execute(listToBeAdded)
                 adapter.notifyItemInserted(listaList.size - 1)
+                InsertList(this@ListaActivity).execute(listToBeAdded)
                 dialog?.dismiss()
                 isShowingDialog = false
             }
@@ -213,6 +228,8 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         savedInstanceState.putSerializable("ItemModificado",modified)
         // We give the array of lists
         //savedInstanceState.putSerializable("lista listas",listaList)
+
+        savedInstanceState.putBoolean("online1", online)
 
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG", isShowingDialog)
 
@@ -331,14 +348,15 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
 
                 return null
             }
-            class InsertDB(private val listaActivity: InsertList, private val listaAct: ListaActivity):AsyncTask<ListBDD, Void, Void>(){
-                override fun doInBackground(vararg params: ListBDD?): Void? {
-                    listaAct.map[listaActivity.listaIt] = params[0]!!
-                    listaAct.listsCounter = listaAct.database.insertList(params[0]!!) + 1
-                    return null
-                }
+        }
 
+        class InsertDB(private val listaActivity: InsertList, private val listaAct: ListaActivity):AsyncTask<ListBDD, Void, Void>(){
+            override fun doInBackground(vararg params: ListBDD?): Void? {
+                listaAct.map[listaActivity.listaIt] = params[0]!!
+                listaAct.listsCounter = listaAct.database.insertList(params[0]!!) + 1
+                return null
             }
+
         }
 
         // Class when a list is removed
@@ -370,6 +388,14 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
             }
         }
 
+        class UpdateListDb(private val listaActivity: ListaActivity):
+            AsyncTask<ListBDD, Void, Void?>(){
+            override fun doInBackground(vararg params: ListBDD?): Void? {
+                listaActivity.database.updateList(params[0]!!)
+                return null
+            }
+        }
+
         class ModifyPos(private val listaActivity: ListaActivity) : AsyncTask<ListaItem, Void, Void>(){
             override fun doInBackground(vararg params: ListaItem?): Void? {
                 var item1 = listaActivity.map[params[0]!!]
@@ -391,7 +417,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                             if (response.body() != null) {
                                 item1!!.updated_at = response.body()!!.updated_at
                                 listaActivity.map[params[0]!!] = item1
-                                listaActivity.database.updateList(item1)
+                                UpdateListDb(listaActivity).execute(item1)
                             }
                         }
                     }
@@ -419,7 +445,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                             if (response.body() != null) {
                                 item2!!.updated_at = response.body()!!.updated_at
                                 listaActivity.map[params[1]!!] = item2
-                                listaActivity.database.updateList(item2)
+                                UpdateListDb(listaActivity).execute(item2)
                             }
                         }
                     }

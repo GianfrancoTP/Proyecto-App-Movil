@@ -21,6 +21,7 @@ import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
 import kotlinx.android.synthetic.main.activity_item_details.*
 import kotlinx.android.synthetic.main.popup.view.*
+import okhttp3.internal.wait
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -29,6 +30,7 @@ import java.lang.Exception
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.concurrent.TimeUnit
 
 class ItemDetails : AppCompatActivity() {
 
@@ -41,10 +43,20 @@ class ItemDetails : AppCompatActivity() {
     lateinit var itemDb: ItemBDD
     lateinit var copyOfItem: Item
     lateinit var allItems: ArrayList<Item>
+    var online = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_item_details)
+
+        online = intent.getBooleanExtra("online1", false)
+        online = online || intent.getBooleanExtra("online",false)
+
+        if(isOnline(this) && !online){
+            online = true
+            //LogFragment.GetUserFromApi(LogFragment()).execute()
+            GetListsFromApi(applicationContext).execute()
+        }
 
         database = Room.databaseBuilder(this, Database::class.java, "ListsBDD").build().ListDao()
 
@@ -99,15 +111,9 @@ class ItemDetails : AppCompatActivity() {
 
     // When the back button is pressed, to go back to the other view
     fun goBackToItemsView(view: View){
-        val myIntent: Intent = Intent()
-        updateItem()
-        myIntent.putExtra("item updated",item as Serializable)
-        myIntent.putExtra("item position modified", pos)
-        myIntent.putExtra("copy item", copyOfItem as Serializable)
-        myIntent.putExtra("all items back", allItems as Serializable)
-        setResult(5, myIntent)
-        finish()
+        updateItemToEndAct()
     }
+
 
     // To delete the specific item
     fun deleteItem(view: View){
@@ -149,6 +155,37 @@ class ItemDetails : AppCompatActivity() {
         itemDb.done = item!!.estado
         itemDb.isShown = item!!.isShown
         UpdateItem(this).execute()
+    }
+
+    fun updateItemToEndAct(){
+        item!!.nameItem =  nombreItemTextView.text.toString()
+        itemDb.name = nombreItemTextView.text.toString()
+
+        item!!.plazo = fechaPlazoTextView.text.toString()
+        itemDb.due_date = fechaPlazoTextView.text.toString()
+
+        item!!.prioridad = NotPriorityImageView.visibility != View.VISIBLE
+        itemDb.starred = NotPriorityImageView.visibility != View.VISIBLE
+
+        item!!.notasItem = notasItemEditText.text.toString()
+        itemDb.notes = notasItemEditText.text.toString()
+
+        if (button3.text == "Volver a no completado"){
+            if(!item!!.estado) {
+                item!!.isShown = false
+                item!!.estado = true
+            }
+
+        }
+        else{
+            if(item!!.estado) {
+                item!!.isShown = false
+                item!!.estado = false
+            }
+        }
+        itemDb.done = item!!.estado
+        itemDb.isShown = item!!.isShown
+        UpdateItemToEnd(this).execute()
     }
 
     // To change the state from being completed or not completed
@@ -232,21 +269,14 @@ class ItemDetails : AppCompatActivity() {
 
     // When the back button was pressed
     override fun onBackPressed() {
-        val myIntent: Intent = Intent()
-        updateItem()
-        myIntent.putExtra("item updated",item as Serializable)
-        myIntent.putExtra("item position modified", pos)
-        myIntent.putExtra("copy item", copyOfItem as Serializable)
-        setResult(5, myIntent)
-        finish()
-        super.onBackPressed()
+        updateItemToEndAct()
+        //super.onBackPressed()
     }
 
     companion object{
         class UpdateItem(private val listaActivity: ItemDetails):
             AsyncTask<Void, Void, Void>() {
             override fun doInBackground(vararg params: Void?): Void? {
-
                 val request = UserService.buildService(PersonApi::class.java)
                 val call = request.updateItem(listaActivity.itemDb.id.toInt(), listaActivity.itemDb, API_KEY)
                 call.enqueue(object : Callback<ItemBDD> {
@@ -258,7 +288,7 @@ class ItemDetails : AppCompatActivity() {
                         if (response.isSuccessful) {
                             if (response.body() != null) {
                                 listaActivity.itemDb.updated_at = response.body()!!.updated_at
-                                listaActivity.database.updateItem(listaActivity.itemDb)
+                                UpdateItemDB(listaActivity).execute()
                                 println(response.body())
                             }
                         }
@@ -278,6 +308,68 @@ class ItemDetails : AppCompatActivity() {
                 return null
             }
         }
+
+        class UpdateItemToEnd(private val listaActivity: ItemDetails):
+            AsyncTask<Void, Void, Void>() {
+            override fun doInBackground(vararg params: Void?): Void? {
+                val request = UserService.buildService(PersonApi::class.java)
+                val call = request.updateItem(listaActivity.itemDb.id.toInt(), listaActivity.itemDb, API_KEY)
+                call.enqueue(object : Callback<ItemBDD> {
+                    override fun onResponse(
+                        call: Call<ItemBDD>,
+                        response: Response<ItemBDD>
+                    ) {
+                        println(response)
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                listaActivity.itemDb.updated_at = response.body()!!.updated_at
+                                UpdateItemDBEnding(listaActivity).execute()
+                                println(response.body())
+                            }
+                        }
+                    }
+                    @RequiresApi(Build.VERSION_CODES.O)
+                    override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
+                        val current = LocalDateTime.now()
+                        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                        val formatted = current.format(formatter)
+
+                        listaActivity.itemDb.updated_at = formatted
+                        listaActivity.database.updateItem(listaActivity.itemDb)
+                        println("NO FUNCIONA ${t.message}")
+                    }
+                })
+                return null
+            }
+        }
+
+        class UpdateItemDB(private val listaActivity: ItemDetails):
+            AsyncTask<ItemBDD, Void, Void>() {
+            override fun doInBackground(vararg params: ItemBDD?): Void? {
+                listaActivity.database.updateItem(listaActivity.itemDb)
+                return null
+            }
+        }
+
+        class UpdateItemDBEnding(private val listaActivity: ItemDetails):
+            AsyncTask<ItemBDD, Void, Void>() {
+            override fun doInBackground(vararg params: ItemBDD?): Void? {
+                listaActivity.database.updateItem(listaActivity.itemDb)
+                return null
+            }
+
+            override fun onPostExecute(result: Void?) {
+                val myIntent: Intent = Intent()
+                myIntent.putExtra("item updated",listaActivity.item as Serializable)
+                myIntent.putExtra("item position modified", listaActivity.pos)
+                myIntent.putExtra("copy item", listaActivity.copyOfItem as Serializable)
+                myIntent.putExtra("all items back", listaActivity.allItems as Serializable)
+                myIntent.putExtra("online", listaActivity.online)
+                listaActivity.setResult(5, myIntent)
+                listaActivity.finish()
+            }
+        }
+
         class EraseItem(private val listaActivity: ItemDetails):
             AsyncTask<ItemBDD, Void, Void>() {
             override fun doInBackground(vararg params: ItemBDD?): Void? {

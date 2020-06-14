@@ -30,10 +30,21 @@ class UserDetails : AppCompatActivity() {
     var dialog: Dialog? = null
     var isShowingDialogExit = false
     var isShowingDialogProfile = false
+    var online = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_details)
+
+        online = intent.getBooleanExtra("online1", false)
+        online = online || intent.getBooleanExtra("online",false)
+
+        if(isOnline(this) && !online){
+            online = true
+            //LogFragment.GetUserFromApi(LogFragment()).execute()
+            GetListsFromApi(applicationContext).execute()
+        }
+
         user = intent.getSerializableExtra("user details")!! as User
 
         user_name_text_view.text = user!!.first_name + " " +user!!.last_name
@@ -243,11 +254,13 @@ class UserDetails : AppCompatActivity() {
     override fun onBackPressed() {
         val goBackIntent = Intent()
         goBackIntent.putExtra("user details update", user as Serializable)
+        goBackIntent.putExtra("online", online)
         setResult(3, goBackIntent)
         super.onBackPressed()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
+        outState.putBoolean("online1", online)
         outState.putBoolean("IS_SHOWING_DIALOG_EXIT", isShowingDialogExit)
         outState.putBoolean("IS_SHOWING_DIALOG_PROFILE", isShowingDialogProfile)
         super.onSaveInstanceState(outState)
