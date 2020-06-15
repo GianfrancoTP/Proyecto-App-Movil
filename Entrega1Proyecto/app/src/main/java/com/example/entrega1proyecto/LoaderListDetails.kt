@@ -140,7 +140,7 @@ class PostToDBBlistDetails() :
         return null
     }
 }
-//                      ESTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA ES PARA CUANDO NO HAY ITEMSSSSSSSSSSSSSSSSSS!!!!!!!!!!!!!!!!
+
 //Update a List into the API
 class UpdateListToAPIlistDetails() :
     AsyncTask<ListBDD, Void, Void>() {

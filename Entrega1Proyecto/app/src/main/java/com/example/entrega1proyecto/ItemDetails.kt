@@ -45,6 +45,7 @@ class ItemDetails : AppCompatActivity() {
     var onlinep = false
     var onlinef = false
     lateinit var listBeingUsed: ListBDD
+    lateinit var idListaABorrar:ListBDD
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -380,7 +381,9 @@ class ItemDetails : AppCompatActivity() {
 
                 val request = UserService.buildService(PersonApi::class.java)
                 val call = request.postList(params[0]!!, API_KEY)
+                listaActivity.idListaABorrar = params[0]!!
                 var listABorrar = params[0]!!
+
                 call.enqueue(object : Callback<ListBDD> {
                     override fun onResponse(
                         call: Call<ListBDD>,
@@ -389,7 +392,8 @@ class ItemDetails : AppCompatActivity() {
                         print(response)
                         if (response.isSuccessful) {
                             if (response.body() != null) {
-                                EraseListInDB(listaActivity).execute(params[0]!!)
+                                println("LISTA A BORRAR!!!!!!!     ${listaActivity.idListaABorrar}")
+                                EraseListInDB(listaActivity).execute()
                                 listABorrar.id = response.body()!!.id
                                 listaActivity.itemDb.list_id = response.body()!!.id
                                 listABorrar.updated_at = response.body()!!.updated_at
@@ -406,9 +410,10 @@ class ItemDetails : AppCompatActivity() {
         }
 
         class EraseListInDB(private val listaActivity: ItemDetails):
-            AsyncTask<ListBDD, Void, Void>() {
-            override fun doInBackground(vararg params: ListBDD?): Void? {
-                listaActivity.database.deleteList(params[0]!!)
+            AsyncTask<Void, Void, Void>() {
+            override fun doInBackground(vararg params: Void?): Void? {
+                println("borrando lista!!!!!!!! ${listaActivity.idListaABorrar}")
+                listaActivity.database.deleteList(listaActivity.idListaABorrar)
                 return null
             }
         }

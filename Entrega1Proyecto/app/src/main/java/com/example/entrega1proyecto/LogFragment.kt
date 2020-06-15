@@ -80,7 +80,7 @@ class LogFragment : Fragment() {
             if(isOnline(context!!)){
                 online = true
                 GetUserFromApi(this).execute()
-                //GetListsFromApi(this).execute()
+                GetListsFromApi(this).execute()
                 //GetListsFromApi(this.context!!).execute()
             }
         }
@@ -172,7 +172,7 @@ class LogFragment : Fragment() {
             }
         }
     }
-/*
+
     // Obtain All lists from the api
     class GetListsFromApi(private val listaActivity: LogFragment) : AsyncTask<Void, Void, Void>() {
         override fun doInBackground(vararg params: Void?): Void? {
@@ -461,5 +461,4 @@ class LogFragment : Fragment() {
             return null
         }
     }
-*/
 }
