@@ -3,6 +3,7 @@ package com.example.entrega1proyecto
 import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
+import android.os.AsyncTask
 import android.os.Bundle
 import android.text.InputType
 import android.view.LayoutInflater
@@ -10,10 +11,15 @@ import android.view.View
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.room.Room
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
+import com.example.entrega1proyecto.ListaActivity.Companion.IT
 import com.example.entrega1proyecto.configuration.API_KEY
+import com.example.entrega1proyecto.model.Database
+import com.example.entrega1proyecto.model.ListDao
 import com.example.entrega1proyecto.model.User
+import com.example.entrega1proyecto.model.UserBBDD
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
 import kotlinx.android.synthetic.main.activity_user_details.*
@@ -31,19 +37,16 @@ class UserDetails : AppCompatActivity() {
     var isShowingDialogExit = false
     var isShowingDialogProfile = false
     var online = false
+    var onlinep = false
+    var onlinef = false
+    lateinit var database: ListDao
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_details)
 
-        online = intent.getBooleanExtra("online1", false)
-        online = online || intent.getBooleanExtra("online",false)
-
-        if(isOnline(this) && !online){
-            online = true
-            //LogFragment.GetUserFromApi(LogFragment()).execute()
-            GetListsFromApi(applicationContext).execute()
-        }
+        // Here we create the db
+        database = Room.databaseBuilder(this, Database::class.java, "ListsBDD").build().ListDao()
 
         user = intent.getSerializableExtra("user details")!! as User
 
@@ -52,14 +55,24 @@ class UserDetails : AppCompatActivity() {
         Glide.with(this).load(user!!.profile_photo).apply(RequestOptions.circleCropTransform())
             .into(banner_picture_user_image_view)
         if(savedInstanceState != null){
-            isShowingDialogExit = savedInstanceState.getBoolean("IS_SHOWING_DIALOG_EXIT", false);
+            isShowingDialogExit = savedInstanceState.getBoolean("IS_SHOWING_DIALOG_EXIT", false)
+            onlinef = savedInstanceState!!.getBoolean("online1",false)
             if(isShowingDialogExit) {
                 logOutPopUp(View(this))
             }
-            isShowingDialogProfile = savedInstanceState.getBoolean("IS_SHOWING_DIALOG_PROFILE", false);
+            isShowingDialogProfile = savedInstanceState.getBoolean("IS_SHOWING_DIALOG_PROFILE", false)
             if(isShowingDialogProfile) {
                 seeMyProfile(View(this))
             }
+        }
+
+        onlinep = intent.getBooleanExtra("online", false)
+
+        online = onlinep || isOnline(this) || onlinef
+
+        if(isOnline(this) && !onlinep && !onlinef){
+            online = true
+            //LogFragment.GetUserFromApi(LogFragment()).execute()
         }
     }
 
@@ -144,23 +157,7 @@ class UserDetails : AppCompatActivity() {
                 user_name_text_view.text = user!!.first_name + " " +user!!.last_name
                 user_email_text_view.text = user!!.email
 
-                val request = UserService.buildService(PersonApi::class.java)
-                val call = request.updateUser(user!!, API_KEY)
-                call.enqueue(object : Callback<User> {
-                    override fun onResponse(
-                        call: Call<User>,
-                        response: Response<User>
-                    ) {
-                        if (response.isSuccessful()) {
-                            if (response.body() != null) {
-                                println("funciona")
-                            }
-                        }
-                    }
-                    override fun onFailure(call: Call<User>, t: Throwable) {
-                        println("NO FUNCIONA ${t.message}")
-                    }
-                })
+                UpdateUser(this@UserDetails).execute(user)
 
                 dialog?.dismiss()
                 isShowingDialogProfile = false
@@ -277,6 +274,38 @@ class UserDetails : AppCompatActivity() {
         super.onPause()
     }
 
+    class UpdateUser(private val listaActivity: UserDetails): AsyncTask<User?,Void,Void>(){
+        override fun doInBackground(vararg params: User?): Void? {
+            val request = UserService.buildService(PersonApi::class.java)
+            val call = request.updateUser(params[0]!!, API_KEY)
+            call.enqueue(object : Callback<User> {
+                override fun onResponse(
+                    call: Call<User>,
+                    response: Response<User>
+                ) {
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                            val userUpdated = UserBBDD(1,response.body()!!.first_name,
+                                response.body()!!.last_name, response.body()!!.email,
+                                response.body()!!.phone, response.body()!!.profile_photo)
+                            UpdateUserBDD(listaActivity).execute(userUpdated)
+                        }
+                    }
+                }
+                override fun onFailure(call: Call<User>, t: Throwable) {
+                    println("NO FUNCIONA ${t.message}")
+                }
+            })
+            return null
+        }
 
+    }
+
+    class UpdateUserBDD(private val listaActivity: UserDetails): AsyncTask<UserBBDD?,Void,Void>() {
+        override fun doInBackground(vararg params: UserBBDD?): Void? {
+            listaActivity.database.updateUser(params[0]!!)
+            return null
+        }
+    }
 
 }

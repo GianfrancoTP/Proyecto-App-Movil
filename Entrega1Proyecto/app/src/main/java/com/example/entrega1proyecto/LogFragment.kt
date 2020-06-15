@@ -27,6 +27,7 @@ class LogFragment : Fragment() {
     // Db
     lateinit var database: ListDao
     var online = false
+    var onlinef = false
 
     fun goToList() {
 
@@ -49,6 +50,7 @@ class LogFragment : Fragment() {
         if (data != null) {
             if (resultCode == Activity.RESULT_OK) {
                 user = data.getSerializableExtra("user details finish") as User
+                onlinef = data.getBooleanExtra("online", false)
                 emailTextView.setText(user!!.email)
                 passwordTextView.setText(user!!.first_name)
             }
@@ -79,7 +81,7 @@ class LogFragment : Fragment() {
                 online = true
                 GetUserFromApi(this).execute()
                 //GetListsFromApi(this).execute()
-                GetListsFromApi(this.context!!).execute()
+                //GetListsFromApi(this.context!!).execute()
             }
         }
 

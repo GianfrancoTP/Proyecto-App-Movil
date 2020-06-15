@@ -57,19 +57,12 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     var itemsCounter = 1.toLong()
     lateinit var listBeingUsed: ListBDD
     var online = false
+    var onlinep = false
+    var onlinef = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_list_details)
-
-        online = intent.getBooleanExtra("online1", false)
-        online = online || intent.getBooleanExtra("online",false)
-
-        if(isOnline(this) && !online){
-            online = true
-            //LogFragment.GetUserFromApi(LogFragment()).execute()
-            GetListsFromApi(applicationContext).execute()
-        }
 
         // We set the adapter for his activity
         adapter = AdaptadorItemsCustom(this)
@@ -94,6 +87,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
 
 */
         if(savedInstanceState!=null){
+            onlinep = savedInstanceState.getBoolean("online1", false)
             isShowingDialogAdd = savedInstanceState.getBoolean("IS_SHOWING_DIALOG_ADD", false)
             if(isShowingDialogAdd){
                 anadirItem(View(this))
@@ -102,6 +96,15 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             if(isShowingDialogEdit){
                 editarListaName(View(this))
             }
+        }
+
+        onlinef = intent.getBooleanExtra("online", false)
+        online = onlinep || isOnline(this) || onlinef
+
+        if(isOnline(this) && !onlinep && !onlinef){
+            online = true
+            //LogFragment.GetUserFromApi(LogFragment()).execute()
+            GetListsFromApilistDetails(applicationContext, this, listId).execute()
         }
 
         SwitchItemsChecked.setOnCheckedChangeListener { compoundButton: CompoundButton, b: Boolean ->
@@ -186,7 +189,10 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                     if (itemsOnList.size == 0){
                         itemsOnList= data.getSerializableExtra("all items back") as ArrayList<Item>
                     }
-                    online = data.getBooleanExtra("online", false)
+                    onlinef = data.getBooleanExtra("online", false)
+                    if(onlinef){
+                        GetListsFromApilistDetails(applicationContext, this, listId).execute()
+                    }
                     itemModified = data.getSerializableExtra("item updated") as Item
                     itemModificadoPos = data.getIntExtra("item position modified", -1)
                     itemsOnList[itemModificadoPos] = itemModified!!
@@ -350,6 +356,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     override fun onEyeItemCLicked(result: Item) {
         val intent = Intent(this, ItemDetails::class.java)
         itemModificadoPos = itemsOnList.indexOf(result)
+        intent.putExtra("list", listBeingUsed)
         intent.putExtra("online", online)
         intent.putExtra("item to watch", result)
         intent.putExtra("item recorded", result as Serializable)
@@ -391,6 +398,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             }
         }
         list = ListaItem(list!!.name, itemsOnList)
+        myIntent.putExtra("online", online)
         myIntent.putExtra("listaItems",list)
         setResult(Activity.RESULT_OK, myIntent)
         finish()
@@ -452,11 +460,20 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 listaIt = params[0]!!
                 val itemForBDD = ItemBDD(
                     listaActivity.itemsCounter,
-                    listaActivity.listId, params[0]!!.nameItem, params[0]!!.estado,
-                    params[0]!!.prioridad, params[0]!!.plazo,
+                    listaActivity.listId,
+                    params[0]!!.nameItem,
+                    params[0]!!.estado,
+                    params[0]!!.prioridad,
+                    params[0]!!.plazo,
                     params[0]!!.notasItem,
-                    params[0]!!.fechaCreacion, listaActivity.itemsOnList.indexOf(params[0]),params[0]!!.isShown, ""
+                    params[0]!!.fechaCreacion,
+                    listaActivity.itemsOnList.indexOf(params[0]),
+                    params[0]!!.isShown,
+                    ""
                 )
+                if(!isOnline(listaActivity)){
+                    itemForBDD.id = itemForBDD.id + 100
+                }
 
                 val request = UserService.buildService(PersonApi::class.java)
                 val itemTest = ListItems(listOf(itemForBDD))
@@ -475,6 +492,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                             }
                         }
                     }
+
                     @RequiresApi(Build.VERSION_CODES.O)
                     override fun onFailure(call: Call<List<ItemBDD>>, t: Throwable) {
                         val current = LocalDateTime.now()
@@ -488,15 +506,16 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 })
                 return null
             }
-            class InsertItemDB(private val listaActivity: listDetails.Companion.InsertItem, private val listaAct: listDetails):AsyncTask<ItemBDD, Void, Void>(){
-                override fun doInBackground(vararg params: ItemBDD?): Void? {
-                    listaAct.map[listaActivity.listaIt] = params[0]!!
-                    listaAct.itemsCounter = listaAct.database.insertItem(params[0]!!) + 1
-                    return null
-                }
+        }
 
+        class InsertItemDB(private val listaActivity: InsertItem, private val listaAct: listDetails):AsyncTask<ItemBDD, Void, Void>(){
+            override fun doInBackground(vararg params: ItemBDD?): Void? {
+                listaAct.map[listaActivity.listaIt] = params[0]!!
+                listaAct.itemsCounter = listaAct.database.insertItem(params[0]!!) + 1
+                return null
             }
         }
+
 
         class UpdateNameList(private val listaActivity: listDetails):
                 AsyncTask<ListaItem, Void, Void>(){
@@ -581,16 +600,19 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         class UpdateMap(private val listaActivity: listDetails):
             AsyncTask<Void, Void, List<ItemBDD>?>(){
             override fun doInBackground(vararg params: Void?): List<ItemBDD>? {
+                println("ESTAMOS DENTRO DEL MAP1  ${listaActivity.map}")
                 listaActivity.map = hashMapOf()
                 return listaActivity.database.getSpecificList(listaActivity.listId).items
             }
 
             override fun onPostExecute(result: List<ItemBDD>?) {
                 var count = 0
+                println("ESTAMOS DENTRO DEL MAP2  ${result}")
                 result!!.forEach{
                     listaActivity.map[listaActivity.itemsOnList[count]] = it
                     count += 1
                 }
+                println("ESTAMOS DENTRO DEL MAP3  ${listaActivity.map}")
             }
         }
 

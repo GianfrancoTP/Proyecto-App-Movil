@@ -29,13 +29,13 @@ interface PersonApi {
                    @Body list: ListBDD,
                    @Header("token")  api_key: String?
     ): Call<ListBDD>
-    /*
-        //Get list information by ID
-        @GET("lists/{list_id}")
-        fun getList(@Path("list_id") id: Int,
-                    @Header("token")  api_key: String?
-        ): Call<Lists>
-*/
+
+    //Get list information by ID
+    @GET("lists/{list_id}")
+    fun getList(@Path("list_id") id: Int,
+                @Header("token")  api_key: String?
+    ): Call<ListBDD>
+
     //Get all list information
     @GET("lists/")
     fun getAllList(@Header("token")  api_key: String?): Call<List<ListBDD>>
@@ -58,13 +58,13 @@ interface PersonApi {
                    @Body item: ItemBDD,
                    @Header("token")  api_key: String?
     ): Call<ItemBDD>
-    /*
-        //Get item information by ID
-        @GET("items/{id}")
-        fun getItem(@Path("id") id: Int,
-                    @Header("token")  api_key: String?
-        ): Call<Items>
- */
+
+    //Get item information by ID
+    @GET("items/{id}")
+    fun getItem(@Path("id") id: Int,
+                @Header("token")  api_key: String?
+    ): Call<ItemBDD>
+
     //Get all items information
     @GET("items/")
     fun getAllItem(@Query("list_id") id: Int,

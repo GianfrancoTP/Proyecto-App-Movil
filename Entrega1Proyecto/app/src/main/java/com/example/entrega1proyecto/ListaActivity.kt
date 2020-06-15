@@ -50,28 +50,21 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     var listsCounter: Long = 1
     val map = hashMapOf<ListaItem, ListBDD>()
     var online = false
+    var onlinep = false
+    var onlinef = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_lista)
 
-        online = intent.getBooleanExtra("online1", false)
-        online = online || intent.getBooleanExtra("online",false)
-
-        if(isOnline(this) && !online){
-            online = true
-            //LogFragment.GetUserFromApi(LogFragment()).execute()
-            GetListsFromApi(applicationContext).execute()
-        }
+        // Here we create the db
+        database = Room.databaseBuilder(this, Database::class.java, "ListsBDD").build().ListDao()
 
         // The recycler view for the Activity that contains the lists
         adapter = AdaptadorCustom(this, this)
         recycler_view.adapter = adapter
         recycler_view.layoutManager = LinearLayoutManager(this)
-
-        // Here we create the db
-        database = Room.databaseBuilder(this, Database::class.java, "ListsBDD").build().ListDao()
 
         // We get all the lists from the db
         GetAllLists(this).execute()
@@ -85,6 +78,16 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
             if(isShowingDialog){
                 plusButton(View(this))
             }
+            onlinep = savedInstanceState?.getBoolean("online1")!!
+        }
+
+        onlinef = intent.getBooleanExtra("online", false)
+        online = onlinep || isOnline(this) || onlinef
+
+        if(isOnline(this) && !onlinep && !onlinef){
+            online = true
+            //LogFragment.GetUserFromApi(LogFragment()).execute()
+            GetListsFromApi(applicationContext, this).execute()
         }
 
         user = intent.getSerializableExtra("user details start") as User
@@ -146,7 +149,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
             if (resultCode == Activity.RESULT_OK){
                 listaList = ArrayList()
                 adapter.notifyDataSetChanged()
-                online = data.getBooleanExtra("online", false)
+                onlinef = data.getBooleanExtra("online", false)
                 GetAllLists(this).execute()
                 // ACA PUEDE SER QUE NOS FALTE OBTENER LA NUEVA LISTA CON SUS ITEMS (UPDATEAR LA LISTA PARA QUE TENGA SUS NUEVOS ITEMS)
             }
@@ -154,15 +157,21 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 user = data.getSerializableExtra("user details updated") as User
                 val endIntent = Intent()
                 // We give the result to the Log in activity to maintain the information
-                online = data.getBooleanExtra("online", false)
-                endIntent.putExtra("online", online)
+                onlinef = data.getBooleanExtra("online", false)
+                if(onlinef){
+                    GetListsFromApi(applicationContext, this).execute()
+                }
+                endIntent.putExtra("online", onlinef)
                 endIntent.putExtra("lista de listas",listaList as Serializable)
                 endIntent.putExtra("user details finish",user as Serializable)
                 setResult(Activity.RESULT_OK, endIntent)
                 finish()
             }
             else if (resultCode == 3){
-                online = data.getBooleanExtra("online", false)
+                onlinef = data.getBooleanExtra("online", false)
+                if(onlinef){
+                    GetListsFromApi(applicationContext, this).execute()
+                }
                 user = data.getSerializableExtra("user details update") as User
                 nombreUsuarioTextView.text = user!!.first_name
             }
@@ -181,6 +190,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     fun logOutPopUp(view: View){
         val intent = Intent(this, UserDetails::class.java)
         // We give the result to the Log in activity to maintain the information
+        intent.putExtra("online", online)
         intent.putExtra("lista de listas",listaList)
         intent.putExtra("user details", user as Serializable)
         startActivityForResult(intent, 3)
@@ -229,7 +239,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         // We give the array of lists
         //savedInstanceState.putSerializable("lista listas",listaList)
 
-        savedInstanceState.putBoolean("online1", online)
+        savedInstanceState.putBoolean("online1", onlinef)
 
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG", isShowingDialog)
 
@@ -260,6 +270,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
     // To go back to the log in activity
     override fun onBackPressed() {
         val endIntent = Intent()
+        endIntent.putExtra("online", onlinef)
         endIntent.putExtra("lista de listas",listaList as Serializable)
         endIntent.putExtra("user details finish",user as Serializable)
         setResult(Activity.RESULT_OK, endIntent)
@@ -269,6 +280,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
 
     companion object {
         var LISTS = "LISTS"
+        var IT = this
 
         // Class to get all the lists from the database
         class GetAllLists(private val listaActivity: ListaActivity) :
@@ -317,7 +329,23 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
             override fun doInBackground(vararg params: ListaItem?): Void? {
                 // We get the new id to add a new list when we add a list
                 listaIt = params[0]!!
-                val listToBeAdded = ListBDD(listaActivity.listsCounter,params[0]!!.name, listaActivity.listaList.indexOf(params[0]!!), "0")
+                lateinit var listToBeAdded: ListBDD
+                if (isOnline(listaActivity)) {
+                    listToBeAdded = ListBDD(
+                        listaActivity.listsCounter,
+                        params[0]!!.name,
+                        listaActivity.listaList.indexOf(params[0]!!),
+                        "0"
+                    )
+                }
+                else{
+                    listToBeAdded = ListBDD(
+                        listaActivity.listsCounter+100,
+                        params[0]!!.name,
+                        listaActivity.listaList.indexOf(params[0]!!),
+                        "0"
+                    )
+                }
 
                 val request = UserService.buildService(PersonApi::class.java)
                 val call = request.postList(listToBeAdded, API_KEY)
