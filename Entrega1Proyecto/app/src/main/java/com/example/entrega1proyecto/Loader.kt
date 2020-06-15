@@ -60,7 +60,7 @@ class PostListsToDB() :
                 val listBDD = lisBDD.list
                 if (it.updated_at > listBDD.updated_at) {
                     UpdateListsToDBB().execute(it)
-                } else if (it.updated_at < listBDD.updated_at) {
+                } else if (it.updated_at <= listBDD.updated_at) {
                     UpdateListToAPI().execute(listBDD)
                 }
             }
@@ -163,7 +163,7 @@ class PostToDBB(val x : ListWithItems) :
         x.items?.forEach {
             EraseItemInDb().execute(it)
             it.list_id = para.id
-            InsertItemInDB().execute(it)
+            PostItemToAPI2().execute(it)
         }
     }
 }
@@ -184,6 +184,33 @@ class InsertItemInDB() :
 
     override fun onPostExecute(result: Void?) {
         ListaActivity.Companion.GetAllLists(activityComing).execute()
+    }
+}
+
+class PostItemToAPI2() :
+    AsyncTask<ItemBDD, Void, Void>() {
+    override fun doInBackground(vararg params: ItemBDD?): Void? {
+        val listWithItems = ListItems(listOf(params[0]!!))
+        val request = UserService.buildService(PersonApi::class.java)
+        val call = request.postItem(listWithItems, API_KEY)
+        call.enqueue(object : Callback<List<ItemBDD>> {
+            override fun onResponse(
+                call: Call<List<ItemBDD>>,
+                response: Response<List<ItemBDD>>
+            ) {
+                print(response)
+                if (response.isSuccessful) {
+                    if (response.body() != null) {
+                        params[0]!!.id = response.body()!![0].id
+                        InsertItemInDB().execute(response.body()!![0])
+                    }
+                }
+            }
+            override fun onFailure(call: Call<List<ItemBDD>>, t: Throwable) {
+            }
+        })
+
+        return null
     }
 }
 
