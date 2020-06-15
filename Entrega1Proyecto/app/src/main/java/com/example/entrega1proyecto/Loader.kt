@@ -4,10 +4,7 @@ import android.content.Context
 import android.os.AsyncTask
 import androidx.room.Room
 import com.example.entrega1proyecto.configuration.API_KEY
-import com.example.entrega1proyecto.model.Database
-import com.example.entrega1proyecto.model.ItemBDD
-import com.example.entrega1proyecto.model.ListBDD
-import com.example.entrega1proyecto.model.ListDao
+import com.example.entrega1proyecto.model.*
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
 import retrofit2.Call
@@ -57,7 +54,7 @@ class PostListsToDB() :
             idFaltantes.add(it.id)
             val lisBDD = database.getSpecificList(it.id)
             if (lisBDD == null){
-                PostToDBB().execute(it)
+                PostToDBB2().execute(it)
             }
             else{
                 val listBDD = lisBDD.list
@@ -74,6 +71,15 @@ class PostListsToDB() :
 
     override fun onPostExecute(result: ArrayList<Long>?) {
         GetListsFromDbb().execute(result)
+    }
+}
+
+// Post an non-existent list in the Db
+class PostToDBB2() :
+    AsyncTask<ListBDD, Void, Void>() {
+    override fun doInBackground(vararg params: ListBDD?): Void? {
+        database.insertList(params[0]!!)
+        return null
     }
 }
 
@@ -117,8 +123,8 @@ class PostListToAPI() :
                 print(response)
                 if (response.isSuccessful) {
                     if (response.body() != null) {
-                        params[0]!!.id = response.body()!!.id
-                        UpdateListsToDBB().execute(params[0]!!)
+                        EraseListFromBD(response.body()!!).execute(params[0]!!)
+
                     }
                 }
             }
@@ -130,14 +136,58 @@ class PostListToAPI() :
     }
 }
 
+class EraseListFromBD(val id: ListBDD) :
+    AsyncTask<ListBDD, Void, ListBDD>() {
+    lateinit var x:ListWithItems
+    override fun doInBackground(vararg params: ListBDD?): ListBDD? {
+        x = database.getSpecificList(params[0]!!.id)
+        database.deleteList(params[0]!!)
+        return id
+    }
+    override fun onPostExecute(result: ListBDD?) {
+        PostToDBB(x).execute(result!!)
+    }
+}
+
 // Post an non-existent list in the Db
-class PostToDBB() :
+class PostToDBB(val x : ListWithItems) :
     AsyncTask<ListBDD, Void, Void>() {
+    lateinit var para: ListBDD
     override fun doInBackground(vararg params: ListBDD?): Void? {
+        para = params[0]!!
         database.insertList(params[0]!!)
         return null
     }
+
+    override fun onPostExecute(result: Void?) {
+        x.items?.forEach {
+            EraseItemInDb().execute(it)
+            it.list_id = para.id
+            InsertItemInDB().execute(it)
+        }
+    }
 }
+
+class EraseItemInDb() :
+    AsyncTask<ItemBDD, Void, Void>() {
+    override fun doInBackground(vararg params: ItemBDD?): Void? {
+        database.deleteItem(params[0]!!)
+        return null
+    }
+}
+class InsertItemInDB() :
+    AsyncTask<ItemBDD, Void, Void>() {
+    override fun doInBackground(vararg params: ItemBDD?): Void? {
+        database.insertItem(params[0]!!)
+        return null
+    }
+
+    override fun onPostExecute(result: Void?) {
+        ListaActivity.Companion.GetAllLists(activityComing).execute()
+    }
+}
+
+
 //                      ESTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA ES PARA CUANDO NO HAY ITEMSSSSSSSSSSSSSSSSSS!!!!!!!!!!!!!!!!
 //Update a List into the API
 class UpdateListToAPI() :

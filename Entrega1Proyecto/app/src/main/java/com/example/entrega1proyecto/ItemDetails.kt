@@ -46,6 +46,8 @@ class ItemDetails : AppCompatActivity() {
     var onlinef = false
     lateinit var listBeingUsed: ListBDD
     lateinit var idListaABorrar:ListBDD
+    lateinit var idItemABorrar:ItemBDD
+    var idList = (-1).toLong()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,6 +59,7 @@ class ItemDetails : AppCompatActivity() {
             item = savedInstanceState?.getSerializable("Item") as Item
             pos = savedInstanceState?.getInt("Item Mod Position")
             itemDb = savedInstanceState?.getSerializable("item from db") as ItemBDD
+            idList = savedInstanceState?.getLong("id list")
         }
         catch(e:Exception){
             item = intent.getSerializableExtra("item to watch")!! as Item
@@ -65,7 +68,7 @@ class ItemDetails : AppCompatActivity() {
             allItems = intent.getSerializableExtra("all items") as ArrayList<Item>
             itemDb = intent.getSerializableExtra("item from db") as ItemBDD
             listBeingUsed = intent.getSerializableExtra("list") as ListBDD
-
+            idList = listBeingUsed.id
         }
 
         CheckIsInAPI(this).execute()
@@ -253,6 +256,7 @@ class ItemDetails : AppCompatActivity() {
         super.onSaveInstanceState(savedInstanceState)
         updateItem()
         // We give the username
+        savedInstanceState.putLong("id list",idList)
         savedInstanceState.putBoolean("onlinef", online)
         savedInstanceState.putSerializable("Item", item as Serializable)
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG", isShowingDialog)
@@ -376,35 +380,47 @@ class ItemDetails : AppCompatActivity() {
 
 
         // Class to insert items into the db
-        class InsertListInAPI(private val listaActivity: ItemDetails) : AsyncTask<ListBDD, Void, Void>(){
-            override fun doInBackground(vararg params: ListBDD?): Void? {
+        class InsertListInAPI(private val listaActivity: ItemDetails) : AsyncTask<ListBDD, Void, ListBDD>(){
+            override fun doInBackground(vararg params: ListBDD?): ListBDD? {
 
                 val request = UserService.buildService(PersonApi::class.java)
                 val call = request.postList(params[0]!!, API_KEY)
                 listaActivity.idListaABorrar = params[0]!!
-                var listABorrar = params[0]!!
+                var listaMod = params[0]!!
+
 
                 call.enqueue(object : Callback<ListBDD> {
                     override fun onResponse(
                         call: Call<ListBDD>,
                         response: Response<ListBDD>
                     ) {
-                        print(response)
+                        println(response)
                         if (response.isSuccessful) {
                             if (response.body() != null) {
                                 println("LISTA A BORRAR!!!!!!!     ${listaActivity.idListaABorrar}")
                                 EraseListInDB(listaActivity).execute()
-                                listABorrar.id = response.body()!!.id
-                                listaActivity.itemDb.list_id = response.body()!!.id
-                                listABorrar.updated_at = response.body()!!.updated_at
-                                InsertListInDB(listaActivity).execute(listABorrar)
-                                InsertItemInAPI(listaActivity).execute()
+                                listaMod = response.body()!!
+                                listaActivity.idList = response.body()!!.id
+                                UpdatearConAPI(listaActivity).execute(listaMod)
                             }
                         }
                     }
                     override fun onFailure(call: Call<ListBDD>, t: Throwable) {
                     }
                 })
+                return listaMod
+            }
+
+        }
+
+        class UpdatearConAPI(private val listaActivity: ItemDetails):
+            AsyncTask<ListBDD, Void, Void>() {
+            override fun doInBackground(vararg params: ListBDD?): Void? {
+                var listABorrar = params[0]
+                listaActivity.itemDb.list_id = params[0]!!.id
+                listABorrar!!.updated_at = params[0]!!.updated_at
+                InsertListInDB(listaActivity).execute(listABorrar)
+                InsertItemInAPI(listaActivity).execute()
                 return null
             }
         }
@@ -427,11 +443,13 @@ class ItemDetails : AppCompatActivity() {
         }
 
         class InsertItemInAPI(private val listaActivity: ItemDetails):
-            AsyncTask<Void, Void, Void>() {
-            override fun doInBackground(vararg params: Void?): Void? {
+            AsyncTask<Void, Void, ItemBDD>() {
+            override fun doInBackground(vararg params: Void?): ItemBDD? {
                 val request = UserService.buildService(PersonApi::class.java)
                 val itemTest = ListItems(listOf(listaActivity.itemDb))
-                val itemBorrar = listaActivity.itemDb
+
+                listaActivity.idItemABorrar = listaActivity.itemDb
+                var listaMod2 = listaActivity.itemDb
 
                 val call = request.postItem(itemTest, API_KEY)
                 call.enqueue(object : Callback<List<ItemBDD>> {
@@ -442,14 +460,9 @@ class ItemDetails : AppCompatActivity() {
                         println("ESTA ES LA RESPONSE DE AÑADIRLO  $response")
                         if (response.isSuccessful) {
                             if (response.body() != null) {
-                                EraseItemInDB(listaActivity).execute(itemBorrar)
-                                println("ESTAMOS DENTRO DE haber insertado en api       ${listaActivity.itemDb}")
-                                listaActivity.itemDb.id = response.body()!![0].id
-                                listaActivity.itemDb.updated_at =
-                                    response.body()!![0].updated_at
-                                InsertItemDB(listaActivity).execute(
-                                    listaActivity.itemDb
-                                )
+                                EraseItemInDB(listaActivity).execute()
+                                listaMod2 = response.body()!![0]
+                                UpdatearItemConAPI(listaActivity).execute(listaMod2)
                             }
                         }
                     }
@@ -457,21 +470,32 @@ class ItemDetails : AppCompatActivity() {
                     override fun onFailure(call: Call<List<ItemBDD>>, t: Throwable) {
                     }
                 })
+                return listaMod2
+            }
+        }
+
+        class UpdatearItemConAPI(private val listaAct: ItemDetails):AsyncTask<ItemBDD, Void, Void>(){
+            override fun doInBackground(vararg params: ItemBDD?): Void? {
+                var itemABorrar = params[0]
+                listaAct.itemDb.id = params[0]!!.id
+                listaAct.itemDb.updated_at =
+                    params[0]!!.updated_at
+                InsertItemDB(listaAct).execute(
+                    listaAct.itemDb
+                )
                 return null
             }
         }
 
         class EraseItemInDB(private val listaAct: ItemDetails):AsyncTask<ItemBDD, Void, Void>(){
             override fun doInBackground(vararg params: ItemBDD?): Void? {
-                println("ELIMINANDO ITEM DE DB     ${params[0]!!}")
-                listaAct.database.deleteItem(params[0]!!)
+                listaAct.database.deleteItem(listaAct.idItemABorrar)
                 return null
             }
         }
 
         class InsertItemDB(private val listaAct: ItemDetails):AsyncTask<ItemBDD, Void, Void>(){
             override fun doInBackground(vararg params: ItemBDD?): Void? {
-                println("INSERTANDO ITEM EN DB  ${params[0]!!}")
                 listaAct.database.insertItem(params[0]!!)
                 return null
             }
@@ -533,6 +557,7 @@ class ItemDetails : AppCompatActivity() {
                 myIntent.putExtra("copy item", listaActivity.copyOfItem as Serializable)
                 myIntent.putExtra("all items back", listaActivity.allItems as Serializable)
                 myIntent.putExtra("online", listaActivity.online)
+                myIntent.putExtra("id lista", listaActivity.idList)
                 listaActivity.setResult(5, myIntent)
                 listaActivity.finish()
             }

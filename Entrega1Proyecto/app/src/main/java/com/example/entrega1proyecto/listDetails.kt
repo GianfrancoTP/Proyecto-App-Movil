@@ -193,6 +193,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                     if(onlinef){
                         GetListsFromApilistDetails(applicationContext, this, listId).execute()
                     }
+                    listId = data.getLongExtra("id lista", -1)
                     itemModified = data.getSerializableExtra("item updated") as Item
                     itemModificadoPos = data.getIntExtra("item position modified", -1)
                     itemsOnList[itemModificadoPos] = itemModified!!
