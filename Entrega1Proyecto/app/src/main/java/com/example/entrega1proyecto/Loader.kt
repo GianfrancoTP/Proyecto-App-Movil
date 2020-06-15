@@ -290,7 +290,7 @@ class LoadItemsToBD() :
             else{
                 if (it.updated_at > iteBDD.updated_at) {
                     UpdateItemToDBB().execute(it)
-                } else if (it.updated_at < iteBDD.updated_at) {
+                } else if (it.updated_at <= iteBDD.updated_at) {
                     UpdateItemToAPI().execute(iteBDD)
                 }
             }

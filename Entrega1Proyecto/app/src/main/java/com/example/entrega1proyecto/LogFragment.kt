@@ -206,13 +206,13 @@ class LogFragment : Fragment() {
                 idFaltantes.add(it.id)
                 val lisBDD = listaActivity.database.getSpecificList(it.id)
                 if (lisBDD == null){
-                    PostToDBB(listaActivity).execute(it)
+                    PostToDBB3(listaActivity).execute(it)
                 }
                 else{
                     val listBDD = lisBDD.list
                     if (it.updated_at > listBDD.updated_at) {
                         UpdateListsToDBB(listaActivity).execute(it)
-                    } else if (it.updated_at < listBDD.updated_at) {
+                    } else if (it.updated_at <= listBDD.updated_at) {
                         UpdateListToAPI(listaActivity).execute(listBDD)
                     }
                 }
@@ -223,6 +223,15 @@ class LogFragment : Fragment() {
 
         override fun onPostExecute(result: ArrayList<Long>?) {
             GetListsFromDbb(listaActivity).execute(result)
+        }
+    }
+
+    // Post an non-existent list in the Db
+    class PostToDBB3(private val listaActivity: LogFragment) :
+        AsyncTask<ListBDD, Void, Void>() {
+        override fun doInBackground(vararg params: ListBDD?): Void? {
+            listaActivity.database.insertList(params[0]!!)
+            return null
         }
     }
 
@@ -267,8 +276,9 @@ class LogFragment : Fragment() {
                     print(response)
                     if (response.isSuccessful) {
                         if (response.body() != null) {
-                            params[0]!!.id = response.body()!!.id
-                            UpdateListsToDBB(listaActivity).execute(params[0]!!)
+                            EraseListFromBD2(listaActivity,response.body()!!).execute(params[0]!!)
+                            //params[0]!!.id = response.body()!!.id
+                            //UpdateListsToDBB(listaActivity).execute(params[0]!!)
                         }
                     }
                 }
@@ -280,11 +290,80 @@ class LogFragment : Fragment() {
         }
     }
 
+    class EraseListFromBD2(private val listaActivity: LogFragment,val id: ListBDD) :
+        AsyncTask<ListBDD, Void, ListBDD>() {
+        lateinit var x:ListWithItems
+        override fun doInBackground(vararg params: ListBDD?): ListBDD? {
+            x = listaActivity.database.getSpecificList(params[0]!!.id)
+            listaActivity.database.deleteList(params[0]!!)
+            return id
+        }
+        override fun onPostExecute(result: ListBDD?) {
+            PostToDBB4(listaActivity,x).execute(result!!)
+        }
+    }
+
     // Post an non-existent list in the Db
-    class PostToDBB(private val listaActivity: LogFragment) :
+    class PostToDBB4(private val listaActivity: LogFragment, val x : ListWithItems) :
         AsyncTask<ListBDD, Void, Void>() {
+        lateinit var para: ListBDD
         override fun doInBackground(vararg params: ListBDD?): Void? {
+            para = params[0]!!
             listaActivity.database.insertList(params[0]!!)
+            return null
+        }
+        override fun onPostExecute(result: Void?) {
+            x.items?.forEach {
+                EraseItemInDb2(listaActivity).execute(it)
+                it.list_id = para.id
+                PostItemToAPI3(listaActivity).execute(it)
+            }
+        }
+    }
+
+    class EraseItemInDb2(private val listaActivity: LogFragment) :
+        AsyncTask<ItemBDD, Void, Void>() {
+        override fun doInBackground(vararg params: ItemBDD?): Void? {
+            listaActivity.database.deleteItem(params[0]!!)
+            return null
+        }
+    }
+
+    class InsertItemInDB2(private val listaActivity: LogFragment) :
+        AsyncTask<ItemBDD, Void, Void>() {
+        override fun doInBackground(vararg params: ItemBDD?): Void? {
+            listaActivity.database.insertItem(params[0]!!)
+            return null
+        }
+
+        override fun onPostExecute(result: Void?) {
+            //Aqui se debiese cargar las listas e items
+        }
+    }
+
+    class PostItemToAPI3(private val listaActivity: LogFragment) :
+        AsyncTask<ItemBDD, Void, Void>() {
+        override fun doInBackground(vararg params: ItemBDD?): Void? {
+            val listWithItems = ListItems(listOf(params[0]!!))
+            val request = UserService.buildService(PersonApi::class.java)
+            val call = request.postItem(listWithItems, API_KEY)
+            call.enqueue(object : Callback<List<ItemBDD>> {
+                override fun onResponse(
+                    call: Call<List<ItemBDD>>,
+                    response: Response<List<ItemBDD>>
+                ) {
+                    print(response)
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                            params[0]!!.id = response.body()!![0].id
+                            InsertItemInDB2(listaActivity).execute(response.body()!![0])
+                        }
+                    }
+                }
+                override fun onFailure(call: Call<List<ItemBDD>>, t: Throwable) {
+                }
+            })
+
             return null
         }
     }
@@ -360,7 +439,7 @@ class LogFragment : Fragment() {
                 else{
                     if (it.updated_at > iteBDD.updated_at) {
                         UpdateItemToDBB(listaActivity).execute(it)
-                    } else if (it.updated_at < iteBDD.updated_at) {
+                    } else if (it.updated_at <= iteBDD.updated_at) {
                         UpdateItemToAPI(listaActivity).execute(iteBDD)
                     }
                 }
