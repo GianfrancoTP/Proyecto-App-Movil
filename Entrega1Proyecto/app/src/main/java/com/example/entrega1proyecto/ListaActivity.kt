@@ -457,7 +457,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
 
                         item1!!.updated_at = formatted
                         listaActivity.map[params[0]!!] = item1
-                        listaActivity.database.updateList(item1)
+                        UpdateListDb(listaActivity).execute(item1)
                         println("NO FUNCIONA ${t.message}")
                     }
                 })
@@ -485,7 +485,7 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
 
                         item2!!.updated_at = formatted
                         listaActivity.map[params[1]!!] = item2
-                        listaActivity.database.updateList(item2)
+                        UpdateListDb(listaActivity).execute(item2)
                         println("NO FUNCIONA ${t.message}")
                     }
                 })

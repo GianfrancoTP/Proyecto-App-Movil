@@ -533,7 +533,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                         if (response.isSuccessful) {
                             if (response.body() != null) {
                                 listaActivity.listBeingUsed.updated_at = response.body()!!.updated_at
-                                listaActivity.database.updateList(listaActivity.listBeingUsed)
+                                UpdateListBD(listaActivity).execute(listaActivity.listBeingUsed)
                             }
                         }
                     }
@@ -543,11 +543,19 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                         val formatted = current.format(formatter)
                         listaActivity.listBeingUsed.updated_at = formatted
-                        listaActivity.database.updateList(listaActivity.listBeingUsed)
+                        UpdateListBD(listaActivity).execute(listaActivity.listBeingUsed)
                         println("NO FUNCIONA ${t.message}")
                     }
                 })
 
+                return null
+            }
+        }
+
+        class UpdateListBD(private val listaActivity: listDetails):
+            AsyncTask<ListBDD, Void, Void>() {
+            override fun doInBackground(vararg params: ListBDD?): Void? {
+                listaActivity.database.updateList(params[0]!!)
                 return null
             }
         }
@@ -576,7 +584,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                         val formatted = current.format(formatter)
                         listaActivity.listBeingUsed.updated_at = formatted
-                        listaActivity.database.updateItem(params[0]!!)
+                        UpdateItemDb(listaActivity).execute(params[0]!!)
                         println("NO FUNCIONA ${t.message}")
 
                     }
@@ -650,7 +658,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
 
                         item1!!.updated_at = formatted
                         listaActivity.map[params[0]!!] = item1
-                        listaActivity.database.updateItem(item1)
+                        UpdateItemDb(listaActivity).execute(item1)
                         println("NO FUNCIONA ${t.message}")
                     }
                 })
@@ -677,7 +685,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
 
                         item2!!.updated_at = formatted
                         listaActivity.map[params[1]!!] = item2
-                        listaActivity.database.updateItem(item2)
+                        UpdateItemDb(listaActivity).execute(item2)
                         println("NO FUNCIONA ${t.message}")
                     }
                 })

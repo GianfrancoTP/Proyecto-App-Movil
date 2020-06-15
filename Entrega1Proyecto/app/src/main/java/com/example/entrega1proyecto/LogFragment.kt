@@ -81,7 +81,6 @@ class LogFragment : Fragment() {
                 online = true
                 GetUserFromApi(this).execute()
                 GetListsFromApi(this).execute()
-                //GetListsFromApi(this.context!!).execute()
             }
         }
 
