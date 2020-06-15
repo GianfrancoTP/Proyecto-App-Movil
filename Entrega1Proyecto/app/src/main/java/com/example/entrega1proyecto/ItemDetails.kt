@@ -1,5 +1,6 @@
 package com.example.entrega1proyecto
 
+import android.app.DatePickerDialog
 import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
@@ -29,6 +30,8 @@ import java.lang.Exception
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.*
+import kotlin.collections.ArrayList
 
 class ItemDetails : AppCompatActivity() {
 
@@ -92,9 +95,28 @@ class ItemDetails : AppCompatActivity() {
 
         nombreItemTextView.text = item!!.nameItem
         createdAtTextView.text = item!!.fechaCreacion
-        if(item!!.plazo == ""){
-            fechaPlazoTextView.hint = "Escriba aquí la fecha de plazo"
-            fechaPlazoTextView.setText("")
+        println("ESTEEE ES EL ITEEEEM   ${item!!.plazo}")
+        if(item!!.plazo == "" || item!!.plazo == null){
+            fechaPlazoTextView.hint = "Seleccione la fecha de plazo"
+            val c = Calendar.getInstance()
+            val year = c.get(Calendar.YEAR)
+            val month = c.get(Calendar.MONTH)
+            val day = c.get(Calendar.DAY_OF_MONTH)
+            val hour = c.get(Calendar.HOUR_OF_DAY)
+            val min = c.get(Calendar.MINUTE)
+            val seg = c.get(Calendar.SECOND)
+
+            imageView.setOnClickListener {
+
+                val dpd = DatePickerDialog(this, DatePickerDialog.OnDateSetListener { view, mYear, mMonth, mDay->
+
+                    var dateStr = "$mYear-$mMonth-$mDay $hour:$min:$seg"
+                    fechaPlazoTextView.setText(dateStr)
+                }, year, month, day)
+
+                dpd.show()
+
+            }
         }
         else{
             fechaPlazoTextView.hint = ""
