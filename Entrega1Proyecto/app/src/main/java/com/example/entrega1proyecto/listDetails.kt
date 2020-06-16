@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.CheckBox
 import android.widget.CompoundButton
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -33,8 +34,10 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.io.Serializable
+import java.text.ParseException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle
 import java.util.*
 import kotlin.collections.ArrayList
@@ -255,9 +258,16 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 val formatted = current.format(formatter)
                 var output: String? = null
                 if (view.plazoEditText.text.toString() != ""){
-                    val formatter2 = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                    val dateTime = LocalDateTime.parse(view.plazoEditText.text.toString(), formatter2)
-                    output = formatter2.format(dateTime)
+                    try{
+                        val formatter2 = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                        val dateTime = LocalDateTime.parse(view.plazoEditText.text.toString(), formatter2)
+                        output = formatter2.format(dateTime)
+                        }
+                    catch(e: DateTimeParseException){
+                        Toast.makeText(this@listDetails, "Formato de plazo erroneo", Toast.LENGTH_SHORT)
+                            .show()
+                        view.plazoEditText.setText("")
+                    }
                 }
 
                 shown = !SwitchItemsChecked.isChecked

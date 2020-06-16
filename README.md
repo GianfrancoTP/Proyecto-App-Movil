@@ -5,7 +5,19 @@
   - Gianfranco Traverso
   - Katherine Jara
 
-# Instrucciones
+# Instrucciones entrega 3
+### Primer uso de aplicación:
+- Para el primer uso, ya que no contamos con un usuario, contamos con la necesidad de una conexión a internet.
+- Si se comienza la aplicación sin una conexión, se mostrará un imageView en la esquina derecha, con la opción de volver a trar de obtener los datos contenidos en la nube. Pero, lógicamente se espera que si se cliquea el botón, es para decir que ya se esta conectado a internet, o sino mostrará un toast, diciendo que aun no hay una conexión.
+
+### Descarga de internet:
+- Para poder descargar las listas junto a sus respectivos items (si tienen), lo que se debe hacer es estar conectado a internet, y si estamos en la primera actividad (actividad del login), es cliquear el imageView de la esquina superior derecha, diciendo que ya contamos con una conexión a internet.
+- Si nos encontramos en otra actividad, implementamos que en el comienzo de esta se revise la conexión, para poder obtener desde la nube y pasar todos los datos modificados durante el uso de esta app a esta.
+- Se espera que el formato indicado para la fecha de plazo de un item va a venir tal como se indica, en donde igual pusimos un limite de caracteres y la opción solo de escribir en el formato pedido.
+
+
+
+# Instrucciones entrega 2
 ### Vista Inicial:
 - En esta vista no es necesario hacer nada, ya que sólo estaremos buscando el JSON con el usuario entregado por el usuario. Pero igualmente se puede modificar el correo y la clave, pero estas no modificaran nada del usuario, y se entrará con el correo entregado, por lo que es un log in dummy.
 - Luego para poder acceder, se debe hacer click en el botón "ingresar".
