@@ -16,6 +16,7 @@ import com.example.entrega1proyecto.model.*
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
 import kotlinx.android.synthetic.main.fragment_log.*
+import kotlinx.android.synthetic.main.fragment_log.view.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -66,6 +67,8 @@ class LogFragment : Fragment() {
         val button = rootView.findViewById<Button>(R.id.IngresarButton)
         // Here we create the db
 
+        rootView.reloadImageView.visibility = View.GONE
+
         database =
             Room.databaseBuilder(activity!!.applicationContext, Database::class.java, "ListsBDD")
                 .build().ListDao()
@@ -81,6 +84,23 @@ class LogFragment : Fragment() {
                 online = true
                 GetUserFromApi(this).execute()
                 GetListsFromApi(this).execute()
+            }
+            else if (!isOnline(context!!) && user == null){
+                rootView.reloadImageView.visibility = View.VISIBLE
+                rootView.reloadImageView.setOnClickListener {
+                    if(isOnline(context!!)){
+                        Toast.makeText(context, "Conectando a internet...", Toast.LENGTH_SHORT)
+                            .show()
+                        reloadImageView.visibility = View.GONE
+                        online = true
+                        GetUserFromApi(this).execute()
+                        GetListsFromApi(this).execute()
+                    }
+                    else{
+                        Toast.makeText(context, "Sin conexión", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
             }
         }
 
