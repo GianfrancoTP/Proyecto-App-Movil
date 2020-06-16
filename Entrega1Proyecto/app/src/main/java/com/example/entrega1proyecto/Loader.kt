@@ -213,9 +213,8 @@ class PostItemToAPI2() :
         return null
     }
 }
+//                  Para cuando no hay items en la lista
 
-
-//                      ESTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA ES PARA CUANDO NO HAY ITEMSSSSSSSSSSSSSSSSSS!!!!!!!!!!!!!!!!
 //Update a List into the API
 class UpdateListToAPI() :
     AsyncTask<ListBDD, Void, Void>() {

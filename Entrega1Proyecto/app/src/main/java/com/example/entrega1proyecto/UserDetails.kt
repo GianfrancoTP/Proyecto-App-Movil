@@ -72,7 +72,6 @@ class UserDetails : AppCompatActivity() {
 
         if(isOnline(this) && !onlinep && !onlinef){
             online = true
-            //LogFragment.GetUserFromApi(LogFragment()).execute()
         }
     }
 

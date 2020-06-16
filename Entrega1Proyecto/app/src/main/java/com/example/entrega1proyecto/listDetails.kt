@@ -216,17 +216,7 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
             }
         }
     }
-/*
-    // We set the items on the list in this activity
-    fun createItems(list: ListaItem){
-        if (list.items != null) {
-            list.items?.forEach {
-                itemsOnList.add(it)
-                adapter.notifyItemInserted(itemsOnList.size - 1)
-            }
-        }
-    }
-*/
+
     // Function to add items in the list
     fun anadirItem(view: View){
         // We show a popup asking the specific things that need to contain an item
@@ -344,10 +334,8 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
     // We update the item if it was clicked
     override fun onSpecificItemCLicked(result: Item, check:CheckBox) {
         var itemModifiedPosition = itemsOnList.indexOf(result)
-        //------------------------------------------------------------------------------------------------------------
-        // Esto no esta funcionando para cuando modificamos un item y luego lo clickeamos para decir que esta terminado
         var itemBDDModified = map[result]
-        //------------------------------------------------------------------------------------------------------------
+
         if(result.estado){
             result.estado = check.isChecked
             result.isShown = check.isChecked

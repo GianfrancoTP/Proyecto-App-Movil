@@ -108,15 +108,6 @@ class LogFragment : Fragment() {
         return rootView
     }
 
-/*
-    class CompareToBDD(private val listaActivity: LogFragment) : AsyncTask<Void, Void, Void>() {
-        override fun doInBackground(vararg params: Void?): Void? {
-
-            return null
-        }
-    }
-
- */
     // Function to save user into the DB
     class SetUserToDB(private val listaActivity: LogFragment) : AsyncTask<User, Void, Void>() {
         override fun doInBackground(vararg params: User?): Void? {
@@ -281,7 +272,7 @@ class LogFragment : Fragment() {
         }
 
     }
-    //  PUEDE SER QUE TENGAMOS QUE ACTUALIZAR LOS IDS DE LA BDD---------------------------------------------
+
     // Post an non-existent list in the API
     class PostListToAPI(private val listaActivity: LogFragment) :
         AsyncTask<ListBDD, Void, Void>() {
@@ -387,7 +378,7 @@ class LogFragment : Fragment() {
             return null
         }
     }
-    //  PUEDE SER QUE TENGAMOS QUE ACTUALIZAR LOS IDS DE LA BDD---------------------------------------------
+
     //Update a List into the API
     class UpdateListToAPI(private val listaActivity: LogFragment) :
         AsyncTask<ListBDD, Void, Void>() {
@@ -496,7 +487,6 @@ class LogFragment : Fragment() {
 
     }
 
-    //  PUEDE SER QUE TENGAMOS QUE ACTUALIZAR LOS IDS DE LA BDD---------------------------------------------
     // Post an non-existent list in the API
     class PostItemToAPI(private val listaActivity: LogFragment) :
         AsyncTask<ItemBDD, Void, Void>() {
@@ -533,7 +523,6 @@ class LogFragment : Fragment() {
         }
     }
 
-    //  PUEDE SER QUE TENGAMOS QUE ACTUALIZAR LOS IDS DE LA BDD---------------------------------------------
     class UpdateItemToAPI(private val listaActivity: LogFragment) :
         AsyncTask<ItemBDD, Void, Void>() {
         override fun doInBackground(vararg params: ItemBDD?): Void? {
