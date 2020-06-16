@@ -23,9 +23,12 @@ import com.example.entrega1proyecto.configuration.API_KEY
 import com.example.entrega1proyecto.model.*
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
+import com.google.android.material.textfield.TextInputLayout
 import kotlinx.android.synthetic.main.activity_list_details.*
 import kotlinx.android.synthetic.main.popup.view.*
+import kotlinx.android.synthetic.main.popup_to_create_item.*
 import kotlinx.android.synthetic.main.popup_to_create_item.view.*
+import kotlinx.android.synthetic.main.popup_to_create_item.view.plazoEditText
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
