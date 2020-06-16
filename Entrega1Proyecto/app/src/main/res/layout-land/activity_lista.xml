@@ -10,6 +10,7 @@
     tools:context=".ListaActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/constraintLayout3"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:background="@drawable/button_shape_blue_top_menu"
@@ -18,16 +19,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline2">
 
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:srcCompat="@drawable/logo_dp"
             android:layout_marginStart="20dp"
-            />
-        <ImageView
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/logo_dp" />
+
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/iconImageView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -63,7 +64,7 @@
         app:layout_constraintBottom_toTopOf="@+id/plusButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/guideline3"
+        app:layout_constraintTop_toBottomOf="@+id/guideline7"
         tools:listitem="@layout/template" />
 
     <Button
@@ -95,5 +96,23 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         app:layout_constraintGuide_percent="0.1" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline7"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.18004866" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/textView10"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mis Listas"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toTopOf="@+id/recycler_view"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/constraintLayout3" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -8,7 +8,7 @@
     android:background="#FCFEFF"
     tools:context=".LogFragment">
 
-    <TextView
+    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/logInTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -16,6 +16,19 @@
         android:text="Login"
         android:textSize="24dp"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/logInTextView2" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/logInTextView2"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Bienvenido !"
+        android:textSize="24dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline" />
 
@@ -65,7 +78,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/passwordTextView" />
 
-    <TextView
+    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/recuperarContraseñaTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
