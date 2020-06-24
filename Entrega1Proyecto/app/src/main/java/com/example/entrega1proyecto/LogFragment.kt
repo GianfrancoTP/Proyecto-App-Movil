@@ -13,8 +13,10 @@ import androidx.fragment.app.Fragment
 import androidx.room.Room
 import com.example.entrega1proyecto.configuration.API_KEY
 import com.example.entrega1proyecto.model.*
+import com.example.entrega1proyecto.model.adapters.ListItems
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
+import com.example.entrega1proyecto.networking.isOnline
 import kotlinx.android.synthetic.main.fragment_log.*
 import kotlinx.android.synthetic.main.fragment_log.view.*
 import retrofit2.Call
@@ -355,7 +357,10 @@ class LogFragment : Fragment() {
     class PostItemToAPI3(private val listaActivity: LogFragment) :
         AsyncTask<ItemBDD, Void, Void>() {
         override fun doInBackground(vararg params: ItemBDD?): Void? {
-            val listWithItems = ListItems(listOf(params[0]!!))
+            val listWithItems =
+                ListItems(
+                    listOf(params[0]!!)
+                )
             val request = UserService.buildService(PersonApi::class.java)
             val call = request.postItem(listWithItems, API_KEY)
             call.enqueue(object : Callback<List<ItemBDD>> {
@@ -491,7 +496,10 @@ class LogFragment : Fragment() {
     class PostItemToAPI(private val listaActivity: LogFragment) :
         AsyncTask<ItemBDD, Void, Void>() {
         override fun doInBackground(vararg params: ItemBDD?): Void? {
-            val listWithItems = ListItems(listOf(params[0]!!))
+            val listWithItems =
+                ListItems(
+                    listOf(params[0]!!)
+                )
             val request = UserService.buildService(PersonApi::class.java)
             val call = request.postItem(listWithItems, API_KEY)
             call.enqueue(object : Callback<List<ItemBDD>> {

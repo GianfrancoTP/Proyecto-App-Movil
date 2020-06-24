@@ -18,8 +18,11 @@ import com.example.entrega1proyecto.model.Database
 import com.example.entrega1proyecto.model.ItemBDD
 import com.example.entrega1proyecto.model.ListBDD
 import com.example.entrega1proyecto.model.ListDao
+import com.example.entrega1proyecto.model.adapters.Item
+import com.example.entrega1proyecto.model.adapters.ListItems
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
+import com.example.entrega1proyecto.networking.isOnline
 import kotlinx.android.synthetic.main.activity_item_details.*
 import kotlinx.android.synthetic.main.popup.view.*
 import retrofit2.Call
@@ -468,7 +471,10 @@ class ItemDetails : AppCompatActivity() {
             AsyncTask<Void, Void, ItemBDD>() {
             override fun doInBackground(vararg params: Void?): ItemBDD? {
                 val request = UserService.buildService(PersonApi::class.java)
-                val itemTest = ListItems(listOf(listaActivity.itemDb))
+                val itemTest =
+                    ListItems(
+                        listOf(listaActivity.itemDb)
+                    )
 
                 listaActivity.idItemABorrar = listaActivity.itemDb
                 var listaMod2 = listaActivity.itemDb

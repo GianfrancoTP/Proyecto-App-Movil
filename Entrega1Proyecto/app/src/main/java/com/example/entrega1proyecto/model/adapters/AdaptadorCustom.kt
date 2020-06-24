@@ -1,9 +1,10 @@
-package com.example.entrega1proyecto
+package com.example.entrega1proyecto.model.adapters
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.example.entrega1proyecto.R
 import kotlinx.android.synthetic.main.template.view.*
 import java.io.Serializable
 import kotlin.collections.ArrayList
@@ -14,7 +15,9 @@ class AdaptadorCustom(private val itemClickListener: OnItemClickListener, privat
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.template, parent, false)
-        return ViewHolder(view)
+        return ViewHolder(
+            view
+        )
     }
 
     override fun getItemCount(): Int {

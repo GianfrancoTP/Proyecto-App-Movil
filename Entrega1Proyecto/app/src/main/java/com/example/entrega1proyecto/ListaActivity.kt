@@ -18,8 +18,11 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
 import com.example.entrega1proyecto.configuration.API_KEY
 import com.example.entrega1proyecto.model.*
+import com.example.entrega1proyecto.model.adapters.*
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
+import com.example.entrega1proyecto.networking.isOnline
+import com.example.entrega1proyecto.networking.loaders.GetListsFromApi
 import kotlinx.android.synthetic.main.activity_lista.*
 import kotlinx.android.synthetic.main.popup.view.*
 import retrofit2.Call
@@ -33,12 +36,16 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 
-class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickListener{
+class ListaActivity : AppCompatActivity(),
+    OnItemClickListener,
+    OnTrashClickListener {
 
     var listaList: ArrayList<ListaItem> = ArrayList()
     var startingListaList: ArrayList<ListaItem> = ArrayList()
-    var itemsRecibidos: ListaItem = ListaItem("")
-    var modified: ListaItem = ListaItem("")
+    var itemsRecibidos: ListaItem =
+        ListaItem("")
+    var modified: ListaItem =
+        ListaItem("")
     var validador: Boolean = false
     var user: User? = null
     var isShowingDialog = false
@@ -62,7 +69,10 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         database = Room.databaseBuilder(this, Database::class.java, "ListsBDD").build().ListDao()
 
         // The recycler view for the Activity that contains the lists
-        adapter = AdaptadorCustom(this, this)
+        adapter = AdaptadorCustom(
+            this,
+            this
+        )
         recycler_view.adapter = adapter
         recycler_view.layoutManager = LinearLayoutManager(this)
 
@@ -87,7 +97,10 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         if(isOnline(this) && !onlinep && !onlinef){
             online = true
             //LogFragment.GetUserFromApi(LogFragment()).execute()
-            GetListsFromApi(applicationContext, this).execute()
+            GetListsFromApi(
+                applicationContext,
+                this
+            ).execute()
         }
 
         user = intent.getSerializableExtra("user details start") as User
@@ -159,7 +172,10 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 // We give the result to the Log in activity to maintain the information
                 onlinef = data.getBooleanExtra("online", false)
                 if(onlinef){
-                    GetListsFromApi(applicationContext, this).execute()
+                    GetListsFromApi(
+                        applicationContext,
+                        this
+                    ).execute()
                 }
                 endIntent.putExtra("online", onlinef)
                 endIntent.putExtra("lista de listas",listaList as Serializable)
@@ -170,7 +186,10 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
             else if (resultCode == 3){
                 onlinef = data.getBooleanExtra("online", false)
                 if(onlinef){
-                    GetListsFromApi(applicationContext, this).execute()
+                    GetListsFromApi(
+                        applicationContext,
+                        this
+                    ).execute()
                 }
                 user = data.getSerializableExtra("user details update") as User
                 nombreUsuarioTextView.text = user!!.first_name
@@ -216,7 +235,11 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         // Here we create the new list with null items inside it
         builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
-                val listToBeAdded = ListaItem(view.listNameTextView.text.toString(),ArrayList())
+                val listToBeAdded =
+                    ListaItem(
+                        view.listNameTextView.text.toString(),
+                        ArrayList()
+                    )
                 listaList.add(listToBeAdded)
                 adapter.notifyItemInserted(listaList.size - 1)
                 InsertList(this@ListaActivity).execute(listToBeAdded)
@@ -285,7 +308,8 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
         // Class to get all the lists from the database
         class GetAllLists(private val listaActivity: ListaActivity) :
             AsyncTask<Void, Void, ArrayList<ListWithItems>>() {
-            var list: ListaItem = ListaItem("")
+            var list: ListaItem =
+                ListaItem("")
             override fun doInBackground(vararg params: Void?): ArrayList<ListWithItems> {
                 // Here we get the elements from the database
                 listaActivity.testListaList =
@@ -308,13 +332,18 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
 
                 // Here we add it to the lista list
                 listaActivity.testListaList.forEach{
-                    list = ListaItem(it.list.name)
+                    list =
+                        ListaItem(it.list.name)
                     if (list.items == null){
                         list.items = ArrayList()
                     }
                     it.items?.forEach {x->
-                        list.items!!.add(Item(x.name, x.done, x.starred, x.due_date,
-                            x.notes, x.created_at, x.isShown))
+                        list.items!!.add(
+                            Item(
+                                x.name, x.done, x.starred, x.due_date,
+                                x.notes, x.created_at, x.isShown
+                            )
+                        )
                     }
                     listaActivity.map[list] = it.list
                     listaActivity.listaList.add(list)
@@ -330,7 +359,10 @@ class ListaActivity : AppCompatActivity(), OnItemClickListener, OnTrashClickList
                 // We get the new id to add a new list when we add a list
                 listaIt = params[0]!!
                 lateinit var listToBeAdded: ListBDD
-                if (isOnline(listaActivity)) {
+                if (isOnline(
+                        listaActivity
+                    )
+                ) {
                     listToBeAdded = ListBDD(
                         listaActivity.listsCounter,
                         params[0]!!.name,

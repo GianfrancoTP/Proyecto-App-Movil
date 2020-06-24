@@ -22,19 +22,19 @@ import androidx.room.Room
 import com.example.entrega1proyecto.ListaActivity.Companion.LISTS
 import com.example.entrega1proyecto.configuration.API_KEY
 import com.example.entrega1proyecto.model.*
+import com.example.entrega1proyecto.model.adapters.*
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
-import com.google.android.material.textfield.TextInputLayout
+import com.example.entrega1proyecto.networking.isOnline
+import com.example.entrega1proyecto.networking.loaders.GetListsFromApilistDetails
 import kotlinx.android.synthetic.main.activity_list_details.*
 import kotlinx.android.synthetic.main.popup.view.*
-import kotlinx.android.synthetic.main.popup_to_create_item.*
 import kotlinx.android.synthetic.main.popup_to_create_item.view.*
 import kotlinx.android.synthetic.main.popup_to_create_item.view.plazoEditText
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.io.Serializable
-import java.text.ParseException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -42,11 +42,13 @@ import java.time.format.FormatStyle
 import java.util.*
 import kotlin.collections.ArrayList
 
-class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
+class listDetails : AppCompatActivity(),
+    OnSpecificItemClickListener {
 
     var itemsOnList: ArrayList<Item> = ArrayList()
     var copyItemsOnList: ArrayList<Item> = ArrayList()
-    var list: ListaItem = ListaItem("", ArrayList())
+    var list: ListaItem =
+        ListaItem("", ArrayList())
     var prioritario = false
     var shown = false
     var itemModificadoPos = -1
@@ -71,7 +73,8 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         setContentView(R.layout.activity_list_details)
 
         // We set the adapter for his activity
-        adapter = AdaptadorItemsCustom(this)
+        adapter =
+            AdaptadorItemsCustom(this)
         itemsRecyclerView.adapter = adapter
         itemsRecyclerView.layoutManager = LinearLayoutManager(this)
 
@@ -110,7 +113,11 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
         if(isOnline(this) && !onlinep && !onlinef){
             online = true
             //LogFragment.GetUserFromApi(LogFragment()).execute()
-            GetListsFromApilistDetails(applicationContext, this, listId).execute()
+            GetListsFromApilistDetails(
+                applicationContext,
+                this,
+                listId
+            ).execute()
         }
 
         SwitchItemsChecked.setOnCheckedChangeListener { compoundButton: CompoundButton, b: Boolean ->
@@ -197,7 +204,11 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                     }
                     onlinef = data.getBooleanExtra("online", false)
                     if(onlinef){
-                        GetListsFromApilistDetails(applicationContext, this, listId).execute()
+                        GetListsFromApilistDetails(
+                            applicationContext,
+                            this,
+                            listId
+                        ).execute()
                     }
                     listId = data.getLongExtra("id lista", -1)
                     itemModified = data.getSerializableExtra("item updated") as Item
@@ -262,10 +273,12 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
 
                 shown = !SwitchItemsChecked.isChecked
                 // Here we create the item
-                var newItem = Item(nameItem = view.itemNameEditText.text.toString(),estado = false,
-                    prioridad= prioritario, plazo= output,
-                    notasItem= view.descripcionEditText.text.toString(),
-                    fechaCreacion= formatted, isShown = shown)
+                var newItem = Item(
+                    nameItem = view.itemNameEditText.text.toString(), estado = false,
+                    prioridad = prioritario, plazo = output,
+                    notasItem = view.descripcionEditText.text.toString(),
+                    fechaCreacion = formatted, isShown = shown
+                )
 
                 //Here we add the item to the bdd
                 InsertItem(this@listDetails).execute(newItem)
@@ -324,7 +337,10 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 UpdateSpecificItem(this).execute(map[it])
             }
         }
-        list = ListaItem(list!!.name, itemsOnList)
+        list = ListaItem(
+            list!!.name,
+            itemsOnList
+        )
         myIntent.putExtra("online", online)
         myIntent.putExtra("listaItems",list)
         setResult(Activity.RESULT_OK, myIntent)
@@ -399,7 +415,10 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                 UpdateSpecificItem(this).execute(map[it])
             }
         }
-        list = ListaItem(list!!.name, itemsOnList)
+        list = ListaItem(
+            list!!.name,
+            itemsOnList
+        )
         myIntent.putExtra("online", online)
         myIntent.putExtra("listaItems",list)
         setResult(Activity.RESULT_OK, myIntent)
@@ -431,13 +450,18 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                     if (listaActivity.itemsOnList.size != 0){
                         listaActivity.itemsOnList = ArrayList()
                     }
-                    listaActivity.list = ListaItem(result!!.list.name, ArrayList())
+                    listaActivity.list =
+                        ListaItem(
+                            result!!.list.name,
+                            ArrayList()
+                        )
                     val x = result.items?.sortedBy { it.position }
                     x?.forEach {
-                        val itemAdded = Item(
-                            it.name, it.done, it.starred, it.due_date,
-                            it.notes, it.created_at, it.isShown
-                        )
+                        val itemAdded =
+                            Item(
+                                it.name, it.done, it.starred, it.due_date,
+                                it.notes, it.created_at, it.isShown
+                            )
                         if (listaActivity.SwitchItemsChecked.isChecked){
                             itemAdded.isShown = it.done
                         }
@@ -473,12 +497,18 @@ class listDetails : AppCompatActivity(), OnSpecificItemClickListener {
                     params[0]!!.isShown,
                     ""
                 )
-                if(!isOnline(listaActivity)){
+                if(!isOnline(
+                        listaActivity
+                    )
+                ){
                     itemForBDD.id = itemForBDD.id + 100
                 }
 
                 val request = UserService.buildService(PersonApi::class.java)
-                val itemTest = ListItems(listOf(itemForBDD))
+                val itemTest =
+                    ListItems(
+                        listOf(itemForBDD)
+                    )
 
                 val call = request.postItem(itemTest, API_KEY)
                 call.enqueue(object : Callback<List<ItemBDD>> {

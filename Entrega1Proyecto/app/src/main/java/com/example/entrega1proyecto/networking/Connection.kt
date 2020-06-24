@@ -1,4 +1,4 @@
-package com.example.entrega1proyecto
+package com.example.entrega1proyecto.networking
 
 import android.content.Context
 import android.net.ConnectivityManager

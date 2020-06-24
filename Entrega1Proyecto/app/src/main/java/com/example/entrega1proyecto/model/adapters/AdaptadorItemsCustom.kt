@@ -1,18 +1,14 @@
-package com.example.entrega1proyecto
+package com.example.entrega1proyecto.model.adapters
 
 
-import android.content.Intent
 import android.graphics.Color
-import android.graphics.drawable.Drawable
-import android.graphics.drawable.DrawableContainer
 import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
-import androidx.core.app.ActivityCompat.startActivityForResult
-import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
+import com.example.entrega1proyecto.R
 import com.example.entrega1proyecto.model.ItemBDD
 import kotlinx.android.synthetic.main.items_template.view.*
 import java.io.Serializable
@@ -24,7 +20,9 @@ class AdaptadorItemsCustom(private val specificItemClickListener: OnSpecificItem
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.items_template, parent, false)
-        return ViewHolder(view)
+        return ViewHolder(
+            view
+        )
     }
 
     fun setData(newData: ArrayList<Item>) {

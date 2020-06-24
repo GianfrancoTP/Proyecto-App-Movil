@@ -1,6 +1,6 @@
 package com.example.entrega1proyecto.networking
 
-import com.example.entrega1proyecto.ListItems
+import com.example.entrega1proyecto.model.adapters.ListItems
 import com.example.entrega1proyecto.model.*
 import retrofit2.Call
 import retrofit2.http.*

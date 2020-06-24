@@ -14,7 +14,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.room.Room
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
-import com.example.entrega1proyecto.ListaActivity.Companion.IT
 import com.example.entrega1proyecto.configuration.API_KEY
 import com.example.entrega1proyecto.model.Database
 import com.example.entrega1proyecto.model.ListDao
@@ -22,6 +21,7 @@ import com.example.entrega1proyecto.model.User
 import com.example.entrega1proyecto.model.UserBBDD
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
+import com.example.entrega1proyecto.networking.isOnline
 import kotlinx.android.synthetic.main.activity_user_details.*
 import kotlinx.android.synthetic.main.edit_user_popup.view.*
 import retrofit2.Call
