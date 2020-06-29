@@ -3,26 +3,36 @@ package com.example.entrega1proyecto
 import android.app.Activity
 import android.content.Intent
 import android.os.AsyncTask
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.room.Room
+import com.example.entrega1proyecto.MainActivity.Companion.VERIFICADOR
 import com.example.entrega1proyecto.configuration.API_KEY
 import com.example.entrega1proyecto.model.*
 import com.example.entrega1proyecto.model.adapters.ListItems
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
 import com.example.entrega1proyecto.networking.isOnline
+import com.example.entrega1proyecto.networking.loaders.GetAllFromDB
+import com.example.entrega1proyecto.networking.loaders.setDB
 import kotlinx.android.synthetic.main.fragment_log.*
 import kotlinx.android.synthetic.main.fragment_log.view.*
+import okhttp3.internal.wait
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.io.Serializable
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.zip.Inflater
 
 class LogFragment : Fragment() {
     var user: User? = null
@@ -31,6 +41,7 @@ class LogFragment : Fragment() {
     lateinit var database: ListDao
     var online = false
     var onlinef = false
+    lateinit var rootView: View
 
     fun goToList() {
 
@@ -65,10 +76,17 @@ class LogFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val rootView = inflater.inflate(R.layout.fragment_log, container, false)
+        rootView = inflater.inflate(R.layout.fragment_log, container, false)
         val button = rootView.findViewById<Button>(R.id.IngresarButton)
         // Here we create the db
+        VERIFICADOR = false
 
+        if(isOnline(context!!)) {
+            setDB(activity!!.applicationContext)
+        }
+        else{
+            VERIFICADOR = true
+        }
         rootView.reloadImageView.visibility = View.GONE
 
         database =
@@ -81,11 +99,12 @@ class LogFragment : Fragment() {
             emailTextView.setText(user!!.email)
             passwordTextView.setText(user!!.first_name)
         } catch (e: Exception) {
-            ObtainUserFromDB(this).execute()
+            rootView.progressBarFragment.visibility = View.VISIBLE
+            AsyncRunnable(this)
             if(isOnline(context!!)){
                 online = true
-                GetUserFromApi(this).execute()
-                GetListsFromApi(this).execute()
+                //GetUserFromApi(this).execute()
+                //GetListsFromApi(this).execute()
             }
             else if (!isOnline(context!!) && user == null){
                 rootView.reloadImageView.visibility = View.VISIBLE
@@ -95,8 +114,8 @@ class LogFragment : Fragment() {
                             .show()
                         reloadImageView.visibility = View.GONE
                         online = true
-                        GetUserFromApi(this).execute()
-                        GetListsFromApi(this).execute()
+                        //GetUserFromApi(this).execute()
+                        //GetListsFromApi(this).execute()
                     }
                     else{
                         Toast.makeText(context, "Sin conexión", Toast.LENGTH_SHORT)
@@ -110,26 +129,51 @@ class LogFragment : Fragment() {
         return rootView
     }
 
+    fun AsyncRunnable(listaActivity: LogFragment) {
+        Thread(Runnable {
+            while(!VERIFICADOR){}
+            ObtainUserFromDB(listaActivity).execute()
+            VERIFICADOR = false
+        }).start()
+    }
+
     // Function to save user into the DB
     class SetUserToDB(private val listaActivity: LogFragment) : AsyncTask<User, Void, Void>() {
+        @RequiresApi(Build.VERSION_CODES.O)
         override fun doInBackground(vararg params: User?): Void? {
             val user = params[0]!!
-            val u1 = UserBBDD(
-                1,
-                user.first_name,
-                user.last_name,
-                user.email,
-                user.phone,
-                user.profile_photo
-            )
+            val current = LocalDateTime.now()
+            val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+            val formatted = current.format(formatter)
+            val u1: UserBBDD
+            if(isOnline(listaActivity.context!!)) {
+                u1 = UserBBDD(
+                    1,
+                    user.first_name,
+                    user.last_name,
+                    user.email,
+                    user.phone,
+                    user.profile_photo,
+                    formatted,
+                    true
+                )
+            }
+            else{
+                u1 = UserBBDD(
+                    1,
+                    user.first_name,
+                    user.last_name,
+                    user.email,
+                    user.phone,
+                    user.profile_photo,
+                    formatted,
+                    false
+                )
+            }
+
             listaActivity.database.insertUser(u1)
             return null
         }
-/*
-        override fun onPostExecute(result: Void?) {
-            CompareToBDD(listaActivity).execute()
-        }
-*/
     }
 
     // Function to obtain user from the api
@@ -182,6 +226,7 @@ class LogFragment : Fragment() {
                 listaActivity.emailTextView.setText(listaActivity.user!!.email)
                 listaActivity.passwordTextView.setText(listaActivity.user!!.first_name)
             }
+            listaActivity.rootView.progressBarFragment.visibility = View.GONE
         }
     }
 

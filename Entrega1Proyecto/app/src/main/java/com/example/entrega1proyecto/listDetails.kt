@@ -26,7 +26,7 @@ import com.example.entrega1proyecto.model.adapters.*
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
 import com.example.entrega1proyecto.networking.isOnline
-import com.example.entrega1proyecto.networking.loaders.GetListsFromApilistDetails
+//import com.example.entrega1proyecto.networking.loaders.GetListsFromApilistDetails
 import kotlinx.android.synthetic.main.activity_list_details.*
 import kotlinx.android.synthetic.main.popup.view.*
 import kotlinx.android.synthetic.main.popup_to_create_item.view.*
@@ -73,8 +73,7 @@ class listDetails : AppCompatActivity(),
         setContentView(R.layout.activity_list_details)
 
         // We set the adapter for his activity
-        adapter =
-            AdaptadorItemsCustom(this)
+        adapter = AdaptadorItemsCustom(this)
         itemsRecyclerView.adapter = adapter
         itemsRecyclerView.layoutManager = LinearLayoutManager(this)
 
@@ -113,11 +112,7 @@ class listDetails : AppCompatActivity(),
         if(isOnline(this) && !onlinep && !onlinef){
             online = true
             //LogFragment.GetUserFromApi(LogFragment()).execute()
-            GetListsFromApilistDetails(
-                applicationContext,
-                this,
-                listId
-            ).execute()
+            //GetListsFromApilistDetails( applicationContext, this, listId ).execute()
         }
 
         SwitchItemsChecked.setOnCheckedChangeListener { compoundButton: CompoundButton, b: Boolean ->
@@ -170,7 +165,6 @@ class listDetails : AppCompatActivity(),
         }
 
         //This is for the Drag and Drop ----------------------------------------------------------------------------
-
         val touchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0){
             override fun onMove(
                 recyclerView: RecyclerView,
@@ -204,11 +198,7 @@ class listDetails : AppCompatActivity(),
                     }
                     onlinef = data.getBooleanExtra("online", false)
                     if(onlinef){
-                        GetListsFromApilistDetails(
-                            applicationContext,
-                            this,
-                            listId
-                        ).execute()
+                        //GetListsFromApilistDetails(applicationContext, this, listId).execute()
                     }
                     listId = data.getLongExtra("id lista", -1)
                     itemModified = data.getSerializableExtra("item updated") as Item
@@ -428,7 +418,6 @@ class listDetails : AppCompatActivity(),
 
     companion object {
 
-
         class GetTheList(private val listaActivity: listDetails) :
             AsyncTask<Long, Void, ListWithItems>() {
             override fun doInBackground(vararg params: Long?): ListWithItems {
@@ -484,24 +473,40 @@ class listDetails : AppCompatActivity(),
             lateinit var listaIt: Item
             override fun doInBackground(vararg params: Item?): Void? {
                 listaIt = params[0]!!
-                val itemForBDD = ItemBDD(
-                    listaActivity.itemsCounter,
-                    listaActivity.listId,
-                    params[0]!!.nameItem,
-                    params[0]!!.estado,
-                    params[0]!!.prioridad,
-                    params[0]!!.plazo,
-                    params[0]!!.notasItem,
-                    params[0]!!.fechaCreacion,
-                    listaActivity.itemsOnList.indexOf(params[0]),
-                    params[0]!!.isShown,
-                    ""
-                )
-                if(!isOnline(
-                        listaActivity
+                val itemForBDD: ItemBDD
+                if(!isOnline(listaActivity))
+                {
+                    itemForBDD = ItemBDD(
+                        listaActivity.itemsCounter + 100,
+                        listaActivity.listId,
+                        params[0]!!.nameItem,
+                        params[0]!!.estado,
+                        params[0]!!.prioridad,
+                        params[0]!!.plazo,
+                        params[0]!!.notasItem,
+                        params[0]!!.fechaCreacion,
+                        listaActivity.itemsOnList.indexOf(params[0]),
+                        params[0]!!.isShown,
+                        "",
+                        false
                     )
-                ){
-                    itemForBDD.id = itemForBDD.id + 100
+
+                }
+                else{
+                    itemForBDD = ItemBDD(
+                        listaActivity.itemsCounter,
+                        listaActivity.listId,
+                        params[0]!!.nameItem,
+                        params[0]!!.estado,
+                        params[0]!!.prioridad,
+                        params[0]!!.plazo,
+                        params[0]!!.notasItem,
+                        params[0]!!.fechaCreacion,
+                        listaActivity.itemsOnList.indexOf(params[0]),
+                        params[0]!!.isShown,
+                        "",
+                        true
+                    )
                 }
 
                 val request = UserService.buildService(PersonApi::class.java)
@@ -563,6 +568,7 @@ class listDetails : AppCompatActivity(),
                         println(response)
                         if (response.isSuccessful) {
                             if (response.body() != null) {
+                                listaActivity.listBeingUsed.isOnline = true
                                 listaActivity.listBeingUsed.updated_at = response.body()!!.updated_at
                                 UpdateListBD(listaActivity).execute(listaActivity.listBeingUsed)
                             }
@@ -573,6 +579,7 @@ class listDetails : AppCompatActivity(),
                         val current = LocalDateTime.now()
                         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                         val formatted = current.format(formatter)
+                        listaActivity.listBeingUsed.isOnline = false
                         listaActivity.listBeingUsed.updated_at = formatted
                         UpdateListBD(listaActivity).execute(listaActivity.listBeingUsed)
                         println("NO FUNCIONA ${t.message}")
@@ -604,8 +611,8 @@ class listDetails : AppCompatActivity(),
                         if (response.isSuccessful) {
                             if (response.body() != null) {
                                 params[0]!!.updated_at = response.body()!!.updated_at
-                                UpdateItemDb(listaActivity).execute(response.body()!!)
-                                println(response.body())
+                                params[0]!!.isOnline = true
+                                UpdateItemDb(listaActivity).execute(params[0]!!)
                             }
                         }
                     }
@@ -615,6 +622,8 @@ class listDetails : AppCompatActivity(),
                         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                         val formatted = current.format(formatter)
                         listaActivity.listBeingUsed.updated_at = formatted
+                        params[0]!!.isOnline = false
+                        params[0]!!.updated_at = formatted
                         UpdateItemDb(listaActivity).execute(params[0]!!)
                         println("NO FUNCIONA ${t.message}")
 
@@ -640,19 +649,16 @@ class listDetails : AppCompatActivity(),
         class UpdateMap(private val listaActivity: listDetails):
             AsyncTask<Void, Void, List<ItemBDD>?>(){
             override fun doInBackground(vararg params: Void?): List<ItemBDD>? {
-                println("ESTAMOS DENTRO DEL MAP1  ${listaActivity.map}")
                 listaActivity.map = hashMapOf()
                 return listaActivity.database.getSpecificList(listaActivity.listId).items
             }
 
             override fun onPostExecute(result: List<ItemBDD>?) {
                 var count = 0
-                println("ESTAMOS DENTRO DEL MAP2  ${result}")
                 result!!.forEach{
                     listaActivity.map[listaActivity.itemsOnList[count]] = it
                     count += 1
                 }
-                println("ESTAMOS DENTRO DEL MAP3  ${listaActivity.map}")
             }
         }
 
@@ -677,6 +683,7 @@ class listDetails : AppCompatActivity(),
                         if (response.isSuccessful) {
                             if (response.body() != null) {
                                 item1!!.updated_at = response.body()!!.updated_at
+                                item1!!.isOnline = true
                                 listaActivity.map[params[0]!!] = item1
                                 UpdateItemDb(listaActivity).execute(item1)
                             }
@@ -687,6 +694,7 @@ class listDetails : AppCompatActivity(),
                         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                         val formatted = current.format(formatter)
 
+                        item1!!.isOnline = false
                         item1!!.updated_at = formatted
                         listaActivity.map[params[0]!!] = item1
                         UpdateItemDb(listaActivity).execute(item1)
@@ -704,6 +712,7 @@ class listDetails : AppCompatActivity(),
                         if (response.isSuccessful) {
                             if (response.body() != null) {
                                 item2!!.updated_at = response.body()!!.updated_at
+                                item2!!.isOnline = true
                                 listaActivity.map[params[1]!!] = item2
                                 UpdateItemDb(listaActivity).execute(item2)
                             }
@@ -714,6 +723,7 @@ class listDetails : AppCompatActivity(),
                         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                         val formatted = current.format(formatter)
 
+                        item2!!.isOnline = false
                         item2!!.updated_at = formatted
                         listaActivity.map[params[1]!!] = item2
                         UpdateItemDb(listaActivity).execute(item2)

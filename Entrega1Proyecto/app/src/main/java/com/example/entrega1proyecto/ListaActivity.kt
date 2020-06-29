@@ -359,15 +359,13 @@ class ListaActivity : AppCompatActivity(),
                 // We get the new id to add a new list when we add a list
                 listaIt = params[0]!!
                 lateinit var listToBeAdded: ListBDD
-                if (isOnline(
-                        listaActivity
-                    )
-                ) {
+                if (isOnline(listaActivity)) {
                     listToBeAdded = ListBDD(
                         listaActivity.listsCounter,
                         params[0]!!.name,
                         listaActivity.listaList.indexOf(params[0]!!),
-                        "0"
+                        "0",
+                        true
                     )
                 }
                 else{
@@ -375,7 +373,8 @@ class ListaActivity : AppCompatActivity(),
                         listaActivity.listsCounter+100,
                         params[0]!!.name,
                         listaActivity.listaList.indexOf(params[0]!!),
-                        "0"
+                        "0",
+                        false
                     )
                 }
 
@@ -424,26 +423,30 @@ class ListaActivity : AppCompatActivity(),
             override fun doInBackground(vararg params: ListaItem?): Void? {
                 val listaABorrar = listaActivity.map[params[0]!!]
                 listaActivity.database.deleteList(listaABorrar!!)
-                listaActivity.database.deleteListItems(listaABorrar!!.id)
-
-                val request = UserService.buildService(PersonApi::class.java)
-                val call = request.deleteList(listaABorrar!!.id.toInt(), API_KEY)
-                call.enqueue(object : Callback<ListBDD> {
-                    override fun onResponse(
-                        call: Call<ListBDD>,
-                        response: Response<ListBDD>
-                    ) {
-                        if (response.isSuccessful) {
-                            if (response.body() != null) {
-                                println(response.body())
+                listaActivity.database.deleteListItems(listaABorrar.id)
+                if(!isOnline(listaActivity)){
+                    listaActivity.database.eraseList(ListBddErased(listaABorrar.id))
+                }
+                else {
+                    val request = UserService.buildService(PersonApi::class.java)
+                    val call = request.deleteList(listaABorrar!!.id.toInt(), API_KEY)
+                    call.enqueue(object : Callback<ListBDD> {
+                        override fun onResponse(
+                            call: Call<ListBDD>,
+                            response: Response<ListBDD>
+                        ) {
+                            if (response.isSuccessful) {
+                                if (response.body() != null) {
+                                    println(response.body())
+                                }
                             }
                         }
-                    }
-                    override fun onFailure(call: Call<ListBDD>, t: Throwable) {
-                        println("NO FUNCIONA ${t.message}")
-                    }
-                })
 
+                        override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                            println("NO FUNCIONA ${t.message}")
+                        }
+                    })
+                }
                 return null
             }
         }
@@ -476,6 +479,7 @@ class ListaActivity : AppCompatActivity(),
                         if (response.isSuccessful) {
                             if (response.body() != null) {
                                 item1!!.updated_at = response.body()!!.updated_at
+                                item1!!.isOnline = true
                                 listaActivity.map[params[0]!!] = item1
                                 UpdateListDb(listaActivity).execute(item1)
                             }
@@ -487,6 +491,7 @@ class ListaActivity : AppCompatActivity(),
                         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                         val formatted = current.format(formatter)
 
+                        item1!!.isOnline = false
                         item1!!.updated_at = formatted
                         listaActivity.map[params[0]!!] = item1
                         UpdateListDb(listaActivity).execute(item1)
@@ -504,6 +509,7 @@ class ListaActivity : AppCompatActivity(),
                         if (response.isSuccessful) {
                             if (response.body() != null) {
                                 item2!!.updated_at = response.body()!!.updated_at
+                                item2!!.isOnline = true
                                 listaActivity.map[params[1]!!] = item2
                                 UpdateListDb(listaActivity).execute(item2)
                             }
@@ -515,6 +521,7 @@ class ListaActivity : AppCompatActivity(),
                         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                         val formatted = current.format(formatter)
 
+                        item2!!.isOnline = false
                         item2!!.updated_at = formatted
                         listaActivity.map[params[1]!!] = item2
                         UpdateListDb(listaActivity).execute(item2)

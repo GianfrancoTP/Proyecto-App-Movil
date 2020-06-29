@@ -4,11 +4,13 @@ import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.os.AsyncTask
+import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.EditText
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.room.Room
@@ -28,6 +30,9 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.io.Serializable
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 class UserDetails : AppCompatActivity() {
 
@@ -278,26 +283,39 @@ class UserDetails : AppCompatActivity() {
             val request = UserService.buildService(PersonApi::class.java)
             val call = request.updateUser(params[0]!!, API_KEY)
             call.enqueue(object : Callback<User> {
+                @RequiresApi(Build.VERSION_CODES.O)
                 override fun onResponse(
                     call: Call<User>,
                     response: Response<User>
                 ) {
                     if (response.isSuccessful) {
                         if (response.body() != null) {
+                            val current = LocalDateTime.now()
+                            val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                            val formatted = current.format(formatter)
                             val userUpdated = UserBBDD(1,response.body()!!.first_name,
                                 response.body()!!.last_name, response.body()!!.email,
-                                response.body()!!.phone, response.body()!!.profile_photo)
+                                response.body()!!.phone, response.body()!!.profile_photo,
+                                formatted, true)
                             UpdateUserBDD(listaActivity).execute(userUpdated)
                         }
                     }
                 }
+                @RequiresApi(Build.VERSION_CODES.O)
                 override fun onFailure(call: Call<User>, t: Throwable) {
                     println("NO FUNCIONA ${t.message}")
+                    val current = LocalDateTime.now()
+                    val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                    val formatted = current.format(formatter)
+                    val userUpdated = UserBBDD(1,params[0]!!.first_name,
+                        params[0]!!.last_name, params[0]!!.email,
+                        params[0]!!.phone, params[0]!!.profile_photo,
+                        formatted, false)
+                    UpdateUserBDD(listaActivity).execute(userUpdated)
                 }
             })
             return null
         }
-
     }
 
     class UpdateUserBDD(private val listaActivity: UserDetails): AsyncTask<UserBBDD?,Void,Void>() {
@@ -306,5 +324,4 @@ class UserDetails : AppCompatActivity() {
             return null
         }
     }
-
 }

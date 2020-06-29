@@ -14,10 +14,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.room.Room
 import com.example.entrega1proyecto.configuration.API_KEY
-import com.example.entrega1proyecto.model.Database
-import com.example.entrega1proyecto.model.ItemBDD
-import com.example.entrega1proyecto.model.ListBDD
-import com.example.entrega1proyecto.model.ListDao
+import com.example.entrega1proyecto.model.*
 import com.example.entrega1proyecto.model.adapters.Item
 import com.example.entrega1proyecto.model.adapters.ListItems
 import com.example.entrega1proyecto.networking.PersonApi
@@ -98,7 +95,7 @@ class ItemDetails : AppCompatActivity() {
 
         nombreItemTextView.text = item!!.nameItem
         createdAtTextView.text = item!!.fechaCreacion
-        println("ESTEEE ES EL ITEEEEM   ${item!!.plazo}")
+
         if(item!!.plazo == "" || item!!.plazo == null){
             fechaPlazoTextView.hint = "Seleccione la fecha de plazo"
             val c = Calendar.getInstance()
@@ -110,15 +107,11 @@ class ItemDetails : AppCompatActivity() {
             val seg = c.get(Calendar.SECOND)
 
             imageView.setOnClickListener {
-
                 val dpd = DatePickerDialog(this, DatePickerDialog.OnDateSetListener { view, mYear, mMonth, mDay->
-
                     var dateStr = "$mYear-$mMonth-$mDay $hour:$min:$seg"
                     fechaPlazoTextView.setText(dateStr)
                 }, year, month, day)
-
                 dpd.show()
-
             }
         }
         else{
@@ -325,6 +318,7 @@ class ItemDetails : AppCompatActivity() {
                         if (response.isSuccessful) {
                             if (response.body() != null) {
                                 listaActivity.itemDb.updated_at = response.body()!!.updated_at
+                                listaActivity.itemDb.isOnline = true
                                 UpdateItemDB(listaActivity).execute()
                                 println(response.body())
                             }
@@ -336,6 +330,7 @@ class ItemDetails : AppCompatActivity() {
                         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                         val formatted = current.format(formatter)
 
+                        listaActivity.itemDb.isOnline = false
                         listaActivity.itemDb.updated_at = formatted
                         UpdateItemDB(listaActivity).execute(listaActivity.itemDb)
                         println("NO FUNCIONA ${t.message}")
@@ -365,7 +360,6 @@ class ItemDetails : AppCompatActivity() {
                         }
                     }
                     override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
-                        println("no se encontro")
 
                     }
                 })
@@ -425,6 +419,7 @@ class ItemDetails : AppCompatActivity() {
                                 println("LISTA A BORRAR!!!!!!!     ${listaActivity.idListaABorrar}")
                                 EraseListInDB(listaActivity).execute()
                                 listaMod = response.body()!!
+                                listaMod.isOnline = true
                                 listaActivity.idList = response.body()!!.id
                                 UpdatearConAPI(listaActivity).execute(listaMod)
                             }
@@ -443,6 +438,7 @@ class ItemDetails : AppCompatActivity() {
             override fun doInBackground(vararg params: ListBDD?): Void? {
                 var listABorrar = params[0]
                 listaActivity.itemDb.list_id = params[0]!!.id
+                listABorrar!!.isOnline = isOnline(listaActivity)
                 listABorrar!!.updated_at = params[0]!!.updated_at
                 InsertListInDB(listaActivity).execute(listABorrar)
                 InsertItemInAPI(listaActivity).execute()
@@ -453,8 +449,10 @@ class ItemDetails : AppCompatActivity() {
         class EraseListInDB(private val listaActivity: ItemDetails):
             AsyncTask<Void, Void, Void>() {
             override fun doInBackground(vararg params: Void?): Void? {
-                println("borrando lista!!!!!!!! ${listaActivity.idListaABorrar}")
                 listaActivity.database.deleteList(listaActivity.idListaABorrar)
+                if (!isOnline(listaActivity)){
+                    listaActivity.database.eraseItem(ItemBddErased(listaActivity.idListaABorrar.id))
+                }
                 return null
             }
         }
@@ -485,7 +483,6 @@ class ItemDetails : AppCompatActivity() {
                         call: Call<List<ItemBDD>>,
                         response: Response<List<ItemBDD>>
                     ) {
-                        println("ESTA ES LA RESPONSE DE AÑADIRLO  $response")
                         if (response.isSuccessful) {
                             if (response.body() != null) {
                                 EraseItemInDB(listaActivity).execute()
@@ -504,13 +501,9 @@ class ItemDetails : AppCompatActivity() {
 
         class UpdatearItemConAPI(private val listaAct: ItemDetails):AsyncTask<ItemBDD, Void, Void>(){
             override fun doInBackground(vararg params: ItemBDD?): Void? {
-                var itemABorrar = params[0]
                 listaAct.itemDb.id = params[0]!!.id
-                listaAct.itemDb.updated_at =
-                    params[0]!!.updated_at
-                InsertItemDB(listaAct).execute(
-                    listaAct.itemDb
-                )
+                listaAct.itemDb.updated_at = params[0]!!.updated_at
+                InsertItemDB(listaAct).execute(listaAct.itemDb)
                 return null
             }
         }
@@ -518,12 +511,16 @@ class ItemDetails : AppCompatActivity() {
         class EraseItemInDB(private val listaAct: ItemDetails):AsyncTask<ItemBDD, Void, Void>(){
             override fun doInBackground(vararg params: ItemBDD?): Void? {
                 listaAct.database.deleteItem(listaAct.idItemABorrar)
+                if(!isOnline(listaAct)){
+                    listaAct.database.eraseItem(ItemBddErased(listaAct.idItemABorrar.id))
+                }
                 return null
             }
         }
 
         class InsertItemDB(private val listaAct: ItemDetails):AsyncTask<ItemBDD, Void, Void>(){
             override fun doInBackground(vararg params: ItemBDD?): Void? {
+                params[0]!!.isOnline = isOnline(listaAct)
                 listaAct.database.insertItem(params[0]!!)
                 return null
             }
@@ -542,6 +539,7 @@ class ItemDetails : AppCompatActivity() {
                         println(response)
                         if (response.isSuccessful) {
                             if (response.body() != null) {
+                                listaActivity.itemDb.isOnline = true
                                 listaActivity.itemDb.updated_at = response.body()!!.updated_at
                                 UpdateItemDBEnding(listaActivity).execute()
                                 println(response.body())
@@ -554,6 +552,7 @@ class ItemDetails : AppCompatActivity() {
                         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                         val formatted = current.format(formatter)
 
+                        listaActivity.itemDb.isOnline = false
                         listaActivity.itemDb.updated_at = formatted
                         UpdateItemDB(listaActivity).execute(listaActivity.itemDb)
                         println("NO FUNCIONA ${t.message}")
@@ -602,16 +601,15 @@ class ItemDetails : AppCompatActivity() {
                         call: Call<ItemBDD>,
                         response: Response<ItemBDD>
                     ) {
-                        println(response)
                         if (response.isSuccessful) {
                             if (response.body() != null) {
-                                println("funciona")
                                 println(response.body())
                             }
                         }
                     }
                     override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
                         println("NO FUNCIONA ${t.message}")
+                        listaActivity.database.eraseItem(ItemBddErased(params[0]!!.id))
                     }
                 })
                 return null

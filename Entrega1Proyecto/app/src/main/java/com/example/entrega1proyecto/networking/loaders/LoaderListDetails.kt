@@ -1,5 +1,5 @@
 package com.example.entrega1proyecto.networking.loaders
-
+/*
 import android.content.Context
 import android.os.AsyncTask
 import androidx.room.Room
@@ -342,3 +342,5 @@ class UpdateItemToAPIlistDetails() :
         return null
     }
 }
+
+ */

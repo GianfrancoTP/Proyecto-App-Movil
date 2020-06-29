@@ -3,7 +3,9 @@ package com.example.entrega1proyecto.model
 import androidx.room.*
 import androidx.room.ForeignKey.CASCADE
 import com.example.entrega1proyecto.model.ItemBDD.Companion.TABLE2_NAME
+import com.example.entrega1proyecto.model.ItemBddErased.Companion.TABLE_NAME_OFFLINE_ITEM
 import com.example.entrega1proyecto.model.ListBDD.Companion.TABLE_NAME
+import com.example.entrega1proyecto.model.ListBddErased.Companion.TABLE_NAME_OFFLINE
 import com.example.entrega1proyecto.model.UserBBDD.Companion.TABLE3_NAME
 import java.io.Serializable
 
@@ -26,6 +28,33 @@ interface ListDao{
     // Esto es para crear, updatear, obtener o eliminar una lista
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertList(data: ListBDD): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun eraseList(data: ListBddErased)
+
+    @Delete
+    fun deleteListDeleted(data: ListBddErased)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun eraseItem(data: ItemBddErased)
+
+    @Delete
+    fun deleteItemDeleted(data: ItemBddErased)
+
+    @Query("SELECT * FROM $TABLE_NAME_OFFLINE")
+    fun getAllListsErased(): List<Long>
+
+    @Query("SELECT * FROM $TABLE_NAME_OFFLINE_ITEM")
+    fun getAllItemsErased(): List<Long>
+
+    @Query("SELECT * FROM $TABLE2_NAME WHERE online = :bool")
+    fun getAllItemsOffline(bool: Boolean = false): List<ItemBDD>
+
+    @Query("SELECT * FROM $TABLE_NAME WHERE online = :bool")
+    fun getAllListsOffline(bool: Boolean = false): List<ListBDD>
+
+    @Query("SELECT * FROM $TABLE3_NAME WHERE online = :bool")
+    fun getUserOffline(bool: Boolean = false): User
 
     @Update
     fun updateList(data: ListBDD)
@@ -72,7 +101,9 @@ data class ListBDD(
     @ColumnInfo(name= POSITION)
     var position: Int,
     @ColumnInfo(name= UPDATEDAT)
-    var updated_at: String
+    var updated_at: String,
+    @ColumnInfo(name= ONLINE)
+    var isOnline: Boolean
 ):Serializable{
     companion object{
         const val TABLE_NAME = "ListBDD"
@@ -80,6 +111,19 @@ data class ListBDD(
         const val NAME = "title"
         const val POSITION = "position"
         const val UPDATEDAT = "updated_at"
+        const val ONLINE = "online"
+    }
+}
+
+@Entity(tableName = TABLE_NAME_OFFLINE)
+data class ListBddErased(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = ID)
+    var id: Long
+):Serializable{
+    companion object{
+        const val TABLE_NAME_OFFLINE = "ListBddOffline"
+        const val ID = "id"
     }
 }
 
@@ -107,7 +151,9 @@ data class ItemBDD(
     @ColumnInfo(name = IS_SHOWN)
     var isShown: Boolean,
     @ColumnInfo(name= UPDATEDAT)
-    var updated_at: String
+    var updated_at: String,
+    @ColumnInfo(name= ONLINE)
+    var isOnline: Boolean
 ):Serializable{
     companion object{
         const val TABLE2_NAME = "ItemBDD"
@@ -122,6 +168,19 @@ data class ItemBDD(
         const val POSITION = "position"
         const val IS_SHOWN = "isShown"
         const val UPDATEDAT = "updated_at"
+        const val ONLINE = "online"
+    }
+}
+
+@Entity(tableName = TABLE_NAME_OFFLINE_ITEM)
+data class ItemBddErased(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = ID)
+    var id: Long
+):Serializable{
+    companion object{
+        const val TABLE_NAME_OFFLINE_ITEM = "ItemBddOffline"
+        const val ID = "id"
     }
 }
 
@@ -148,7 +207,11 @@ data class UserBBDD(
     @ColumnInfo(name = PHONE)
     var phone: String,
     @ColumnInfo(name = PROFILEPHOTO)
-    var profile_photo: String
+    var profile_photo: String,
+    @ColumnInfo(name= UPDATEDAT)
+    var updated_at: String,
+    @ColumnInfo(name= ONLINE)
+    var isOnline: Boolean
 ):Serializable{
     companion object{
         const val TABLE3_NAME = "UserBDD"
@@ -158,5 +221,7 @@ data class UserBBDD(
         const val EMAIL = "email"
         const val PHONE = "phone"
         const val PROFILEPHOTO = "profile_photo"
+        const val UPDATEDAT = "updated_at"
+        const val ONLINE = "online"
     }
 }

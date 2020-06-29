@@ -8,10 +8,12 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         var LOGGED = "LOGGED"
+        var VERIFICADOR = false
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
     }
+
 
 }

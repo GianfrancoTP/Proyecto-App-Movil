@@ -183,19 +183,6 @@ class EraseItemInDb() :
         return null
     }
 }
-class InsertItemInDB() :
-    AsyncTask<ItemBDD, Void, Void>() {
-    override fun doInBackground(vararg params: ItemBDD?): Void? {
-        database.insertItem(params[0]!!)
-        return null
-    }
-
-    override fun onPostExecute(result: Void?) {
-        ListaActivity.Companion.GetAllLists(
-            activityComing
-        ).execute()
-    }
-}
 
 class PostItemToAPI2() :
     AsyncTask<ItemBDD, Void, Void>() {
@@ -223,6 +210,20 @@ class PostItemToAPI2() :
         })
 
         return null
+    }
+}
+
+class InsertItemInDB() :
+    AsyncTask<ItemBDD, Void, Void>() {
+    override fun doInBackground(vararg params: ItemBDD?): Void? {
+        database.insertItem(params[0]!!)
+        return null
+    }
+
+    override fun onPostExecute(result: Void?) {
+        ListaActivity.Companion.GetAllLists(
+            activityComing
+        ).execute()
     }
 }
 //                  Para cuando no hay items en la lista
