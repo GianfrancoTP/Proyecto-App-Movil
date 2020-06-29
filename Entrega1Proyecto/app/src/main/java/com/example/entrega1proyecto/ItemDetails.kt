@@ -74,7 +74,7 @@ class ItemDetails : AppCompatActivity() {
             idList = listBeingUsed.id
         }
 
-        CheckIsInAPI(this).execute()
+        //CheckIsInAPI(this).execute()
 
         if(savedInstanceState!=null){
             onlinep = savedInstanceState.getBoolean("onlinef", false)!!
@@ -340,7 +340,7 @@ class ItemDetails : AppCompatActivity() {
                 return null
             }
         }
-
+/*
         class CheckIsInAPI(private val listaActivity: ItemDetails):
             AsyncTask<Void, Void, Void>() {
             override fun doInBackground(vararg params: Void?): Void? {
@@ -525,7 +525,7 @@ class ItemDetails : AppCompatActivity() {
                 return null
             }
         }
-
+*/
         class UpdateItemToEnd(private val listaActivity: ItemDetails):
             AsyncTask<Void, Void, Void>() {
             override fun doInBackground(vararg params: Void?): Void? {
@@ -554,7 +554,7 @@ class ItemDetails : AppCompatActivity() {
 
                         listaActivity.itemDb.isOnline = false
                         listaActivity.itemDb.updated_at = formatted
-                        UpdateItemDB(listaActivity).execute(listaActivity.itemDb)
+                        UpdateItemDBEnding(listaActivity).execute(listaActivity.itemDb)
                         println("NO FUNCIONA ${t.message}")
                     }
                 })

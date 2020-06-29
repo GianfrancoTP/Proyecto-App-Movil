@@ -215,7 +215,7 @@ fun updateAllOfflineItemsToApi(){
                 {
                     if (response.isSuccessful) {
                         if (response.body() != null) {
-                            UpdatearOnlineItems().execute(it)
+                            UpdatearOnlineItems(null).execute(it)
                         }
                     }
                     else{
@@ -233,6 +233,7 @@ fun updateAllOfflineItemsToApi(){
 fun insertItemInApi(itemToInsert: ItemBDD){
     val request = UserService.buildService(PersonApi::class.java)
     val x = ListItems(listOf(itemToInsert))
+    val p = itemToInsert
     val callUploadLists = request.postItem(x, API_KEY)
     callUploadLists.enqueue(object : Callback<List<ItemBDD>> {
             override fun onResponse(
@@ -243,7 +244,7 @@ fun insertItemInApi(itemToInsert: ItemBDD){
             if (response.isSuccessful) {
                 if (response.body() != null) {
                     itemToInsert.id = response.body()!![0].id
-                    UpdatearOnlineItems().execute(itemToInsert)
+                    UpdatearOnlineItems(p).execute(itemToInsert)
                 }
             }
         }
@@ -252,9 +253,12 @@ fun insertItemInApi(itemToInsert: ItemBDD){
     })
 }
 
-class UpdatearOnlineItems(): AsyncTask<ItemBDD, Void, Void>() {
+class UpdatearOnlineItems(val item: ItemBDD?): AsyncTask<ItemBDD, Void, Void>() {
     override fun doInBackground(vararg params: ItemBDD?): Void? {
         params[0]!!.isOnline = true
+        if (item != null) {
+            databaseLoader.deleteItem(item)
+        }
         databaseLoader.insertItem(params[0]!!)
         GetAllFromApi()
         return null
@@ -343,6 +347,9 @@ fun loadItems(allListsFromApi: List<ListBDD>){
                 println("NO FUNCIONA ${t.message}")
             }
         })
+    }
+    if (allListsFromApi.isEmpty()){
+        updateAll()
     }
 }
 

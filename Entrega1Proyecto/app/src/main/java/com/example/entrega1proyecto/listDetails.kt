@@ -204,6 +204,7 @@ class listDetails : AppCompatActivity(),
                     itemModified = data.getSerializableExtra("item updated") as Item
                     itemModificadoPos = data.getIntExtra("item position modified", -1)
                     itemsOnList[itemModificadoPos] = itemModified!!
+                    println(map)
                     UpdateMap(this).execute()
                     adapter.notifyItemChanged(itemModificadoPos)
                 }catch (e: Exception){
@@ -633,7 +634,7 @@ class listDetails : AppCompatActivity(),
             }
 
             override fun onPostExecute(result: Void?) {
-                UpdateMap(listaActivity).execute()
+                //UpdateMap(listaActivity).execute()
             }
         }
 
