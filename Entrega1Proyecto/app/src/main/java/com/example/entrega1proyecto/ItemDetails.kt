@@ -37,7 +37,8 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 class ItemDetails : AppCompatActivity() {
-
+    //                  PIERDE LA INFO PQ HACE MUCHAS COSAS EN EL MAIN THREAD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     var item: Item? = null
     var isShowingDialog = false
     var dialog: Dialog? = null
