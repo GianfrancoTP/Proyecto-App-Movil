@@ -67,7 +67,6 @@ class listDetails : AppCompatActivity(),
     var online = false
     var onlinep = false
     var onlinef = false
-    lateinit var linearLayoutManager: LinearLayoutManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -117,18 +116,18 @@ class listDetails : AppCompatActivity(),
 
         SwitchItemsChecked.setOnCheckedChangeListener { compoundButton: CompoundButton, b: Boolean ->
             if (b){
+                val mp = map
+                map = hashMapOf()
                 itemsOnList.forEach {
+                    val valueTest = mp[it]
                     var itemModifiedPosition = itemsOnList.indexOf(it)
-                    if (it.estado) {
-                        it.isShown = true
-                        adapter.notifyItemChanged(itemModifiedPosition)
-                    }
-                    else{
-                        it.isShown = false
-                        adapter.notifyItemChanged(itemModifiedPosition)
-                    }
+                    it.isShown = it.estado
+                    valueTest!!.isShown = it.estado
+                    map[it] = valueTest!!
+                    adapter.notifyItemChanged(itemModifiedPosition)
+                    UpdateSpecificItem(this, map[it])
                 }
-                map.values.forEach {
+                /*map.values.forEach {
                     if(it.done) {
                         it.isShown = true
                         UpdateSpecificItem(this, it)
@@ -137,21 +136,21 @@ class listDetails : AppCompatActivity(),
                         it.isShown = false
                         UpdateSpecificItem(this, it)
                     }
-                }
+                }*/
             }
             else{
+                val mp = map
+                map = hashMapOf()
                 itemsOnList.forEach {
+                    val valueTest = mp[it]
                     var itemModifiedPosition = itemsOnList.indexOf(it)
-                    if(it.estado) {
-                        it.isShown = false
-                        adapter.notifyItemChanged(itemModifiedPosition)
-                    }
-                    else{
-                        it.isShown = true
-                        adapter.notifyItemChanged(itemModifiedPosition)
-                    }
+                    it.isShown = !it.estado
+                    valueTest!!.isShown = it.estado
+                    map[it] = valueTest!!
+                    adapter.notifyItemChanged(itemModifiedPosition)
+                    UpdateSpecificItem(this, map[it])
                 }
-                map.values.forEach {
+                /*map.values.forEach {
                     if(it.done) {
                         it.isShown = false
                         UpdateSpecificItem(this, it)
@@ -160,7 +159,7 @@ class listDetails : AppCompatActivity(),
                         it.isShown = true
                         UpdateSpecificItem(this, it)
                     }
-                }
+                }*/
             }
         }
 
@@ -174,6 +173,8 @@ class listDetails : AppCompatActivity(),
             ): Boolean {
                 val sourcePosition = viewHolder.adapterPosition
                 val targetPosition = target.adapterPosition
+                map[itemsOnList[sourcePosition]]?.position = targetPosition
+                map[itemsOnList[targetPosition]]?.position = sourcePosition
                 Collections.swap(itemsOnList, sourcePosition, targetPosition)
                 adapter.notifyItemMoved(sourcePosition, targetPosition)
                 ModifyPositionItems(this@listDetails, itemsOnList[sourcePosition], itemsOnList[targetPosition])
@@ -196,12 +197,12 @@ class listDetails : AppCompatActivity(),
                     onlinef = data.getBooleanExtra("online", false)
                     itemModificadoPos = data.getIntExtra("item position modified", -1)
 
-                    listId = data.getLongExtra("id lista", -1)
+                    //listId = data.getLongExtra("id lista", -1)
                     itemModified = data.getSerializableExtra("item updated") as Item
                     itemsOnList[itemModificadoPos] = itemModified!!
                     adapter.notifyItemChanged(itemModificadoPos)
                     UpdateMap(this).execute()
-
+                    Thread.sleep(2000)
                 }catch (e: Exception){
                     itemModificadoPos = data.getIntExtra("item position modified", -1)
                     itemsOnList.removeAt(itemModificadoPos)
@@ -265,12 +266,13 @@ class listDetails : AppCompatActivity(),
                     fechaCreacion = formatted, isShown = shown
                 )
 
-                //Here we add the item to the bdd
-                InsertItem(this@listDetails,newItem)
-
                 // We add it to the array of items
                 itemsOnList.add(newItem)
                 adapter.notifyItemInserted(itemsOnList.size -1)
+
+                //Here we add the item to the bdd
+                InsertItem(this@listDetails,newItem)
+
                 dialog?.dismiss()
                 isShowingDialogAdd = false
             }
@@ -665,21 +667,26 @@ class listDetails : AppCompatActivity(),
                 listaActivity.database.updateItem(params[0]!!)
                 return null
             }
+            override fun onPostExecute(result: Void?) {
+                UpdateMap(listaActivity).execute()
+            }
         }
 
         class UpdateMap(private val listaActivity: listDetails):
             AsyncTask<Void, Void, List<ItemBDD>?>(){
             var x = 0
             override fun doInBackground(vararg params: Void?): List<ItemBDD>? {
-                listaActivity.map = hashMapOf()
                 x = listaActivity.itemsOnList.size -1
-                return listaActivity.database.getSpecificList(listaActivity.listId).items?.sortedBy { it.position }
+                val listTest = listaActivity.database.getSpecificList(listaActivity.listId)
+                val orderedItems = listTest.items?.sortedBy { it.position }
+                return orderedItems
             }
 
             override fun onPostExecute(result: List<ItemBDD>?) {
                 //listaActivity.adapter.notifyItemRangeRemoved(0, x)
                 //listaActivity.adapter.notifyDataSetChanged()
                 var count = 0
+                listaActivity.map = hashMapOf()
                 result!!.forEach{
                     val item = Item(it.name,it.done, it.starred, it.due_date, it.notes, it.created_at, false)
                     if (listaActivity.SwitchItemsChecked.isChecked){
@@ -696,16 +703,15 @@ class listDetails : AppCompatActivity(),
 
         @RequiresApi(Build.VERSION_CODES.O)
         fun ModifyPositionItems(listaActivity: listDetails, param0: Item?, param1: Item?){
-
             var item1 = listaActivity.map[param0!!]
             var item2 = listaActivity.map[param1!!]
 
-            val pos = item1!!.position
-            item1.position = item2!!.position
-            item2.position = pos
+            //val pos = item1!!.position
+            //item1.position = item2!!.position
+            //item2.position = pos
 
             val request = UserService.buildService(PersonApi::class.java)
-            val call = request.updateItem(item1.id.toInt(),item1, API_KEY)
+            val call = request.updateItem(item1?.id!!.toInt(),item1, API_KEY)
             call.enqueue(object : Callback<ItemBDD> {
                 override fun onResponse(
                     call: Call<ItemBDD>,
@@ -734,7 +740,7 @@ class listDetails : AppCompatActivity(),
                 }
             })
 
-            val call2 = request.updateItem(item2.id.toInt(),item2, API_KEY)
+            val call2 = request.updateItem(item2?.id!!.toInt(),item2, API_KEY)
             call2.enqueue(object : Callback<ItemBDD> {
                 override fun onResponse(
                     call: Call<ItemBDD>,

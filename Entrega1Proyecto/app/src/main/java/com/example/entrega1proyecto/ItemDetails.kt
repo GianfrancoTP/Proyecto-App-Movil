@@ -519,19 +519,19 @@ class ItemDetails : AppCompatActivity() {
 
         fun UpdateItemToEnd(listaActivity: ItemDetails){
             val request = UserService.buildService(PersonApi::class.java)
+            println("TESTEO PARTE 1   ${listaActivity.itemDb}")
             val call = request.updateItem(listaActivity.itemDb.id.toInt(), listaActivity.itemDb, API_KEY)
             call.enqueue(object : Callback<ItemBDD> {
                 override fun onResponse(
                     call: Call<ItemBDD>,
                     response: Response<ItemBDD>
                 ) {
-                    println(response)
                     if (response.isSuccessful) {
                         if (response.body() != null) {
                             listaActivity.itemDb.isOnline = true
                             listaActivity.itemDb.updated_at = response.body()!!.updated_at
                             UpdateItemDBEnding(listaActivity).execute()
-                            println(response.body())
+                            println("ESTE ES EL BODY DE LA RESPONSE DE GUARDAR EL ITEM EN API ${response.body()}")
                         }
                     }
                 }
@@ -552,6 +552,7 @@ class ItemDetails : AppCompatActivity() {
         class UpdateItemDB(private val listaActivity: ItemDetails):
             AsyncTask<Void, Void, Void>() {
             override fun doInBackground(vararg params: Void?): Void? {
+                println("GUARDANDO ITEM EN DB!!!!!!!!! ${listaActivity.itemDb}")
                 listaActivity.database.updateItem(listaActivity.itemDb)
                 return null
             }
@@ -591,12 +592,10 @@ class ItemDetails : AppCompatActivity() {
                         response: Response<ItemBDD>
                     ) {
                         if (response.isSuccessful) {
-                            if (response.body() != null) {
-                                val myIntent = Intent()
-                                myIntent.putExtra("item updated","NONE")
-                                listaActivity.setResult(5, myIntent)
-                                listaActivity.finish()
-                            }
+                            val myIntent = Intent()
+                            myIntent.putExtra("item position modified", listaActivity.pos)
+                            listaActivity.setResult(5, myIntent)
+                            listaActivity.finish()
                         }
                     }
                     override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
