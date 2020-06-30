@@ -13,6 +13,9 @@ import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.RoomMasterTable
+import androidx.room.RoomOpenHelper
 import com.example.entrega1proyecto.configuration.API_KEY
 import com.example.entrega1proyecto.model.*
 import com.example.entrega1proyecto.model.adapters.Item
@@ -36,20 +39,18 @@ import kotlin.collections.ArrayList
 class ItemDetails : AppCompatActivity() {
 
     var item: Item? = null
-    var pos = -1
     var isShowingDialog = false
     var dialog: Dialog? = null
     // Db
     lateinit var database: ListDao
     lateinit var itemDb: ItemBDD
-    lateinit var copyOfItem: Item
-    lateinit var allItems: ArrayList<Item>
+    var pos = -1
     var online = false
     var onlinep = false
     var onlinef = false
     lateinit var listBeingUsed: ListBDD
-    lateinit var idListaABorrar:ListBDD
-    lateinit var idItemABorrar:ItemBDD
+    //lateinit var idListaABorrar:ListBDD
+    //lateinit var idItemABorrar:ItemBDD
     var idList = (-1).toLong()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,9 +67,7 @@ class ItemDetails : AppCompatActivity() {
         }
         catch(e:Exception){
             item = intent.getSerializableExtra("item to watch")!! as Item
-            copyOfItem = intent.getSerializableExtra("item recorded")!! as Item
             pos = intent.getIntExtra("Item position", -1)
-            allItems = intent.getSerializableExtra("all items") as ArrayList<Item>
             itemDb = intent.getSerializableExtra("item from db") as ItemBDD
             listBeingUsed = intent.getSerializableExtra("list") as ListBDD
             idList = listBeingUsed.id
@@ -145,12 +144,7 @@ class ItemDetails : AppCompatActivity() {
 
     // To delete the specific item
     fun deleteItem(view: View){
-        val myIntent: Intent = Intent()
         EraseItem(this).execute(itemDb)
-        myIntent.putExtra("item updated","NONE")
-        myIntent.putExtra("copy item", copyOfItem)
-        setResult(5, myIntent)
-        finish()
     }
 
     // When we end modifying the item
@@ -182,7 +176,7 @@ class ItemDetails : AppCompatActivity() {
         }
         itemDb.done = item!!.estado
         itemDb.isShown = item!!.isShown
-        UpdateItem(this).execute()
+        UpdateItem(this)
     }
 
     fun updateItemToEndAct(){
@@ -213,7 +207,7 @@ class ItemDetails : AppCompatActivity() {
         }
         itemDb.done = item!!.estado
         itemDb.isShown = item!!.isShown
-        UpdateItemToEnd(this).execute()
+        UpdateItemToEnd(this)
     }
 
     // To change the state from being completed or not completed
@@ -246,7 +240,7 @@ class ItemDetails : AppCompatActivity() {
             override fun onClick(dialog: DialogInterface?, which: Int) {
                 item?.nameItem = view.listNameTextView.text.toString()
                 itemDb.name = view.listNameTextView.text.toString()
-                UpdateItem(this@ItemDetails).execute()
+                UpdateItem(this@ItemDetails)
                 nombreItemTextView.text = item?.nameItem
                 dialog?.dismiss()
                 isShowingDialog = false
@@ -278,7 +272,6 @@ class ItemDetails : AppCompatActivity() {
         savedInstanceState.putBoolean("onlinef", online)
         savedInstanceState.putSerializable("Item", item as Serializable)
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG", isShowingDialog)
-        savedInstanceState.putInt("Item Mod Position", pos)
     }
 
     // Function to obtain what was given before changing the state of the activity
@@ -304,42 +297,39 @@ class ItemDetails : AppCompatActivity() {
     }
 
     companion object{
-        class UpdateItem(private val listaActivity: ItemDetails):
-            AsyncTask<Void, Void, Void>() {
-            override fun doInBackground(vararg params: Void?): Void? {
-                val request = UserService.buildService(PersonApi::class.java)
-                val call = request.updateItem(listaActivity.itemDb.id.toInt(), listaActivity.itemDb, API_KEY)
-                call.enqueue(object : Callback<ItemBDD> {
-                    override fun onResponse(
-                        call: Call<ItemBDD>,
-                        response: Response<ItemBDD>
-                    ) {
-                        println(response)
-                        if (response.isSuccessful) {
-                            if (response.body() != null) {
-                                listaActivity.itemDb.updated_at = response.body()!!.updated_at
-                                listaActivity.itemDb.isOnline = true
-                                UpdateItemDB(listaActivity).execute()
-                                println(response.body())
-                            }
+
+        fun UpdateItem(listaActivity: ItemDetails){
+            val request = UserService.buildService(PersonApi::class.java)
+            val call = request.updateItem(listaActivity.itemDb.id.toInt(), listaActivity.itemDb, API_KEY)
+            call.enqueue(object : Callback<ItemBDD> {
+                override fun onResponse(
+                    call: Call<ItemBDD>,
+                    response: Response<ItemBDD>
+                ) {
+                    println(response)
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                            listaActivity.itemDb.updated_at = response.body()!!.updated_at
+                            listaActivity.itemDb.isOnline = true
+                            UpdateItemDB(listaActivity).execute()
+                            println(response.body())
                         }
                     }
-                    @RequiresApi(Build.VERSION_CODES.O)
-                    override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
-                        val current = LocalDateTime.now()
-                        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
-                        val formatted = current.format(formatter)
+                }
+                @RequiresApi(Build.VERSION_CODES.O)
+                override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
+                    val current = LocalDateTime.now()
+                    val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                    val formatted = current.format(formatter)
 
-                        listaActivity.itemDb.isOnline = false
-                        listaActivity.itemDb.updated_at = formatted
-                        UpdateItemDB(listaActivity).execute(listaActivity.itemDb)
-                        println("NO FUNCIONA ${t.message}")
-                    }
-                })
-
-                return null
-            }
+                    listaActivity.itemDb.isOnline = false
+                    listaActivity.itemDb.updated_at = formatted
+                    UpdateItemDB(listaActivity).execute()
+                    println("NO FUNCIONA ${t.message}")
+                }
+            })
         }
+
 /*
         class CheckIsInAPI(private val listaActivity: ItemDetails):
             AsyncTask<Void, Void, Void>() {
@@ -526,63 +516,58 @@ class ItemDetails : AppCompatActivity() {
             }
         }
 */
-        class UpdateItemToEnd(private val listaActivity: ItemDetails):
-            AsyncTask<Void, Void, Void>() {
-            override fun doInBackground(vararg params: Void?): Void? {
-                val request = UserService.buildService(PersonApi::class.java)
-                val call = request.updateItem(listaActivity.itemDb.id.toInt(), listaActivity.itemDb, API_KEY)
-                call.enqueue(object : Callback<ItemBDD> {
-                    override fun onResponse(
-                        call: Call<ItemBDD>,
-                        response: Response<ItemBDD>
-                    ) {
-                        println(response)
-                        if (response.isSuccessful) {
-                            if (response.body() != null) {
-                                listaActivity.itemDb.isOnline = true
-                                listaActivity.itemDb.updated_at = response.body()!!.updated_at
-                                UpdateItemDBEnding(listaActivity).execute()
-                                println(response.body())
-                            }
+
+        fun UpdateItemToEnd(listaActivity: ItemDetails){
+            val request = UserService.buildService(PersonApi::class.java)
+            val call = request.updateItem(listaActivity.itemDb.id.toInt(), listaActivity.itemDb, API_KEY)
+            call.enqueue(object : Callback<ItemBDD> {
+                override fun onResponse(
+                    call: Call<ItemBDD>,
+                    response: Response<ItemBDD>
+                ) {
+                    println(response)
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                            listaActivity.itemDb.isOnline = true
+                            listaActivity.itemDb.updated_at = response.body()!!.updated_at
+                            UpdateItemDBEnding(listaActivity).execute()
+                            println(response.body())
                         }
                     }
-                    @RequiresApi(Build.VERSION_CODES.O)
-                    override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
-                        val current = LocalDateTime.now()
-                        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
-                        val formatted = current.format(formatter)
+                }
+                @RequiresApi(Build.VERSION_CODES.O)
+                override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
+                    val current = LocalDateTime.now()
+                    val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                    val formatted = current.format(formatter)
 
-                        listaActivity.itemDb.isOnline = false
-                        listaActivity.itemDb.updated_at = formatted
-                        UpdateItemDBEnding(listaActivity).execute(listaActivity.itemDb)
-                        println("NO FUNCIONA ${t.message}")
-                    }
-                })
-                return null
-            }
+                    listaActivity.itemDb.isOnline = false
+                    listaActivity.itemDb.updated_at = formatted
+                    UpdateItemDBEnding(listaActivity).execute()
+                    println("NO FUNCIONA ${t.message}")
+                }
+            })
         }
 
         class UpdateItemDB(private val listaActivity: ItemDetails):
-            AsyncTask<ItemBDD, Void, Void>() {
-            override fun doInBackground(vararg params: ItemBDD?): Void? {
+            AsyncTask<Void, Void, Void>() {
+            override fun doInBackground(vararg params: Void?): Void? {
                 listaActivity.database.updateItem(listaActivity.itemDb)
                 return null
             }
         }
 
         class UpdateItemDBEnding(private val listaActivity: ItemDetails):
-            AsyncTask<ItemBDD, Void, Void>() {
-            override fun doInBackground(vararg params: ItemBDD?): Void? {
+            AsyncTask<Void, Void, Void>() {
+            override fun doInBackground(vararg params: Void?): Void? {
                 listaActivity.database.updateItem(listaActivity.itemDb)
                 return null
             }
 
             override fun onPostExecute(result: Void?) {
-                val myIntent: Intent = Intent()
-                myIntent.putExtra("item updated",listaActivity.item as Serializable)
+                val myIntent = Intent()
                 myIntent.putExtra("item position modified", listaActivity.pos)
-                myIntent.putExtra("copy item", listaActivity.copyOfItem as Serializable)
-                myIntent.putExtra("all items back", listaActivity.allItems as Serializable)
+                myIntent.putExtra("item updated",listaActivity.item as Serializable)
                 myIntent.putExtra("online", listaActivity.online)
                 myIntent.putExtra("id lista", listaActivity.idList)
                 listaActivity.setResult(5, myIntent)
@@ -591,11 +576,15 @@ class ItemDetails : AppCompatActivity() {
         }
 
         class EraseItem(private val listaActivity: ItemDetails):
-            AsyncTask<ItemBDD, Void, Void>() {
-            override fun doInBackground(vararg params: ItemBDD?): Void? {
+            AsyncTask<ItemBDD, Void, ItemBDD>() {
+            override fun doInBackground(vararg params: ItemBDD?): ItemBDD? {
                 listaActivity.database.deleteItem(params[0]!!)
+                return params[0]!!
+            }
+
+            override fun onPostExecute(result: ItemBDD?) {
                 val request = UserService.buildService(PersonApi::class.java)
-                val call = request.deleteItem(params[0]!!.id.toInt(), API_KEY)
+                val call = request.deleteItem(result!!.id.toInt(), API_KEY)
                 call.enqueue(object : Callback<ItemBDD> {
                     override fun onResponse(
                         call: Call<ItemBDD>,
@@ -603,16 +592,33 @@ class ItemDetails : AppCompatActivity() {
                     ) {
                         if (response.isSuccessful) {
                             if (response.body() != null) {
-                                println(response.body())
+                                val myIntent = Intent()
+                                myIntent.putExtra("item updated","NONE")
+                                listaActivity.setResult(5, myIntent)
+                                listaActivity.finish()
                             }
                         }
                     }
                     override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
                         println("NO FUNCIONA ${t.message}")
-                        listaActivity.database.eraseItem(ItemBddErased(params[0]!!.id))
+                        EraseDBItem(listaActivity).execute(result)
                     }
                 })
+            }
+        }
+
+        class EraseDBItem(private val listaActivity: ItemDetails):
+            AsyncTask<ItemBDD, Void, Void>() {
+            override fun doInBackground(vararg params: ItemBDD?): Void? {
+                listaActivity.database.eraseItem(ItemBddErased(params[0]!!.id))
                 return null
+            }
+
+            override fun onPostExecute(result: Void?) {
+                val myIntent = Intent()
+                myIntent.putExtra("item updated","NONE")
+                listaActivity.setResult(5, myIntent)
+                listaActivity.finish()
             }
         }
     }

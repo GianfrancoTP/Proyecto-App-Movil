@@ -94,7 +94,7 @@ class AdaptadorItemsCustom(private val specificItemClickListener: OnSpecificItem
             }
 
             view.seeItemDetails.setOnClickListener{
-                clickListener.onEyeItemCLicked(item)
+                clickListener.onEyeItemCLicked(item, adapterPosition)
             }
         }
     }
@@ -102,7 +102,7 @@ class AdaptadorItemsCustom(private val specificItemClickListener: OnSpecificItem
 
 interface OnSpecificItemClickListener{
     fun onSpecificItemCLicked(result: Item, it:CheckBox)
-    fun onEyeItemCLicked(result: Item)
+    fun onEyeItemCLicked(result: Item, position: Int)
 }
 class Item(var nameItem: String, var estado: Boolean, var prioridad:Boolean, var plazo: String?, var notasItem: String?,
            var fechaCreacion: String, var isShown: Boolean): Serializable {}
