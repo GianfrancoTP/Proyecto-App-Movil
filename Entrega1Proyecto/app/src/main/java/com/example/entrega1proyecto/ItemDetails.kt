@@ -23,6 +23,13 @@ import com.example.entrega1proyecto.model.adapters.ListItems
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
 import com.example.entrega1proyecto.networking.isOnline
+import com.example.entrega1proyecto.utils.LocationUtil
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_item_details.*
 import kotlinx.android.synthetic.main.popup.view.*
 import retrofit2.Call
@@ -53,6 +60,9 @@ class ItemDetails : AppCompatActivity() {
     //lateinit var idListaABorrar:ListBDD
     //lateinit var idItemABorrar:ItemBDD
     var idList = (-1).toLong()
+    // MAPS
+    private lateinit var mMap: GoogleMap
+    private lateinit var locationData: LocationUtil
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,6 +83,14 @@ class ItemDetails : AppCompatActivity() {
             listBeingUsed = intent.getSerializableExtra("list") as ListBDD
             idList = listBeingUsed.id
         }
+
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
+        locationData = LocationUtil(this)
+        mapFragment.getMapAsync { googleMap ->
+            mMap = googleMap
+            invokeLocationAction()
+        }
+
 
         //CheckIsInAPI(this).execute()
 
@@ -149,7 +167,7 @@ class ItemDetails : AppCompatActivity() {
     }
 
     // When we end modifying the item
-    fun updateItem(){
+    fun updateItem(savedInstanceState: Bundle){
         item!!.nameItem =  nombreItemTextView.text.toString()
         itemDb.name = nombreItemTextView.text.toString()
 
@@ -177,6 +195,12 @@ class ItemDetails : AppCompatActivity() {
         }
         itemDb.done = item!!.estado
         itemDb.isShown = item!!.isShown
+
+        savedInstanceState.putLong("id list",idList)
+        savedInstanceState.putBoolean("onlinef", online)
+        savedInstanceState.putSerializable("Item", item as Serializable)
+        savedInstanceState.putBoolean("IS_SHOWING_DIALOG", isShowingDialog)
+
         UpdateItem(this)
     }
 
@@ -267,12 +291,7 @@ class ItemDetails : AppCompatActivity() {
     // Function to maintain the data when the activity is changed of state
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
-        updateItem()
-        // We give the username
-        savedInstanceState.putLong("id list",idList)
-        savedInstanceState.putBoolean("onlinef", online)
-        savedInstanceState.putSerializable("Item", item as Serializable)
-        savedInstanceState.putBoolean("IS_SHOWING_DIALOG", isShowingDialog)
+        updateItem(savedInstanceState)
     }
 
     // Function to obtain what was given before changing the state of the activity
@@ -297,6 +316,13 @@ class ItemDetails : AppCompatActivity() {
         //super.onBackPressed()
     }
 
+    fun invokeLocationAction() {
+        val loc = LatLng(itemDb.lat, itemDb.longitud)
+        mMap.addMarker(MarkerOptions().position(loc).title("Marker in ${itemDb.name}"))
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(loc))
+    }
+
+
     companion object{
 
         fun UpdateItem(listaActivity: ItemDetails){
@@ -307,7 +333,6 @@ class ItemDetails : AppCompatActivity() {
                     call: Call<ItemBDD>,
                     response: Response<ItemBDD>
                 ) {
-                    println(response)
                     if (response.isSuccessful) {
                         if (response.body() != null) {
                             listaActivity.itemDb.updated_at = response.body()!!.updated_at
@@ -331,196 +356,9 @@ class ItemDetails : AppCompatActivity() {
             })
         }
 
-/*
-        class CheckIsInAPI(private val listaActivity: ItemDetails):
-            AsyncTask<Void, Void, Void>() {
-            override fun doInBackground(vararg params: Void?): Void? {
-                val request = UserService.buildService(PersonApi::class.java)
-                val call = request.getItem(listaActivity.itemDb.id.toInt(), API_KEY)
-                call.enqueue(object : Callback<ItemBDD> {
-                    override fun onResponse(
-                        call: Call<ItemBDD>,
-                        response: Response<ItemBDD>
-                    ) {
-                        if (response.isSuccessful) {
-                            if (response.body() != null) {
-                            }
-                        }
-                        else{
-                            CheckListInAPI(listaActivity).execute()
-                        }
-                    }
-                    override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
-
-                    }
-                })
-                return null
-            }
-        }
-
-        class CheckListInAPI(private val listaActivity: ItemDetails):
-            AsyncTask<Void, Void, Void>() {
-            override fun doInBackground(vararg params: Void?): Void? {
-                val request = UserService.buildService(PersonApi::class.java)
-                val call = request.getList(listaActivity.listBeingUsed.id.toInt(), API_KEY)
-                call.enqueue(object : Callback<ListBDD> {
-                    override fun onResponse(
-                        call: Call<ListBDD>,
-                        response: Response<ListBDD>
-                    ) {
-                        println("ESTA ES LA RESPUESTA $response")
-                        if (response.isSuccessful) {
-                            if (response.body() != null) {
-                                InsertItemInAPI(listaActivity).execute()
-                            }
-                        }
-                        else{
-                            InsertListInAPI(listaActivity).execute(listaActivity.listBeingUsed)
-                        }
-                    }
-                    override fun onFailure(call: Call<ListBDD>, t: Throwable) {
-                        println("no se encontro")
-
-                    }
-                })
-                return null
-            }
-        }
-
-
-
-        // Class to insert items into the db
-        class InsertListInAPI(private val listaActivity: ItemDetails) : AsyncTask<ListBDD, Void, ListBDD>(){
-            override fun doInBackground(vararg params: ListBDD?): ListBDD? {
-
-                val request = UserService.buildService(PersonApi::class.java)
-                val call = request.postList(params[0]!!, API_KEY)
-                listaActivity.idListaABorrar = params[0]!!
-                var listaMod = params[0]!!
-
-
-                call.enqueue(object : Callback<ListBDD> {
-                    override fun onResponse(
-                        call: Call<ListBDD>,
-                        response: Response<ListBDD>
-                    ) {
-                        println(response)
-                        if (response.isSuccessful) {
-                            if (response.body() != null) {
-                                println("LISTA A BORRAR!!!!!!!     ${listaActivity.idListaABorrar}")
-                                EraseListInDB(listaActivity).execute()
-                                listaMod = response.body()!!
-                                listaMod.isOnline = true
-                                listaActivity.idList = response.body()!!.id
-                                UpdatearConAPI(listaActivity).execute(listaMod)
-                            }
-                        }
-                    }
-                    override fun onFailure(call: Call<ListBDD>, t: Throwable) {
-                    }
-                })
-                return listaMod
-            }
-
-        }
-
-        class UpdatearConAPI(private val listaActivity: ItemDetails):
-            AsyncTask<ListBDD, Void, Void>() {
-            override fun doInBackground(vararg params: ListBDD?): Void? {
-                var listABorrar = params[0]
-                listaActivity.itemDb.list_id = params[0]!!.id
-                listABorrar!!.isOnline = isOnline(listaActivity)
-                listABorrar!!.updated_at = params[0]!!.updated_at
-                InsertListInDB(listaActivity).execute(listABorrar)
-                InsertItemInAPI(listaActivity).execute()
-                return null
-            }
-        }
-
-        class EraseListInDB(private val listaActivity: ItemDetails):
-            AsyncTask<Void, Void, Void>() {
-            override fun doInBackground(vararg params: Void?): Void? {
-                listaActivity.database.deleteList(listaActivity.idListaABorrar)
-                if (!isOnline(listaActivity)){
-                    listaActivity.database.eraseItem(ItemBddErased(listaActivity.idListaABorrar.id))
-                }
-                return null
-            }
-        }
-
-        class InsertListInDB(private val listaActivity: ItemDetails):
-            AsyncTask<ListBDD, Void, Void>() {
-            override fun doInBackground(vararg params: ListBDD?): Void? {
-                listaActivity.database.insertList(params[0]!!)
-                return null
-            }
-        }
-
-        class InsertItemInAPI(private val listaActivity: ItemDetails):
-            AsyncTask<Void, Void, ItemBDD>() {
-            override fun doInBackground(vararg params: Void?): ItemBDD? {
-                val request = UserService.buildService(PersonApi::class.java)
-                val itemTest =
-                    ListItems(
-                        listOf(listaActivity.itemDb)
-                    )
-
-                listaActivity.idItemABorrar = listaActivity.itemDb
-                var listaMod2 = listaActivity.itemDb
-
-                val call = request.postItem(itemTest, API_KEY)
-                call.enqueue(object : Callback<List<ItemBDD>> {
-                    override fun onResponse(
-                        call: Call<List<ItemBDD>>,
-                        response: Response<List<ItemBDD>>
-                    ) {
-                        if (response.isSuccessful) {
-                            if (response.body() != null) {
-                                EraseItemInDB(listaActivity).execute()
-                                listaMod2 = response.body()!![0]
-                                UpdatearItemConAPI(listaActivity).execute(listaMod2)
-                            }
-                        }
-                    }
-
-                    override fun onFailure(call: Call<List<ItemBDD>>, t: Throwable) {
-                    }
-                })
-                return listaMod2
-            }
-        }
-
-        class UpdatearItemConAPI(private val listaAct: ItemDetails):AsyncTask<ItemBDD, Void, Void>(){
-            override fun doInBackground(vararg params: ItemBDD?): Void? {
-                listaAct.itemDb.id = params[0]!!.id
-                listaAct.itemDb.updated_at = params[0]!!.updated_at
-                InsertItemDB(listaAct).execute(listaAct.itemDb)
-                return null
-            }
-        }
-
-        class EraseItemInDB(private val listaAct: ItemDetails):AsyncTask<ItemBDD, Void, Void>(){
-            override fun doInBackground(vararg params: ItemBDD?): Void? {
-                listaAct.database.deleteItem(listaAct.idItemABorrar)
-                if(!isOnline(listaAct)){
-                    listaAct.database.eraseItem(ItemBddErased(listaAct.idItemABorrar.id))
-                }
-                return null
-            }
-        }
-
-        class InsertItemDB(private val listaAct: ItemDetails):AsyncTask<ItemBDD, Void, Void>(){
-            override fun doInBackground(vararg params: ItemBDD?): Void? {
-                params[0]!!.isOnline = isOnline(listaAct)
-                listaAct.database.insertItem(params[0]!!)
-                return null
-            }
-        }
-*/
-
         fun UpdateItemToEnd(listaActivity: ItemDetails){
             val request = UserService.buildService(PersonApi::class.java)
-            println("TESTEO PARTE 1   ${listaActivity.itemDb}")
+            println("LO QUE SE VA A GUARDAR EN LA API   ${listaActivity.itemDb}")
             val call = request.updateItem(listaActivity.itemDb.id.toInt(), listaActivity.itemDb, API_KEY)
             call.enqueue(object : Callback<ItemBDD> {
                 override fun onResponse(
@@ -532,7 +370,7 @@ class ItemDetails : AppCompatActivity() {
                             listaActivity.itemDb.isOnline = true
                             listaActivity.itemDb.updated_at = response.body()!!.updated_at
                             UpdateItemDBEnding(listaActivity).execute()
-                            println("ESTE ES EL BODY DE LA RESPONSE DE GUARDAR EL ITEM EN API ${response.body()}")
+                            println("RESPONSE DE GUARDAR EN API ${response.body()}")
                         }
                     }
                 }
@@ -545,7 +383,7 @@ class ItemDetails : AppCompatActivity() {
                     listaActivity.itemDb.isOnline = false
                     listaActivity.itemDb.updated_at = formatted
                     UpdateItemDBEnding(listaActivity).execute()
-                    println("NO FUNCIONA ${t.message}")
+                    println("NO SE PUDO GUARDAR EN API ${t.message}")
                 }
             })
         }
@@ -553,7 +391,6 @@ class ItemDetails : AppCompatActivity() {
         class UpdateItemDB(private val listaActivity: ItemDetails):
             AsyncTask<Void, Void, Void>() {
             override fun doInBackground(vararg params: Void?): Void? {
-                println("GUARDANDO ITEM EN DB!!!!!!!!! ${listaActivity.itemDb}")
                 listaActivity.database.updateItem(listaActivity.itemDb)
                 return null
             }

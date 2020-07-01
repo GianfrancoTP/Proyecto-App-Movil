@@ -1,9 +1,11 @@
 package com.example.entrega1proyecto
 
+import android.Manifest
 import android.app.Activity
 import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
@@ -15,6 +17,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -26,6 +29,7 @@ import com.example.entrega1proyecto.model.adapters.*
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
 import com.example.entrega1proyecto.networking.isOnline
+import com.example.entrega1proyecto.utils.LocationUtil
 //import com.example.entrega1proyecto.networking.loaders.GetListsFromApilistDetails
 import kotlinx.android.synthetic.main.activity_list_details.*
 import kotlinx.android.synthetic.main.popup.view.*
@@ -41,6 +45,8 @@ import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle
 import java.util.*
 import kotlin.collections.ArrayList
+import androidx.lifecycle.Observer
+import retrofit2.http.Field
 
 class listDetails : AppCompatActivity(),
     OnSpecificItemClickListener {
@@ -67,10 +73,14 @@ class listDetails : AppCompatActivity(),
     var online = false
     var onlinep = false
     var onlinef = false
+    // map
+    private lateinit var locationData: LocationUtil
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_list_details)
+
+        locationData = LocationUtil(this)
 
         // We set the adapter for his activity
         adapter = AdaptadorItemsCustom(this)
@@ -213,6 +223,25 @@ class listDetails : AppCompatActivity(),
             }
         }
     }
+
+    private fun isPermissionsGranted() =
+        ActivityCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+
+    private fun shouldShowRequestPermissionRationale() =
+        ActivityCompat.shouldShowRequestPermissionRationale(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) && ActivityCompat.shouldShowRequestPermissionRationale(
+            this,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
 
     // Function to add items in the list
     fun anadirItem(view: View){
@@ -365,12 +394,15 @@ class listDetails : AppCompatActivity(),
 
         itemModificadoPos = position
         var count = 0
-        map.keys.forEach{
+
+        val itemBuscadoBD = map.filterValues { it.position == position }.values.toMutableList()
+        intent.putExtra("item from db", itemBuscadoBD[0] as Serializable)
+        /*map.keys.forEach{
             if (count == itemModificadoPos){
                 intent.putExtra("item from db", map[it])
             }
             count += 1
-        }
+        }*/
         intent.putExtra("list", listBeingUsed)
         intent.putExtra("online", online)
         intent.putExtra("item to watch", result)
@@ -425,7 +457,7 @@ class listDetails : AppCompatActivity(),
     }
 
     companion object {
-
+        var LOCATION_PERMISSION = 100
         class GetTheList(private val listaActivity: listDetails) :
             AsyncTask<Long, Void, ListWithItems>() {
             override fun doInBackground(vararg params: Long?): ListWithItems {
@@ -476,8 +508,28 @@ class listDetails : AppCompatActivity(),
             }
         }
 
+
         fun InsertItem(listaActivity: listDetails, params: Item?){
             var listaIt = params!!
+            var lat: Double = 0.toDouble()
+            var longitud: Double = 0.toDouble()
+            when {
+                listaActivity.isPermissionsGranted() -> listaActivity.locationData.observe(listaActivity, Observer {
+                    lat =  it.latitude
+                    longitud = it.longitude
+                })
+
+                listaActivity.shouldShowRequestPermissionRationale() -> println("Ask Permission")
+
+                else -> ActivityCompat.requestPermissions(
+                    listaActivity,
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ),
+                    LOCATION_PERMISSION
+                )
+            }
             var itemForBDD = ItemBDD(
                 listaActivity.itemsCounter,
                 listaActivity.listId,
@@ -490,7 +542,9 @@ class listDetails : AppCompatActivity(),
                 listaActivity.itemsOnList.indexOf(params),
                 params!!.isShown,
                 "",
-                true
+                true,
+                longitud,
+                lat
             )
             if(!isOnline(listaActivity))
             {

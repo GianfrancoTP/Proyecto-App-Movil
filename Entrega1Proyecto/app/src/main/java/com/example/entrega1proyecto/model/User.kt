@@ -153,7 +153,11 @@ data class ItemBDD(
     @ColumnInfo(name= UPDATEDAT)
     var updated_at: String,
     @ColumnInfo(name= ONLINE)
-    var isOnline: Boolean
+    var isOnline: Boolean,
+    @ColumnInfo(name= LONG)
+    var longitud: Double,
+    @ColumnInfo(name= LAT)
+    var lat: Double
 ):Serializable{
     companion object{
         const val TABLE2_NAME = "ItemBDD"
@@ -169,6 +173,8 @@ data class ItemBDD(
         const val IS_SHOWN = "isShown"
         const val UPDATEDAT = "updated_at"
         const val ONLINE = "online"
+        const val LONG = "long"
+        const val LAT = "lat"
     }
 }
 

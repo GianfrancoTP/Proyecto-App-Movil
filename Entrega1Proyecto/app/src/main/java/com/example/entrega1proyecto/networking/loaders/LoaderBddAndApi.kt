@@ -81,6 +81,7 @@ fun UpdateAndEraseAll(){
                 }
 
                 override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                    VERIFICADOR = true
                 }
             })
         }
@@ -101,6 +102,7 @@ fun UpdateAndEraseAll(){
                     }
                 }
                 override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
+                    VERIFICADOR = true
                 }
             })
         }
@@ -123,6 +125,7 @@ fun UpdateAndEraseAll(){
 
             override fun onFailure(call: Call<User>, t: Throwable) {
                 println("NO FUNCIONA ${t.message}")
+                VERIFICADOR = true
             }
         })
     }
@@ -150,7 +153,7 @@ fun UpdateAndEraseAll(){
                 }
 
                 override fun onFailure(call: Call<ListBDD>, t: Throwable) {
-
+                    VERIFICADOR = true
                 }
             })
         }
@@ -224,6 +227,7 @@ fun updateAllOfflineItemsToApi(){
                 }
                 override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
                     println("NO FUNCIONA ${t.message}")
+                    VERIFICADOR = true
                 }
             })
         }
@@ -296,6 +300,7 @@ fun GetAllFromApi(){
         }
 
         override fun onFailure(call: Call<List<ListBDD>>, t: Throwable) {
+            VERIFICADOR = true
         }
     })
 

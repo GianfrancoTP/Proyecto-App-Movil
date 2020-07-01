@@ -56,8 +56,19 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/Grid"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/nav">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/detailsBox"
         android:layout_width="730dp"
         android:layout_height="206dp"
@@ -155,30 +166,40 @@
             app:layout_constraintTop_toBottomOf="@+id/textView11" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <ScrollView
-        android:id="@+id/scrollView2"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:background="@color/MyModifiedColor"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/guideline5"
-        app:layout_constraintTop_toBottomOf="@+id/detailsBox"
-        android:layout_marginBottom="10dp">
+            <ScrollView
+                android:id="@+id/scrollView2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/MyModifiedColor"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/guideline5"
+                app:layout_constraintTop_toBottomOf="@+id/detailsBox"
+                android:layout_marginBottom="10dp">
 
-        <EditText
-            android:id="@+id/notasItemEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/MyColor"
-            android:layout_marginStart="30dp"
-            android:paddingStart="9dp"
-            android:paddingTop="9dp"
-            android:layout_marginEnd="30dp"
-            android:paddingEnd="9dp"
-            android:paddingBottom="9dp"
-            android:inputType="textMultiLine"
-            android:textSize="16dp" />
+                <EditText
+                    android:id="@+id/notasItemEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@color/MyColor"
+                    android:layout_marginStart="30dp"
+                    android:paddingStart="9dp"
+                    android:paddingTop="9dp"
+                    android:layout_marginEnd="30dp"
+                    android:paddingEnd="9dp"
+                    android:paddingBottom="9dp"
+                    android:inputType="textMultiLine"
+                    android:textSize="16dp" />
+            </ScrollView>
+
+            <fragment
+                android:id="@+id/map"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_marginTop="15dp"
+                android:layout_width="match_parent"
+                android:layout_height="220dp" />
+
+        </LinearLayout>
     </ScrollView>
 
     <androidx.constraintlayout.widget.Guideline
