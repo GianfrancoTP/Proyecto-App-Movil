@@ -1,10 +1,12 @@
 package com.example.entrega1proyecto
 
 import android.app.Activity
+import android.content.ContentValues.TAG
 import android.content.Intent
 import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,6 +24,18 @@ import com.example.entrega1proyecto.networking.UserService
 import com.example.entrega1proyecto.networking.isOnline
 import com.example.entrega1proyecto.networking.loaders.GetAllFromDB
 import com.example.entrega1proyecto.networking.loaders.setDB
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.SignInButton
+import com.google.android.gms.common.api.ApiException
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textview.MaterialTextView
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import kotlinx.android.synthetic.main.fragment_log.*
 import kotlinx.android.synthetic.main.fragment_log.view.*
 import okhttp3.internal.wait
@@ -32,6 +46,7 @@ import java.io.Serializable
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.*
 import java.util.zip.Inflater
 
 class LogFragment : Fragment() {
@@ -41,7 +56,21 @@ class LogFragment : Fragment() {
     lateinit var database: ListDao
     var online = false
     var onlinef = false
-    lateinit var rootView: View
+    //lateinit var rootView: View
+    // FIREBASE
+    private lateinit var auth: FirebaseAuth
+    private lateinit var googleSignInClient: GoogleSignInClient
+    // Buttons UI
+   /* lateinit var button: SignInButton
+    lateinit var buttonLogOut: SignInButton
+    lateinit var emailTV: MaterialTextView
+    lateinit var nameTV: MaterialTextView
+*/
+
+
+    companion object{
+        private const val RC_SIGN_IN = 123
+    }
 
     fun goToList() {
 
@@ -62,13 +91,30 @@ class LogFragment : Fragment() {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (data != null) {
-            if (resultCode == Activity.RESULT_OK) {
+            // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
+            if (requestCode == RC_SIGN_IN) {
+                val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+                try {
+                    // Google Sign In was successful, authenticate with Firebase
+                    val account = task.getResult(ApiException::class.java)!!
+                    Log.d(TAG, "firebaseAuthWithGoogle:" + account.id)
+                    firebaseAuthWithGoogle(account.idToken!!)
+                    goToList()
+                } catch (e: ApiException) {
+                    // Google Sign In failed, update UI appropriately
+                    Log.w(TAG, "Google sign in failed", e)
+                }
+            }
+            else if (resultCode == Activity.RESULT_OK) {
+                signOut()
                 user = data.getSerializableExtra("user details finish") as User
                 onlinef = data.getBooleanExtra("online", false)
-                emailTextView.setText(user!!.email)
-                passwordTextView.setText(user!!.first_name)
+//                emailTV.setText(user!!.email)
+//                nameTV.setText(user!!.first_name)
             }
         }
+
+
     }
 
     override fun onCreateView(
@@ -76,8 +122,28 @@ class LogFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        rootView = inflater.inflate(R.layout.fragment_log, container, false)
-        val button = rootView.findViewById<Button>(R.id.IngresarButton)
+        /*rootView = inflater.inflate(R.layout.fragment_log, container, false)
+        button = rootView.findViewById(R.id.IngresarButton)
+        buttonLogOut = rootView.findViewById(R.id.LogOutButton)
+        emailTV = rootView.findViewById(R.id.EmailUsuario)
+        nameTV = rootView.findViewById(R.id.NombreUsuario)
+        emailTV.visibility = View.GONE
+        nameTV.visibility = View.GONE
+        buttonLogOut.visibility = View.GONE
+
+        button.setOnClickListener { signIn() }
+        buttonLogOut.setOnClickListener { signOut() }*/
+
+        // Configure Google Sign In
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+
+        googleSignInClient = GoogleSignIn.getClient(activity!!.applicationContext, gso)
+
+        auth = Firebase.auth
+
         // Here we create the db
         VERIFICADOR = false
 
@@ -87,7 +153,7 @@ class LogFragment : Fragment() {
         else{
             VERIFICADOR = true
         }
-        rootView.reloadImageView.visibility = View.GONE
+//        rootView.reloadImageView.visibility = View.GONE
 
         database =
             Room.databaseBuilder(activity!!.applicationContext, Database::class.java, "ListsBDD")
@@ -96,10 +162,10 @@ class LogFragment : Fragment() {
         try {
             user = savedInstanceState?.getSerializable("user details update") as User
             SetUserToDB(this).execute(user)
-            emailTextView.setText(user!!.email)
-            passwordTextView.setText(user!!.first_name)
+//            emailTV.text = user!!.email
+//            nameTV.text = user!!.first_name
         } catch (e: Exception) {
-            rootView.progressBarFragment.visibility = View.VISIBLE
+//            rootView.progressBarFragment.visibility = View.VISIBLE
             AsyncRunnable(this)
             if(isOnline(context!!)){
                 online = true
@@ -107,26 +173,25 @@ class LogFragment : Fragment() {
                 //GetListsFromApi(this).execute()
             }
             else if (!isOnline(context!!) && user == null){
-                rootView.reloadImageView.visibility = View.VISIBLE
-                rootView.reloadImageView.setOnClickListener {
-                    if(isOnline(context!!)){
-                        Toast.makeText(context, "Conectando a internet...", Toast.LENGTH_SHORT)
-                            .show()
-                        reloadImageView.visibility = View.GONE
-                        online = true
-                        //GetUserFromApi(this).execute()
-                        //GetListsFromApi(this).execute()
-                    }
-                    else{
-                        Toast.makeText(context, "Sin conexión", Toast.LENGTH_SHORT)
-                            .show()
-                    }
-                }
+//                rootView.reloadImageView.visibility = View.VISIBLE
+//                rootView.reloadImageView.setOnClickListener {
+//                    if(isOnline(context!!)){
+//                        Toast.makeText(context, "Conectando a internet...", Toast.LENGTH_SHORT)
+//                            .show()
+//                        reloadImageView.visibility = View.GONE
+//                        online = true
+//                        //GetUserFromApi(this).execute()
+//                        //GetListsFromApi(this).execute()
+//                    }
+//                    else{
+//                        Toast.makeText(context, "Sin conexión", Toast.LENGTH_SHORT)
+//                            .show()
+//                    }
+//                }
             }
         }
-
-        button.setOnClickListener { goToList() }
-        return rootView
+//        return rootView
+        return null
     }
 
     fun AsyncRunnable(listaActivity: LogFragment) {
@@ -136,6 +201,86 @@ class LogFragment : Fragment() {
             VERIFICADOR = false
         }).start()
     }
+
+    //          THIS IS FOR FIREBASE LOGIN
+
+    private fun signIn() {
+        val signInIntent = googleSignInClient.signInIntent
+        startActivityForResult(signInIntent, RC_SIGN_IN)
+    }
+
+    private fun signOut() {
+        // Firebase sign out
+        auth.signOut()
+
+        // Google sign out
+        googleSignInClient.signOut().addOnCompleteListener(activity!!) {
+            updateUI(null)
+        }
+    }
+
+    private fun updateUI(user: FirebaseUser?) {
+        if (user != null) {
+
+            val x : User = User(user.email!!, user.displayName!!,"", user.phoneNumber!!, "@drawable/account_icon_50dp")
+
+//            emailTV.visibility = View.VISIBLE
+//            nameTV.visibility = View.VISIBLE
+//            buttonLogOut.visibility = View.VISIBLE
+//            button.visibility = View.GONE
+//
+//            emailTV.text = user.email
+//            nameTV.text = user.displayName
+
+        } else {
+//            emailTV.visibility = View.GONE
+//            nameTV.visibility = View.GONE
+//            buttonLogOut.visibility = View.GONE
+//            button.visibility = View.VISIBLE
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Check if user is signed in (non-null) and update UI accordingly.
+        val currentUser = auth.currentUser
+        updateUI(currentUser)
+    }
+
+    private fun firebaseAuthWithGoogle(idToken: String) {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener(activity!!) { task ->
+                if (task.isSuccessful) {
+                    // Sign in success, update UI with the signed-in user's information
+                    Log.d(TAG, "signInWithCredential:success")
+                    val userGoogle = auth.currentUser
+                    if (userGoogle!!.phoneNumber == null){
+                        if (userGoogle.photoUrl == null){
+                             user = User(userGoogle.email!!, userGoogle.displayName!!,"","1111111111", "@assets/account_icon_50dp")
+                        }
+                        else{
+                            user = User(userGoogle.email!!, userGoogle.displayName!!,"","1111111111", userGoogle.photoUrl.toString())
+                        }
+                    }
+                    else{
+                        if (userGoogle.photoUrl == null){
+                            user = User(userGoogle.email!!, userGoogle.displayName!!,"",userGoogle.phoneNumber!!, "@assets/account_icon_50dp")
+                        }
+                        else{
+                            user = User(userGoogle.email!!, userGoogle.displayName!!,"",userGoogle.phoneNumber!!, userGoogle.photoUrl.toString())
+                        }
+                    }
+                    updateUser(user!!, this)
+                } else {
+                    // If sign in fails, display a message to the user.
+                    Log.w(TAG, "signInWithCredential:failure", task.exception)
+                    updateUI(null)
+                }
+            }
+    }
+
+    //              END OF FIREBASE LOG IN
 
     // Function to save user into the DB
     class SetUserToDB(private val listaActivity: LogFragment) : AsyncTask<User, Void, Void>() {
@@ -175,7 +320,7 @@ class LogFragment : Fragment() {
             return null
         }
     }
-
+/*
     // Function to obtain user from the api
     class GetUserFromApi(private val listaActivity: LogFragment) : AsyncTask<Void, Void, Void>() {
         override fun doInBackground(vararg params: Void?): Void? {
@@ -204,7 +349,7 @@ class LogFragment : Fragment() {
             return null
         }
     }
-
+*/
     class ObtainUserFromDB(private val listaActivity: LogFragment) : AsyncTask<Void, Void, User?>() {
         override fun doInBackground(vararg params: Void?): User? {
             var userBd = listaActivity.database.getUser()
@@ -223,13 +368,57 @@ class LogFragment : Fragment() {
 
         override fun onPostExecute(result: User?) {
             if (result != null) {
-                listaActivity.emailTextView.setText(listaActivity.user!!.email)
-                listaActivity.passwordTextView.setText(listaActivity.user!!.first_name)
+//                listaActivity.emailTV.text = listaActivity.user!!.email
+//                listaActivity.nameTV.text = listaActivity.user!!.first_name
             }
-            listaActivity.rootView.progressBarFragment.visibility = View.GONE
+//            listaActivity.rootView.progressBarFragment.visibility = View.GONE
         }
     }
 
+    fun updateUser(user: User, frag: LogFragment){
+        val request = UserService.buildService(PersonApi::class.java)
+        val call = request.updateUser(user, API_KEY)
+        call.enqueue(object : Callback<User> {
+            @RequiresApi(Build.VERSION_CODES.O)
+            override fun onResponse(
+                call: Call<User>,
+                response: Response<User>
+            ) {
+                if (response.isSuccessful) {
+                    if(response.body() != null) {
+                        val current = LocalDateTime.now()
+                        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                        val formatted = current.format(formatter)
+                        var userp = response.body()
+                        val us = UserBBDD(
+                            1,
+                            userp!!.first_name,
+                            userp.last_name,
+                            userp.email,
+                            userp.phone,
+                            userp.profile_photo,
+                            formatted,
+                            true
+
+                        )
+                        UpdateUserBdd(frag).execute(us)
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call<User>, t: Throwable) {
+                TODO("Not yet implemented")
+            }
+        })
+    }
+
+    class UpdateUserBdd(private val listaActivity: LogFragment) : AsyncTask<UserBBDD, Void, Void?>() {
+        override fun doInBackground(vararg params: UserBBDD?): Void? {
+            listaActivity.database.updateUser(params[0]!!)
+            return null
+        }
+    }
+/*
     // Obtain All lists from the api
     class GetListsFromApi(private val listaActivity: LogFragment) : AsyncTask<Void, Void, Void>() {
         override fun doInBackground(vararg params: Void?): Void? {
@@ -601,4 +790,5 @@ class LogFragment : Fragment() {
             return null
         }
     }
+    */
 }
