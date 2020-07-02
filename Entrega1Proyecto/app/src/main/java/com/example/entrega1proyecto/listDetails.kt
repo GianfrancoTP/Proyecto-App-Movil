@@ -124,6 +124,22 @@ class listDetails : AppCompatActivity(),
             //GetListsFromApilistDetails( applicationContext, this, listId ).execute()
         }
 
+        when {
+            isPermissionsGranted() -> locationData.observe(this, Observer {
+            })
+
+            shouldShowRequestPermissionRationale() -> println("Ask Permission")
+
+            else -> ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
+                LOCATION_PERMISSION
+            )
+        }
+
         SwitchItemsChecked.setOnCheckedChangeListener { compoundButton: CompoundButton, b: Boolean ->
             if (b){
                 val mp = map
@@ -519,7 +535,7 @@ class listDetails : AppCompatActivity(),
                     longitud = it.longitude
                 })
 
-                listaActivity.shouldShowRequestPermissionRationale() -> println("Ask Permission")
+                /*listaActivity.shouldShowRequestPermissionRationale() -> println("Ask Permission")
 
                 else -> ActivityCompat.requestPermissions(
                     listaActivity,
@@ -528,7 +544,7 @@ class listDetails : AppCompatActivity(),
                         Manifest.permission.ACCESS_COARSE_LOCATION
                     ),
                     LOCATION_PERMISSION
-                )
+                )*/
             }
             var itemForBDD = ItemBDD(
                 listaActivity.itemsCounter,

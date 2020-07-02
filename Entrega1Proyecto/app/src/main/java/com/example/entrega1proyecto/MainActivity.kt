@@ -18,6 +18,8 @@ import com.example.entrega1proyecto.model.User
 import com.example.entrega1proyecto.model.UserBBDD
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
+import com.example.entrega1proyecto.networking.isOnline
+import com.example.entrega1proyecto.networking.loaders.setDB
 import com.firebase.ui.auth.AuthUI
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -47,6 +49,18 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if(isOnline(this)) {
+            setDB(this)
+        }
+        else{
+            VERIFICADOR = true
+        }
+        try {
+            user = savedInstanceState?.getSerializable("user details update") as User
+        } catch (e: Exception) {
+            AsyncRunnable(this)
+        }
+
         auth = FirebaseAuth.getInstance()
         database = Room.databaseBuilder(this, Database::class.java, "ListsBDD")
             .build().ListDao()
@@ -78,8 +92,8 @@ class MainActivity : AppCompatActivity() {
             try {
                 // Google Sign In was successful, authenticate with Firebase
                 val account = FirebaseAuth.getInstance().currentUser
-
-                if (account!!.phoneNumber == null){
+                Toast.makeText(this,"Welcome ${account!!.displayName}",Toast.LENGTH_SHORT).show()
+                /*if (account!!.phoneNumber == null){
                     if (account.photoUrl == null){
                         user = User(account.email!!, account.displayName!!,"","1111111111", "@assets/account_icon_50dp")
                     }
@@ -99,10 +113,11 @@ class MainActivity : AppCompatActivity() {
                             account.phoneNumber!!, account.photoUrl.toString())
                     }
                 }
-                updateUser(user!!, this)
+                updateUser(user!!, this)*/
+                goToList()
             } catch (e: ApiException) {
-                println(e)
                 // Google Sign In failed, update UI appropriately
+                println(e)
             }
         }
 
@@ -128,79 +143,32 @@ class MainActivity : AppCompatActivity() {
     }
     // [END onactivityresult]
 
-    private fun firebaseAuthWithGoogle(idToken: String) {
-        val credential = GoogleAuthProvider.getCredential(idToken, null)
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) {
-                    // Sign in success, update UI with the signed-in user's information
-                    Log.d(ContentValues.TAG, "signInWithCredential:success")
-                    val userGoogle = auth.currentUser
-                    if (userGoogle!!.phoneNumber == null){
-                        if (userGoogle.photoUrl == null){
-                            user = User(userGoogle.email!!, userGoogle.displayName!!,"","1111111111", "@assets/account_icon_50dp")
-                        }
-                        else{
-                            user = User(userGoogle.email!!, userGoogle.displayName!!,"","1111111111", userGoogle.photoUrl.toString())
-                        }
-                    }
-                    else{
-                        if (userGoogle.photoUrl == null){
-                            user = User(userGoogle.email!!, userGoogle.displayName!!,"",userGoogle.phoneNumber!!, "@assets/account_icon_50dp")
-                        }
-                        else{
-                            user = User(userGoogle.email!!, userGoogle.displayName!!,"",userGoogle.phoneNumber!!, userGoogle.photoUrl.toString())
-                        }
-                    }
-                    updateUser(user!!, this)
-                } else {
-                    // If sign in fails, display a message to the user.
-                    Log.w(ContentValues.TAG, "signInWithCredential:failure", task.exception)
-                }
+    fun AsyncRunnable(listaActivity: MainActivity) {
+        Thread(Runnable {
+            while(!VERIFICADOR){}
+            ObtainUserFromDB(listaActivity).execute()
+            VERIFICADOR = false
+        }).start()
+    }
+
+    class ObtainUserFromDB(private val listaActivity: MainActivity) : AsyncTask<Void, Void, User?>() {
+        override fun doInBackground(vararg params: Void?): User? {
+            var userBd = listaActivity.database.getUser()
+            if (userBd != null){
+                listaActivity.user = User(
+                    userBd.email,
+                    userBd.first_name,
+                    userBd.last_name,
+                    userBd.phone,
+                    userBd.profile_photo
+                )
+                return listaActivity.user
             }
-    }
-
-
-   /* override fun onGoogleLogin(user: FirebaseUser?) {
-        if (user != null) {
-            Toast.makeText(
-                this, "Welcome ${user.email}.",
-                Toast.LENGTH_SHORT
-            ).show()
-            goTOMainGoogle(user.displayName, user.email)
-        }
-        else{
-            Toast.makeText(
-                this, "Authentication failed.",
-                Toast.LENGTH_SHORT
-            ).show()
+            return null
         }
     }
-
-    fun goTOMainGoogle(user: String?, email: String?){
-        val intent = Intent(this, MainActivity::class.java)
-        if (user!= null) {
-            intent.putExtra("loggedIn", user as Serializable)
-            intent.putExtra("loggedInEmail", email as Serializable)
-            startActivityForResult(intent, 11)
-        }
-        else{
-            Toast.makeText(
-                this, "Authentication failed.",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
-    override fun onLogout() {
-        Toast.makeText(
-            this, "Logout successful.",
-            Toast.LENGTH_SHORT
-        ).show()
-    }*/
 
     fun goToList() {
-
         if (user != null) {
             val intent = Intent(this, ListaActivity::class.java)
             intent.putExtra("coming from Log In", true)
@@ -211,10 +179,9 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Debe tener internet para hacer Log In!", Toast.LENGTH_LONG)
                 .show()
         }
-
     }
 
-    fun updateUser(user: User, frag: MainActivity){
+    /*fun updateUser(user: User, frag: MainActivity){
         val request = UserService.buildService(PersonApi::class.java)
         val call = request.updateUser(user, API_KEY)
         call.enqueue(object : Callback<User> {
@@ -260,7 +227,7 @@ class MainActivity : AppCompatActivity() {
         override fun onPostExecute(result: Void?) {
             listaActivity.goToList()
         }
-    }
+    }*/
 
     companion object {
         var LOGGED = "LOGGED"

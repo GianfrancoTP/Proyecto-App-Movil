@@ -7,6 +7,7 @@ import com.example.entrega1proyecto.model.ItemBddErased.Companion.TABLE_NAME_OFF
 import com.example.entrega1proyecto.model.ListBDD.Companion.TABLE_NAME
 import com.example.entrega1proyecto.model.ListBddErased.Companion.TABLE_NAME_OFFLINE
 import com.example.entrega1proyecto.model.UserBBDD.Companion.TABLE3_NAME
+import com.google.gson.annotations.SerializedName
 import java.io.Serializable
 
 
@@ -154,6 +155,7 @@ data class ItemBDD(
     var updated_at: String,
     @ColumnInfo(name= ONLINE)
     var isOnline: Boolean,
+    @SerializedName("long")
     @ColumnInfo(name= LONG)
     var longitud: Double,
     @ColumnInfo(name= LAT)
