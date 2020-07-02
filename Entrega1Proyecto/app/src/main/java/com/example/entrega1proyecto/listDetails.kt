@@ -75,12 +75,12 @@ class listDetails : AppCompatActivity(),
     var onlinef = false
     // map
     private lateinit var locationData: LocationUtil
+    var lat: Double = 0.toDouble()
+    var longitud: Double = 0.toDouble()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_list_details)
-
-        locationData = LocationUtil(this)
 
         // We set the adapter for his activity
         adapter = AdaptadorItemsCustom(this)
@@ -124,8 +124,12 @@ class listDetails : AppCompatActivity(),
             //GetListsFromApilistDetails( applicationContext, this, listId ).execute()
         }
 
+        locationData = LocationUtil(this)
+
         when {
             isPermissionsGranted() -> locationData.observe(this, Observer {
+                lat =  it.latitude
+                longitud = it.longitude
             })
 
             shouldShowRequestPermissionRationale() -> println("Ask Permission")
@@ -261,6 +265,13 @@ class listDetails : AppCompatActivity(),
 
     // Function to add items in the list
     fun anadirItem(view: View){
+
+        if (isPermissionsGranted()){
+            locationData.observe(this, Observer {
+                lat =  it.latitude
+                longitud = it.longitude
+            })
+        }
         // We show a popup asking the specific things that need to contain an item
         var builder: AlertDialog.Builder = AlertDialog.Builder(this)
         var inflater: LayoutInflater = layoutInflater
@@ -474,6 +485,7 @@ class listDetails : AppCompatActivity(),
 
     companion object {
         var LOCATION_PERMISSION = 100
+
         class GetTheList(private val listaActivity: listDetails) :
             AsyncTask<Long, Void, ListWithItems>() {
             override fun doInBackground(vararg params: Long?): ListWithItems {
@@ -527,9 +539,11 @@ class listDetails : AppCompatActivity(),
 
         fun InsertItem(listaActivity: listDetails, params: Item?){
             var listaIt = params!!
-            var lat: Double = 0.toDouble()
-            var longitud: Double = 0.toDouble()
-            when {
+           /*if (listaActivity.isPermissionsGranted() && listaActivity.locationData.value != null){
+                listaActivity.lat =  listaActivity.locationData.value!!.latitude
+                listaActivity.longitud = listaActivity.locationData.value!!.longitude
+            }*/
+            /*when {
                 listaActivity.isPermissionsGranted() -> listaActivity.locationData.observe(listaActivity, Observer {
                     lat =  it.latitude
                     longitud = it.longitude
@@ -545,7 +559,7 @@ class listDetails : AppCompatActivity(),
                     ),
                     LOCATION_PERMISSION
                 )*/
-            }
+            }*/
             var itemForBDD = ItemBDD(
                 listaActivity.itemsCounter,
                 listaActivity.listId,
@@ -559,8 +573,8 @@ class listDetails : AppCompatActivity(),
                 params!!.isShown,
                 "",
                 true,
-                longitud,
-                lat
+                listaActivity.longitud,
+                listaActivity.lat
             )
             if(!isOnline(listaActivity))
             {

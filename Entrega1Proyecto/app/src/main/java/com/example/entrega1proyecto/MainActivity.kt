@@ -43,22 +43,24 @@ class MainActivity : AppCompatActivity() {
     lateinit var database: ListDao
     var online = false
     var onlinef = false
+    var listo = false
     // FIREBASE
     private lateinit var auth: FirebaseAuth
-    private lateinit var googleSignInClient: GoogleSignInClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        try {
+            user = savedInstanceState?.getSerializable("user details update") as User
+        } catch (e: Exception) {
+            AsyncRunnable(this)
+        }
+
         if(isOnline(this)) {
             setDB(this)
         }
         else{
             VERIFICADOR = true
-        }
-        try {
-            user = savedInstanceState?.getSerializable("user details update") as User
-        } catch (e: Exception) {
-            AsyncRunnable(this)
         }
 
         auth = FirebaseAuth.getInstance()
@@ -88,32 +90,10 @@ class MainActivity : AppCompatActivity() {
 
         // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
-            val task: Task<GoogleSignInAccount> = GoogleSignIn.getSignedInAccountFromIntent(data)
             try {
                 // Google Sign In was successful, authenticate with Firebase
                 val account = FirebaseAuth.getInstance().currentUser
                 Toast.makeText(this,"Welcome ${account!!.displayName}",Toast.LENGTH_SHORT).show()
-                /*if (account!!.phoneNumber == null){
-                    if (account.photoUrl == null){
-                        user = User(account.email!!, account.displayName!!,"","1111111111", "@assets/account_icon_50dp")
-                    }
-                    else{
-                        user = User(account.email!!, account.displayName!!,"","1111111111", account.photoUrl.toString())
-                    }
-                }
-                else{
-                    if (account.photoUrl == null){
-                        user = User(
-                            account.email!!, account.displayName!!,"",
-                            account.phoneNumber!!, "@assets/account_icon_50dp")
-                    }
-                    else{
-                        user = User(
-                            account.email!!, account.displayName!!,"",
-                            account.phoneNumber!!, account.photoUrl.toString())
-                    }
-                }
-                updateUser(user!!, this)*/
                 goToList()
             } catch (e: ApiException) {
                 // Google Sign In failed, update UI appropriately
@@ -122,9 +102,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         else if (resultCode == Activity.RESULT_OK) {
+            AuthUI.getInstance().signOut(this)
             user = data?.getSerializableExtra("user details finish") as User
             onlinef = data.getBooleanExtra("online", false)
-            FirebaseAuth.getInstance().signOut()
             val providers = arrayListOf(
                 AuthUI.IdpConfig.GoogleBuilder().build()
             )
@@ -148,6 +128,7 @@ class MainActivity : AppCompatActivity() {
             while(!VERIFICADOR){}
             ObtainUserFromDB(listaActivity).execute()
             VERIFICADOR = false
+            listo = true
         }).start()
     }
 
@@ -169,6 +150,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun goToList() {
+        Thread(Runnable {
+            while(!listo){}
+        }).start()
         if (user != null) {
             val intent = Intent(this, ListaActivity::class.java)
             intent.putExtra("coming from Log In", true)
@@ -180,54 +164,6 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
     }
-
-    /*fun updateUser(user: User, frag: MainActivity){
-        val request = UserService.buildService(PersonApi::class.java)
-        val call = request.updateUser(user, API_KEY)
-        call.enqueue(object : Callback<User> {
-            @RequiresApi(Build.VERSION_CODES.O)
-            override fun onResponse(
-                call: Call<User>,
-                response: Response<User>
-            ) {
-                if (response.isSuccessful) {
-                    if(response.body() != null) {
-                        val current = LocalDateTime.now()
-                        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
-                        val formatted = current.format(formatter)
-                        var userp = response.body()
-                        val us = UserBBDD(
-                            1,
-                            userp!!.first_name,
-                            userp.last_name,
-                            userp.email,
-                            userp.phone,
-                            userp.profile_photo,
-                            formatted,
-                            true
-
-                        )
-                        UpdateUserBdd(frag).execute(us)
-                    }
-                }
-            }
-
-            override fun onFailure(call: Call<User>, t: Throwable) {
-                TODO("Not yet implemented")
-            }
-        })
-    }
-
-    class UpdateUserBdd(private val listaActivity: MainActivity) : AsyncTask<UserBBDD, Void, Void?>() {
-        override fun doInBackground(vararg params: UserBBDD?): Void? {
-            listaActivity.database.updateUser(params[0]!!)
-            return null
-        }
-
-        override fun onPostExecute(result: Void?) {
-            listaActivity.goToList()
-        }
-    }*/
 
     companion object {
         var LOGGED = "LOGGED"
