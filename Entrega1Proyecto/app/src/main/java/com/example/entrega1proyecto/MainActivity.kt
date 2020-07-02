@@ -21,6 +21,7 @@ import com.example.entrega1proyecto.networking.UserService
 import com.example.entrega1proyecto.networking.isOnline
 import com.example.entrega1proyecto.networking.loaders.setDB
 import com.firebase.ui.auth.AuthUI
+import com.firebase.ui.auth.IdpResponse
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -90,15 +91,17 @@ class MainActivity : AppCompatActivity() {
 
         // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
-            try {
+            if (resultCode == Activity.RESULT_OK){
                 // Google Sign In was successful, authenticate with Firebase
                 val account = FirebaseAuth.getInstance().currentUser
                 Toast.makeText(this,"Welcome ${account!!.displayName}",Toast.LENGTH_SHORT).show()
                 goToList()
-            } catch (e: ApiException) {
-                // Google Sign In failed, update UI appropriately
-                println(e)
+
             }
+            else{
+                finish()
+            }
+
         }
 
         else if (resultCode == Activity.RESULT_OK) {

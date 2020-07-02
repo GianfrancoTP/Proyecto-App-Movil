@@ -90,7 +90,7 @@ class AdaptadorItemsCustom(private val specificItemClickListener: OnSpecificItem
 
             // To update what happens when is checked the item
             view.checkBox.setOnClickListener {
-                clickListener.onSpecificItemCLicked(item, it.checkBox)
+                clickListener.onSpecificItemCLicked(item, it.checkBox, adapterPosition)
             }
 
             view.seeItemDetails.setOnClickListener{
@@ -101,7 +101,7 @@ class AdaptadorItemsCustom(private val specificItemClickListener: OnSpecificItem
 }
 
 interface OnSpecificItemClickListener{
-    fun onSpecificItemCLicked(result: Item, it:CheckBox)
+    fun onSpecificItemCLicked(result: Item, it:CheckBox, position: Int)
     fun onEyeItemCLicked(result: Item, position: Int)
 }
 class Item(var nameItem: String, var estado: Boolean, var prioridad:Boolean, var plazo: String?, var notasItem: String?,

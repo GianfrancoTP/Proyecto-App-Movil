@@ -46,7 +46,6 @@ import java.time.format.FormatStyle
 import java.util.*
 import kotlin.collections.ArrayList
 import androidx.lifecycle.Observer
-import retrofit2.http.Field
 
 class listDetails : AppCompatActivity(),
     OnSpecificItemClickListener {
@@ -393,9 +392,8 @@ class listDetails : AppCompatActivity(),
     }
 
     // We update the item if it was clicked
-    override fun onSpecificItemCLicked(result: Item, check:CheckBox) {
-        var itemModifiedPosition = itemsOnList.indexOf(result)
-        var itemBDDModified = map[result]
+    override fun onSpecificItemCLicked(result: Item, check:CheckBox, position: Int) {
+        var itemBDDModified = map.filterValues { it.position == position }.values.toMutableList()[0]
 
         if(result.estado){
             result.estado = check.isChecked
@@ -410,8 +408,8 @@ class listDetails : AppCompatActivity(),
         itemBDDModified!!.isShown = result.isShown
         map[result] = itemBDDModified
         // We save it on the list ot items
-        itemsOnList[itemModifiedPosition] = result
-        adapter.notifyItemChanged(itemModifiedPosition)
+        itemsOnList[position] = result
+        adapter.notifyItemChanged(position)
         UpdateSpecificItem(this, itemBDDModified)
     }
 
