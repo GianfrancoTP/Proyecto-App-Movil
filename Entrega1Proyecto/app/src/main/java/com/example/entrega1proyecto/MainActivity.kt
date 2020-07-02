@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity() {
                 .createSignInIntentBuilder()
                 .setAvailableProviders(providers)
                 .setLogo(R.drawable.logo_50dp)
-                .setTheme(R.style.ThemeOverlay_AppCompat_DayNight)
+                .setTheme(R.style.LoginTheme)
                 .setAlwaysShowSignInMethodScreen(true)
                 .setIsSmartLockEnabled(false)
                 .build(),
@@ -116,7 +116,7 @@ class MainActivity : AppCompatActivity() {
                     .createSignInIntentBuilder()
                     .setAvailableProviders(providers)
                     .setLogo(R.drawable.logo_50dp)
-                    .setTheme(R.style.ThemeOverlay_AppCompat_DayNight)
+                    .setTheme(R.style.LoginTheme)
                     .setAlwaysShowSignInMethodScreen(true)
                     .setIsSmartLockEnabled(false)
                     .build(),
