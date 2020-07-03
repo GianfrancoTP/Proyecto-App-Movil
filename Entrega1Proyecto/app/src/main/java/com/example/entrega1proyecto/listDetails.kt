@@ -94,7 +94,7 @@ class listDetails : AppCompatActivity(),
         listId = listBeingUsed.id
 
         if (listBeingUsed.isSharedList){
-            getItemsFromSharedList(this)
+            getItemsFromSharedList(this, false)
         }
         else{
             // We obtain the array of list
@@ -815,6 +815,7 @@ class listDetails : AppCompatActivity(),
                     listaActivity.map[item] = it
                     count += 1
                 }
+                getItemsFromSharedList(listaActivity, true)
                 //listaActivity.adapter.notifyDataSetChanged()
             }
         }
@@ -888,7 +889,7 @@ class listDetails : AppCompatActivity(),
             })
         }
 
-        fun getItemsFromSharedList(listaActivity: listDetails){
+        fun getItemsFromSharedList(listaActivity: listDetails, isUpdate: Boolean){
             val request = UserService.buildService(PersonApi::class.java)
             val call = request.getAllItem(listaActivity.listBeingUsed.id.toInt(),API_KEY)
             call.enqueue(object : Callback<List<ItemBDD>> {
@@ -899,10 +900,17 @@ class listDetails : AppCompatActivity(),
                     println(response)
                     if (response.isSuccessful) {
                         if (response.body() != null) {
-                            setSharedItems(response.body()!!, listaActivity)
+                            if(!isUpdate) {
+                                setSharedItems(response.body()!!, listaActivity)
+                            }
+                            else{
+                                updateMapShared(listaActivity, response.body()!!)
+                            }
                         }
                         else{
-                            listaActivity.nombreListaTextView.text = listaActivity.list.name
+                            if(!isUpdate) {
+                                listaActivity.nombreListaTextView.text = listaActivity.list.name
+                            }
                         }
                     }
                 }
@@ -916,7 +924,8 @@ class listDetails : AppCompatActivity(),
             listaActivity.list =
                 ListaItem(
                     listaActivity.listBeingUsed.name,
-                    ArrayList()
+                    ArrayList(),
+                    true
                 )
             val x = items.sortedBy { it.position }
             x.forEach {
@@ -932,6 +941,7 @@ class listDetails : AppCompatActivity(),
                 }
                 listaActivity.list.items!!.add(itemAdded)
                 listaActivity.itemsOnList.add(itemAdded)
+                it.position = listaActivity.itemsOnList.size
                 listaActivity.map[itemAdded] = it
             }
             listaActivity.adapter.setData(listaActivity.itemsOnList)
@@ -958,6 +968,24 @@ class listDetails : AppCompatActivity(),
 
                     }
                 })
+            }
+        }
+
+        fun updateMapShared(listaActivity: listDetails, items: List<ItemBDD>){
+            val x = items.sortedBy { it.position }
+            x.forEach {
+                val itemAdded =
+                    Item(
+                        it.name, it.done, it.starred, it.due_date,
+                        it.notes, it.created_at, it.isShown
+                    )
+                if (listaActivity.SwitchItemsChecked.isChecked){
+                    itemAdded.isShown = it.done
+                } else{
+                    itemAdded.isShown = !it.done
+                }
+                it.position = listaActivity.itemsOnList.size
+                listaActivity.map[itemAdded] = it
             }
         }
     }
