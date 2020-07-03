@@ -6,6 +6,7 @@ import com.example.entrega1proyecto.model.ItemBDD.Companion.TABLE2_NAME
 import com.example.entrega1proyecto.model.ItemBddErased.Companion.TABLE_NAME_OFFLINE_ITEM
 import com.example.entrega1proyecto.model.ListBDD.Companion.TABLE_NAME
 import com.example.entrega1proyecto.model.ListBddErased.Companion.TABLE_NAME_OFFLINE
+import com.example.entrega1proyecto.model.SharedListBDD.Companion.TABLE_NAME4
 import com.example.entrega1proyecto.model.UserBBDD.Companion.TABLE3_NAME
 import com.google.gson.annotations.SerializedName
 import java.io.Serializable
@@ -60,6 +61,9 @@ interface ListDao{
     @Update
     fun updateList(data: ListBDD)
 
+    @Query("SELECT * FROM $TABLE_NAME")
+    fun getAllLists(): List<ListBDD>
+
     @Transaction
     @Query("SELECT * FROM $TABLE_NAME ORDER BY position")
     fun getListWithItems(): List<ListWithItems>
@@ -104,7 +108,9 @@ data class ListBDD(
     @ColumnInfo(name= UPDATEDAT)
     var updated_at: String,
     @ColumnInfo(name= ONLINE)
-    var isOnline: Boolean
+    var isOnline: Boolean,
+    @ColumnInfo(name= SHARED)
+    var isSharedList: Boolean
 ):Serializable{
     companion object{
         const val TABLE_NAME = "ListBDD"
@@ -113,6 +119,7 @@ data class ListBDD(
         const val POSITION = "position"
         const val UPDATEDAT = "updated_at"
         const val ONLINE = "online"
+        const val SHARED = "shared_list"
     }
 }
 
@@ -233,3 +240,19 @@ data class UserBBDD(
         const val ONLINE = "online"
     }
 }
+
+@Entity(tableName = TABLE_NAME4)
+data class SharedListBDD(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = ID)
+    var id: Long,
+    @ColumnInfo(name = LIST_ID_SHARED)
+    var list_id: Long
+):Serializable{
+    companion object{
+        const val TABLE_NAME4 = "ListBDD"
+        const val ID = "id"
+        const val LIST_ID_SHARED = "list_id_shared"
+    }
+}
+

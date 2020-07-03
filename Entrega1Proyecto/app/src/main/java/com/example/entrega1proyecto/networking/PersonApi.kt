@@ -77,4 +77,8 @@ interface PersonApi {
                    @Header("token")  api_key: String?
     ): Call<ItemBDD>
 
+    // Get Shared Lists
+    @GET("shared_lists/")
+    fun getSharedLists(@Header("token") api_key: String?): Call<List<SharedListBDD>>
+
 }

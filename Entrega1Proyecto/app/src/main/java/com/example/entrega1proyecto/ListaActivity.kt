@@ -22,9 +22,15 @@ import com.example.entrega1proyecto.model.adapters.*
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
 import com.example.entrega1proyecto.networking.isOnline
+import com.example.entrega1proyecto.networking.loaders.EraseFromErasedLists
 import com.example.entrega1proyecto.networking.loaders.GetListsFromApi
 import kotlinx.android.synthetic.main.activity_lista.*
 import kotlinx.android.synthetic.main.popup.view.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers.Main
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -59,12 +65,14 @@ class ListaActivity : AppCompatActivity(),
     var online = false
     var onlinep = false
     var onlinef = false
+    // Shared Lists
+    var ListWithIds = ArrayList<Long>()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_lista)
-
+        loop()
         // Here we create the db
         database = Room.databaseBuilder(this, Database::class.java, "ListsBDD").build().ListDao()
 
@@ -160,6 +168,7 @@ class ListaActivity : AppCompatActivity(),
         super.onActivityResult(requestCode, resultCode, data)
         if (data != null) {
             if (resultCode == Activity.RESULT_OK){
+                ListWithIds = ArrayList()
                 listaList = ArrayList()
                 adapter.notifyDataSetChanged()
                 onlinef = data.getBooleanExtra("online", false)
@@ -301,6 +310,16 @@ class ListaActivity : AppCompatActivity(),
         super.onBackPressed()
     }
 
+    private fun loop() {
+        CoroutineScope(IO).launch {
+            delay(5000)
+            CoroutineScope(Main).launch {
+                getAllSharedLists(this@ListaActivity)
+                loop()
+            }
+        }
+    }
+
     companion object {
         var LISTS = "LISTS"
         var IT = this
@@ -332,21 +351,23 @@ class ListaActivity : AppCompatActivity(),
 
                 // Here we add it to the lista list
                 listaActivity.testListaList.forEach{
-                    list =
-                        ListaItem(it.list.name)
-                    if (list.items == null){
-                        list.items = ArrayList()
-                    }
-                    it.items?.forEach {x->
-                        list.items!!.add(
-                            Item(
-                                x.name, x.done, x.starred, x.due_date,
-                                x.notes, x.created_at, x.isShown
+                    if (!it.list.isSharedList){
+                        list =
+                            ListaItem(it.list.name)
+                        if (list.items == null){
+                            list.items = ArrayList()
+                        }
+                        it.items?.forEach {x->
+                            list.items!!.add(
+                                Item(
+                                    x.name, x.done, x.starred, x.due_date,
+                                    x.notes, x.created_at, x.isShown
+                                )
                             )
-                        )
+                        }
+                        listaActivity.map[list] = it.list
+                        listaActivity.listaList.add(list)
                     }
-                    listaActivity.map[list] = it.list
-                    listaActivity.listaList.add(list)
                 }
                 listaActivity.adapter.setData(listaActivity.listaList)
             }
@@ -365,7 +386,8 @@ class ListaActivity : AppCompatActivity(),
                         params[0]!!.name,
                         listaActivity.listaList.indexOf(params[0]!!),
                         "0",
-                        true
+                        true,
+                        isSharedList = false
                     )
                 }
                 else{
@@ -374,7 +396,8 @@ class ListaActivity : AppCompatActivity(),
                         params[0]!!.name,
                         listaActivity.listaList.indexOf(params[0]!!),
                         "0",
-                        false
+                        false,
+                        isSharedList = false
                     )
                 }
 
@@ -532,6 +555,84 @@ class ListaActivity : AppCompatActivity(),
                 return null
             }
 
+        }
+
+        fun getAllSharedLists(listaActivity: ListaActivity){
+            val request = UserService.buildService(PersonApi::class.java)
+            val call = request.getSharedLists(API_KEY)
+            call.enqueue(object : Callback<List<SharedListBDD>> {
+                override fun onResponse(
+                    call: Call<List<SharedListBDD>>,
+                    response: Response<List<SharedListBDD>>
+                ) {
+                    if (response.isSuccessful) {
+                        response.body()?.forEach {
+                            if (!listaActivity.ListWithIds.contains(it.list_id)){
+                                listaActivity.ListWithIds.add(it.list_id)
+                                GetRealSharedList(listaActivity, it)
+                            }
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<List<SharedListBDD>>, t: Throwable) {
+                    GetSharedListsOffline(listaActivity).execute()
+                }
+            })
+        }
+
+        class GetSharedListsOffline(private val listaActivity: ListaActivity): AsyncTask<Void,Void,Void>(){
+            override fun doInBackground(vararg params: Void?): Void? {
+                val allLists = listaActivity.database.getAllLists()
+                allLists.forEach {
+                    if (!listaActivity.ListWithIds.contains(it.id) && it.isSharedList){
+                        listaActivity.ListWithIds.add(it.id)
+                        it.isOnline = false
+                        InsertInBDD(listaActivity).execute(it)
+                    }
+                }
+                return null
+            }
+
+        }
+
+        fun GetRealSharedList(listaActivity: ListaActivity, params: SharedListBDD){
+            val request = UserService.buildService(PersonApi::class.java)
+            val call = request.getList(params.list_id.toInt(),API_KEY)
+            call.enqueue(object : Callback<ListBDD> {
+                override fun onResponse(
+                    call: Call<ListBDD>,
+                    response: Response<ListBDD>
+                ) {
+                    if (response.isSuccessful) {
+                        if(response.body() != null){
+                            val x = response.body()
+                            x!!.isOnline = true
+                            x.position = listaActivity.listaList.size
+                            x.isSharedList = true
+                            InsertInBDD(listaActivity).execute(x)
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                }
+            })
+
+        }
+
+        class InsertInBDD(private val listaActivity: ListaActivity) : AsyncTask<ListBDD, Void, ListaItem>(){
+            override fun doInBackground(vararg params: ListBDD?): ListaItem? {
+                listaActivity.database.insertList(params[0]!!)
+                val listItems = ListaItem(params[0]!!.name, null)
+                listaActivity.map[listItems] = params[0]!!
+                return listItems
+            }
+
+            override fun onPostExecute(result: ListaItem?) {
+                listaActivity.listaList.add(result!!)
+                listaActivity.adapter.notifyItemInserted(listaActivity.listaList.size - 1)
+            }
         }
     }
 }

@@ -51,6 +51,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        database = Room.databaseBuilder(this, Database::class.java, "ListsBDD")
+            .build().ListDao()
+
         try {
             user = savedInstanceState?.getSerializable("user details update") as User
         } catch (e: Exception) {
@@ -65,8 +68,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         auth = FirebaseAuth.getInstance()
-        database = Room.databaseBuilder(this, Database::class.java, "ListsBDD")
-            .build().ListDao()
 
         val providers = arrayListOf(
             AuthUI.IdpConfig.GoogleBuilder().build()
@@ -101,7 +102,6 @@ class MainActivity : AppCompatActivity() {
             else{
                 finish()
             }
-
         }
 
         else if (resultCode == Activity.RESULT_OK) {

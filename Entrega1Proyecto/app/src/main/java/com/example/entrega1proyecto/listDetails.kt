@@ -92,8 +92,14 @@ class listDetails : AppCompatActivity(),
         listBeingUsed = intent.getSerializableExtra(LISTS)!! as ListBDD
         listId = listBeingUsed.id
 
-        // We obtain the array of list
-        GetTheList(this).execute(listId)
+        if (listBeingUsed.isSharedList){
+            getItemsFromSharedList(this)
+        }
+        else{
+            // We obtain the array of list
+            GetTheList(this).execute(listId)
+        }
+
 
         // If the activity haven't changed the orientation
 /*
@@ -192,7 +198,7 @@ class listDetails : AppCompatActivity(),
             }
         }
 
-        //This is for the Drag and Drop ----------------------------------------------------------------------------
+        //This is for the Drag and Drop ------------------------------------------------------------------------
         val touchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0){
             @RequiresApi(Build.VERSION_CODES.O)
             override fun onMove(
@@ -850,6 +856,57 @@ class listDetails : AppCompatActivity(),
                     println("NO FUNCIONA ${t.message}")
                 }
             })
+        }
+
+        fun getItemsFromSharedList(listaActivity: listDetails){
+            val request = UserService.buildService(PersonApi::class.java)
+            val call = request.getAllItem(listaActivity.listBeingUsed.id.toInt(),API_KEY)
+            call.enqueue(object : Callback<List<ItemBDD>> {
+                override fun onResponse(
+                    call: Call<List<ItemBDD>>,
+                    response: Response<List<ItemBDD>>
+                ) {
+                    println(response)
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                            setSharedItems(response.body()!!, listaActivity)
+                        }
+                        else{
+                            listaActivity.nombreListaTextView.text = listaActivity.list.name
+                        }
+                    }
+                }
+                override fun onFailure(call: Call<List<ItemBDD>>, t: Throwable) {
+
+                }
+            })
+        }
+
+        fun setSharedItems(items: List<ItemBDD>, listaActivity: listDetails){
+            listaActivity.list =
+                ListaItem(
+                    listaActivity.listBeingUsed.name,
+                    ArrayList()
+                )
+            val x = items.sortedBy { it.position }
+            x.forEach {
+                val itemAdded =
+                    Item(
+                        it.name, it.done, it.starred, it.due_date,
+                        it.notes, it.created_at, it.isShown
+                    )
+                if (listaActivity.SwitchItemsChecked.isChecked){
+                    itemAdded.isShown = it.done
+                } else{
+                    itemAdded.isShown = !it.done
+                }
+                listaActivity.list.items!!.add(itemAdded)
+                listaActivity.itemsOnList.add(itemAdded)
+                listaActivity.map[itemAdded] = it
+            }
+            listaActivity.adapter.setData(listaActivity.itemsOnList)
+            // We set the name of the list
+            listaActivity.nombreListaTextView.text = listaActivity.listBeingUsed.name
         }
 
     }
