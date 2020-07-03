@@ -46,6 +46,7 @@ import java.time.format.FormatStyle
 import java.util.*
 import kotlin.collections.ArrayList
 import androidx.lifecycle.Observer
+import kotlinx.android.synthetic.main.share_popup.view.*
 
 class listDetails : AppCompatActivity(),
     OnSpecificItemClickListener {
@@ -222,6 +223,8 @@ class listDetails : AppCompatActivity(),
         })
         touchHelper.attachToRecyclerView(itemsRecyclerView)
         // End of Drag and Drop --------------------------------------------------------------------------------
+
+        button3.setOnClickListener { shareListPopUp() }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -485,6 +488,33 @@ class listDetails : AppCompatActivity(),
             finish()
         }
         super.onBackPressed()
+    }
+
+    fun shareListPopUp(){
+        var builder: AlertDialog.Builder = AlertDialog.Builder(this)
+        var inflater: LayoutInflater = layoutInflater
+        var view: View = inflater.inflate(R.layout.share_popup,null)
+        builder.setCancelable(false)
+        builder.setView(view)
+
+        // If they dont want to create a new item we resume what the activity was showing
+        builder.setNegativeButton("Cancelar", object: DialogInterface.OnClickListener{
+            override fun onClick(dialog: DialogInterface?, which: Int) {
+                dialog?.dismiss()
+                isShowingDialogAdd = false
+            }
+        })
+        // Here we create the item
+        builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
+            override fun onClick(dialog: DialogInterface?, which: Int) {
+                postSharedList(this@listDetails, view.emailSharedEditText.text.toString())
+                dialog?.dismiss()
+                isShowingDialogAdd = false
+            }
+        })
+        dialogAdd = builder.create()
+        dialogAdd!!.show()
+        isShowingDialogAdd = true
     }
 
     companion object {
@@ -909,5 +939,26 @@ class listDetails : AppCompatActivity(),
             listaActivity.nombreListaTextView.text = listaActivity.listBeingUsed.name
         }
 
+        fun postSharedList(listaActivity: listDetails, email: String?){
+            if(email != null) {
+                val listToBeShared = SharedList(1,listaActivity.listBeingUsed.id.toInt(),email)
+                val request = UserService.buildService(PersonApi::class.java)
+                val call = request.postSharedList(listToBeShared, API_KEY)
+                call.enqueue(object : Callback<SharedList> {
+                    override fun onResponse(
+                        call: Call<SharedList>,
+                        response: Response<SharedList>
+                    ) {
+                        if (response.isSuccessful) {
+
+                        }
+                    }
+
+                    override fun onFailure(call: Call<SharedList>, t: Throwable) {
+
+                    }
+                })
+            }
+        }
     }
 }

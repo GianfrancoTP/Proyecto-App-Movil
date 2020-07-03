@@ -624,7 +624,7 @@ class ListaActivity : AppCompatActivity(),
         class InsertInBDD(private val listaActivity: ListaActivity) : AsyncTask<ListBDD, Void, ListaItem>(){
             override fun doInBackground(vararg params: ListBDD?): ListaItem? {
                 listaActivity.database.insertList(params[0]!!)
-                val listItems = ListaItem(params[0]!!.name, null)
+                val listItems = ListaItem(params[0]!!.name, null, true)
                 listaActivity.map[listItems] = params[0]!!
                 return listItems
             }

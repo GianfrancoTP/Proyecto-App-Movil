@@ -1,5 +1,7 @@
 package com.example.entrega1proyecto.model.adapters
 
+import android.graphics.Color
+import android.graphics.drawable.AnimationDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -44,6 +46,16 @@ class AdaptadorCustom(private val itemClickListener: OnItemClickListener, privat
             this.item = item
             // We set the name of the list here
             view.listaButton.text = item.name
+
+            if (item.isShared!!){
+                view.listaButton.setTextColor(Color.WHITE)
+                view.listaButton.setBackgroundResource(R.drawable.gradient_list)
+                val animationDrawable = view.listaButton.background as AnimationDrawable
+                animationDrawable.setEnterFadeDuration(2000)
+                animationDrawable.setExitFadeDuration(4000)
+                animationDrawable.start()
+            }
+
             // We set the trash image of the list listening to be able to delete the list
             view.trashImageButton.setOnClickListener{
                 trashListener.onTrashCLicked(item)
@@ -64,4 +76,4 @@ interface OnTrashClickListener{
     fun onTrashCLicked(result: ListaItem)
 }
 
-class ListaItem(var name: String, var items: ArrayList<Item>? = null): Serializable {}
+class ListaItem(var name: String, var items: ArrayList<Item>? = null, var isShared: Boolean? = false): Serializable {}

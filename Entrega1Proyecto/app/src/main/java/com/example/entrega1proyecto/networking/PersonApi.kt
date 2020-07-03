@@ -79,6 +79,13 @@ interface PersonApi {
 
     // Get Shared Lists
     @GET("shared_lists/")
-    fun getSharedLists(@Header("token") api_key: String?): Call<List<SharedListBDD>>
+    fun getSharedLists(@Header("token") api_key: String?
+    ): Call<List<SharedListBDD>>
+
+    // Post Shared List
+    @POST("shared_lists/share")
+    fun postSharedList(@Body list: SharedList,
+                       @Header("token") api_key: String?
+    ): Call<SharedList>
 
 }

@@ -144,11 +144,15 @@ fun UpdateAndEraseAll(){
                     count += 1
                     if (response.isSuccessful) {
                         if (response.body() != null) {
-                            UpdatearOnlineList(it, count).execute(it)
+                            if(!it.isSharedList) {
+                                UpdatearOnlineList(it, count).execute(it)
+                            }
                         }
                     }
                     else{
-                        insertListInApi(it,count)
+                        if(!it.isSharedList) {
+                            insertListInApi(it, count)
+                        }
                     }
                 }
 
@@ -183,6 +187,7 @@ fun insertListInApi(listToInsert: ListBDD, count: Int){
                 }
             }
         }
+
         override fun onFailure(callUpload: Call<ListBDD>, t: Throwable) {
         }
     })
@@ -295,6 +300,9 @@ fun GetAllFromApi(){
                 if (response.body() != null) {
                     allListsFromApi = response.body()!!
                     loadItems(allListsFromApi!!)
+                }
+                else{
+                    VERIFICADOR = true
                 }
             }
         }
@@ -421,29 +429,37 @@ class UploadListsAndItemsToBdd(): AsyncTask<Void, Void, Void>() {
 
 fun uploadListsToApi(){
     val request = UserService.buildService(PersonApi::class.java)
+    var todasShared = true
     allListsWithItemsFromDB?.forEach {
-        val callUpload = request.postList(it.list, API_KEY)
-        callUpload.enqueue(object : Callback<ListBDD> {
-            override fun onResponse(
-                callUpload: Call<ListBDD>,
-                response: Response<ListBDD>
-            ) {
-                print(response)
-                if (response.isSuccessful) {
-                    if (response.body() != null) {
-                        if (it.items != null){
-                            it.items.forEach {
-                                it.list_id = response.body()!!.id
+        if (!it.list.isSharedList) {
+            val callUpload = request.postList(it.list, API_KEY)
+            callUpload.enqueue(object : Callback<ListBDD> {
+                override fun onResponse(
+                    callUpload: Call<ListBDD>,
+                    response: Response<ListBDD>
+                ) {
+                    print(response)
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                            if (it.items != null) {
+                                it.items.forEach {
+                                    it.list_id = response.body()!!.id
+                                }
+                                uploadItemsToApi()
                             }
-                            uploadItemsToApi()
+                            todasShared = todasShared && false
+                            it.list.id = response.body()!!.id
                         }
-                        it.list.id = response.body()!!.id
                     }
                 }
-            }
-            override fun onFailure(callUpload: Call<ListBDD>, t: Throwable) {
-            }
-        })
+
+                override fun onFailure(callUpload: Call<ListBDD>, t: Throwable) {
+                }
+            })
+        }
+    }
+    if(todasShared){
+        VERIFICADOR = true
     }
 }
 

@@ -6,6 +6,7 @@ import com.example.entrega1proyecto.model.ItemBDD.Companion.TABLE2_NAME
 import com.example.entrega1proyecto.model.ItemBddErased.Companion.TABLE_NAME_OFFLINE_ITEM
 import com.example.entrega1proyecto.model.ListBDD.Companion.TABLE_NAME
 import com.example.entrega1proyecto.model.ListBddErased.Companion.TABLE_NAME_OFFLINE
+import com.example.entrega1proyecto.model.SharedList.Companion.TABLE_NAME_SHARED_LISTS
 import com.example.entrega1proyecto.model.SharedListBDD.Companion.TABLE_NAME4
 import com.example.entrega1proyecto.model.UserBBDD.Companion.TABLE3_NAME
 import com.google.gson.annotations.SerializedName
@@ -253,6 +254,24 @@ data class SharedListBDD(
         const val TABLE_NAME4 = "ListBDD"
         const val ID = "id"
         const val LIST_ID_SHARED = "list_id_shared"
+    }
+}
+
+@Entity(tableName = TABLE_NAME_SHARED_LISTS)
+data class SharedList(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = ID)
+    var id: Long,
+    @ColumnInfo(name= LIST_ID_TO_BE_SHARED)
+    var list_id: Int,
+    @ColumnInfo(name= EMAIL_TO_BE_SHARED)
+    var user_email: String
+):Serializable{
+    companion object{
+        const val TABLE_NAME_SHARED_LISTS = "shared_table"
+        const val ID = "id"
+        const val LIST_ID_TO_BE_SHARED = "list_id_to_share"
+        const val EMAIL_TO_BE_SHARED = "email_shared"
     }
 }
 
