@@ -372,6 +372,7 @@ fun loadUser(){
             LoadUserToDb().execute()
         }
     }
+    VERIFICADOR = true
 }
 
 class LoadUserToDb(): AsyncTask<Void, Void, Void>() {

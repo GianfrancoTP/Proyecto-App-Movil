@@ -247,7 +247,8 @@ class ListaActivity : AppCompatActivity(),
                 val listToBeAdded =
                     ListaItem(
                         view.listNameTextView.text.toString(),
-                        ArrayList()
+                        ArrayList(),
+                        false
                     )
                 listaList.add(listToBeAdded)
                 adapter.notifyItemInserted(listaList.size - 1)
@@ -328,7 +329,7 @@ class ListaActivity : AppCompatActivity(),
         class GetAllLists(private val listaActivity: ListaActivity) :
             AsyncTask<Void, Void, ArrayList<ListWithItems>>() {
             var list: ListaItem =
-                ListaItem("")
+                ListaItem("", null, false)
             override fun doInBackground(vararg params: Void?): ArrayList<ListWithItems> {
                 // Here we get the elements from the database
                 listaActivity.testListaList =
@@ -353,7 +354,7 @@ class ListaActivity : AppCompatActivity(),
                 listaActivity.testListaList.forEach{
                     if (!it.list.isSharedList){
                         list =
-                            ListaItem(it.list.name)
+                            ListaItem(it.list.name, null, false)
                         if (list.items == null){
                             list.items = ArrayList()
                         }
