@@ -880,7 +880,7 @@ class listDetails : AppCompatActivity(),
                     if (listaActivity.SwitchItemsChecked.isChecked){
                         item.isShown = it.done
                     }
-
+                    it.position = count
                     listaActivity.itemsOnList[count] = item
                     listaActivity.map[item] = it
                     count += 1

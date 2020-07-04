@@ -287,6 +287,8 @@ class ListaActivity : AppCompatActivity(),
 
         savedInstanceState.putBoolean("online1", onlinef)
 
+        //savedInstanceState.putSerializable("ids list", ListWithIds)
+
         savedInstanceState.putBoolean("IS_SHOWING_DIALOG", isShowingDialog)
 
         savedInstanceState.putBoolean("validador", validador)
@@ -299,8 +301,10 @@ class ListaActivity : AppCompatActivity(),
         user = savedInstanceState?.getSerializable("person") as User
         nombreUsuarioTextView.text = user!!.first_name
 
+        //ListWithIds = savedInstanceState.getSerializable("ids list") as ArrayList<Long>
+
         // Obtain the modified items on the list
-        modified = savedInstanceState?.getSerializable("ItemModificado") as ListaItem
+        modified = savedInstanceState.getSerializable("ItemModificado") as ListaItem
 
         adapter.notifyDataSetChanged()
     }
