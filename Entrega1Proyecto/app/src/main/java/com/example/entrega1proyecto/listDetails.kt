@@ -77,6 +77,8 @@ class listDetails : AppCompatActivity(),
     private lateinit var locationData: LocationUtil
     var lat: Double = 0.toDouble()
     var longitud: Double = 0.toDouble()
+    // shared lists changed name
+    var changedName = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -251,7 +253,7 @@ class listDetails : AppCompatActivity(),
                     itemModificadoPos = data.getIntExtra("item position modified", -1)
                     itemsOnList.removeAt(itemModificadoPos)
                     adapter.notifyItemRemoved(itemModificadoPos)
-                    UpdateMap(this)
+                    UpdateMap(this).execute()
                 }
             }
         }
@@ -368,6 +370,7 @@ class listDetails : AppCompatActivity(),
         })
         builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
+                changedName = true
                 list.name = view.listNameTextView.text.toString()
                 listBeingUsed.name = view.listNameTextView.text.toString()
                 nombreListaTextView.text = list.name
@@ -398,10 +401,24 @@ class listDetails : AppCompatActivity(),
                 list!!.name,
                 itemsOnList
             )
-            myIntent.putExtra("online", online)
-            myIntent.putExtra("listaItems", list)
-            setResult(Activity.RESULT_OK, myIntent)
-            finish()
+            if(listBeingUsed.isSharedList){
+                if (changedName){
+                    myIntent.putExtra("changed name", listBeingUsed.name)
+                    myIntent.putExtra("id changed name", listId)
+                }
+                else{
+                    myIntent.putExtra("changed name", "no")
+                }
+                myIntent.putExtra("online", online)
+                setResult(159, myIntent)
+                finish()
+            }
+            else {
+                myIntent.putExtra("online", online)
+                myIntent.putExtra("listaItems", list)
+                setResult(Activity.RESULT_OK, myIntent)
+                finish()
+            }
         }
     }
 
@@ -498,10 +515,25 @@ class listDetails : AppCompatActivity(),
                 list!!.name,
                 itemsOnList
             )
-            myIntent.putExtra("online", online)
-            myIntent.putExtra("listaItems", list)
-            setResult(Activity.RESULT_OK, myIntent)
-            finish()
+            if(listBeingUsed.isSharedList){
+                if (changedName){
+                    myIntent.putExtra("changed name", listBeingUsed.name)
+                    myIntent.putExtra("id changed name", listId)
+                }
+                else{
+                    myIntent.putExtra("changed name", "no")
+                }
+                myIntent.putExtra("online", online)
+                setResult(159, myIntent)
+                finish()
+            }
+            else{
+                myIntent.putExtra("online", online)
+                myIntent.putExtra("listaItems", list)
+                setResult(Activity.RESULT_OK, myIntent)
+                finish()
+            }
+
         }
         super.onBackPressed()
     }
@@ -721,7 +753,9 @@ class listDetails : AppCompatActivity(),
                             if(!listaActivity.listBeingUsed.isSharedList) {
                                 params.updated_at = response.body()!!.updated_at
                                 params.isOnline = true
-                                UpdateItemDb(listaActivity).execute(params)
+                                if (!listaActivity.listBeingUsed.isSharedList) {
+                                    UpdateItemDb(listaActivity).execute(params)
+                                }
                             }
                             else{
                                 getItemsFromSharedList(listaActivity,true)
@@ -738,7 +772,9 @@ class listDetails : AppCompatActivity(),
                     if(!listaActivity.listBeingUsed.isSharedList) {
                         params.isOnline = false
                         params.updated_at = formatted
-                        UpdateItemDb(listaActivity).execute(params)
+                        if (!listaActivity.listBeingUsed.isSharedList) {
+                            UpdateItemDb(listaActivity).execute(params)
+                        }
                     }
                     else{
                         getItemsFromSharedList(listaActivity,true)
@@ -788,14 +824,28 @@ class listDetails : AppCompatActivity(),
 
             override fun onPostExecute(result: Void?) {
                 listaActivity.list = ListaItem(
-                    listaActivity.list!!.name,
+                    listaActivity.list.name,
                     listaActivity.itemsOnList
                 )
                 val myIntent = Intent()
-                myIntent.putExtra("online", listaActivity.online)
-                myIntent.putExtra("listaItems", listaActivity.list)
-                listaActivity.setResult(Activity.RESULT_OK, myIntent)
-                listaActivity.finish()
+                if(listaActivity.listBeingUsed.isSharedList){
+                    myIntent.putExtra("online", listaActivity.online)
+                    if (listaActivity.changedName){
+                        myIntent.putExtra("changed name", listaActivity.listBeingUsed.name)
+                        myIntent.putExtra("id changed name", listaActivity.listId)
+                    }
+                    else{
+                        myIntent.putExtra("changed name", "no")
+                    }
+                    listaActivity.setResult(159, myIntent)
+                    listaActivity.finish()
+                }
+                else{
+                    myIntent.putExtra("online", listaActivity.online)
+                    myIntent.putExtra("listaItems", listaActivity.list)
+                    listaActivity.setResult(Activity.RESULT_OK, myIntent)
+                    listaActivity.finish()
+                }
             }
         }
 
@@ -835,7 +885,9 @@ class listDetails : AppCompatActivity(),
                     listaActivity.map[item] = it
                     count += 1
                 }
-                getItemsFromSharedList(listaActivity, true)
+                if(listaActivity.listBeingUsed.isSharedList) {
+                    getItemsFromSharedList(listaActivity, true)
+                }
                 //listaActivity.adapter.notifyDataSetChanged()
             }
         }
@@ -862,7 +914,9 @@ class listDetails : AppCompatActivity(),
                             item1.updated_at = response.body()!!.updated_at
                             item1.isOnline = true
                             listaActivity.map[param0] = item1
-                            UpdateItemDb(listaActivity).execute(item1)
+                            if(!listaActivity.listBeingUsed.isSharedList) {
+                                UpdateItemDb(listaActivity).execute(item1)
+                            }
                         }
                     }
                 }
@@ -874,7 +928,9 @@ class listDetails : AppCompatActivity(),
                     item1.isOnline = false
                     item1.updated_at = formatted
                     listaActivity.map[param0] = item1
-                    UpdateItemDb(listaActivity).execute(item1)
+                    if(!listaActivity.listBeingUsed.isSharedList) {
+                        UpdateItemDb(listaActivity).execute(item1)
+                    }
                     println("NO FUNCIONA ${t.message}")
                 }
             })
@@ -891,7 +947,9 @@ class listDetails : AppCompatActivity(),
                             item2.updated_at = response.body()!!.updated_at
                             item2.isOnline = true
                             listaActivity.map[param1] = item2
-                            UpdateItemDb(listaActivity).execute(item2)
+                            if(!listaActivity.listBeingUsed.isSharedList) {
+                                UpdateItemDb(listaActivity).execute(item2)
+                            }
                         }
                     }
                 }
@@ -903,7 +961,9 @@ class listDetails : AppCompatActivity(),
                     item2.isOnline = false
                     item2.updated_at = formatted
                     listaActivity.map[param1] = item2
-                    UpdateItemDb(listaActivity).execute(item2)
+                    if(!listaActivity.listBeingUsed.isSharedList) {
+                        UpdateItemDb(listaActivity).execute(item2)
+                    }
                     println("NO FUNCIONA ${t.message}")
                 }
             })
@@ -994,7 +1054,8 @@ class listDetails : AppCompatActivity(),
         fun updateMapShared(listaActivity: listDetails, items: List<ItemBDD>){
             listaActivity.map = hashMapOf()
             val x = items.sortedBy { it.position }
-            var posBusc = x[0].position
+//            var posBusc = x[0].position
+            var posBusc = 0
             x.forEach { itItem ->
                 val itemAdded =
                     Item(
@@ -1008,13 +1069,33 @@ class listDetails : AppCompatActivity(),
                 }
                 if (itItem.position > posBusc + 1){
                     itItem.position = posBusc + 1
-                    UpdateSpecificItem(listaActivity, itItem)
+                    UpdateSpecificModItem(listaActivity, itItem)
                 }
                 posBusc += 1
                 listaActivity.itemsOnList[itItem.position-1] = itemAdded
                 listaActivity.adapter.notifyItemChanged(itItem.position-1)
                 listaActivity.map[itemAdded] = itItem
             }
+        }
+
+        fun UpdateSpecificModItem(listaActivity: listDetails, params: ItemBDD?){
+            val request = UserService.buildService(PersonApi::class.java)
+            val call = request.updateItem(params!!.id.toInt(), params, API_KEY)
+            call.enqueue(object : Callback<ItemBDD> {
+                override fun onResponse(
+                    call: Call<ItemBDD>,
+                    response: Response<ItemBDD>
+                ) {
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
+                }
+            })
         }
     }
 }

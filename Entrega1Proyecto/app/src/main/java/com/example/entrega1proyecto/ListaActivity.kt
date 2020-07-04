@@ -203,6 +203,19 @@ class ListaActivity : AppCompatActivity(),
                 user = data.getSerializableExtra("user details update") as User
                 nombreUsuarioTextView.text = user!!.first_name
             }
+            else if (resultCode == 159){
+                onlinef = data.getBooleanExtra("online", false)
+                val name = data.getSerializableExtra("changed name") as String
+                if (name != "no"){
+                    val idChangedName = data.getSerializableExtra("id changed name") as Long
+                    ListWithIds.remove(idChangedName)
+                    val listRemovedByName = map.filterValues { it.id == idChangedName }.keys.toMutableList()[0]
+                    map.remove(listRemovedByName)
+                    val g = listaList.indexOf(listRemovedByName)
+                    listaList.remove(listRemovedByName)
+                    adapter.notifyItemRemoved(g)
+                }
+            }
         }
     }
 
