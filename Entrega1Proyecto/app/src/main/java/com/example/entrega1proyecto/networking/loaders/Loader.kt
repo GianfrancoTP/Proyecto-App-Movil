@@ -120,25 +120,50 @@ class PostListToAPI() :
     AsyncTask<ListBDD, Void, Void>() {
     override fun doInBackground(vararg params: ListBDD?): Void? {
         val request = UserService.buildService(PersonApi::class.java)
-        val call = request.postList(params[0]!!, API_KEY)
-        call.enqueue(object : Callback<ListBDD> {
-            override fun onResponse(
-                call: Call<ListBDD>,
-                response: Response<ListBDD>
-            ) {
-                print(response)
-                if (response.isSuccessful) {
-                    if (response.body() != null) {
-                        EraseListFromBD(
-                            response.body()!!
-                        ).execute(params[0]!!)
+        if(!params[0]!!.isSharedList) {
+            val call = request.postList(params[0]!!, API_KEY)
+            call.enqueue(object : Callback<ListBDD> {
+                override fun onResponse(
+                    call: Call<ListBDD>,
+                    response: Response<ListBDD>
+                ) {
+                    print(response)
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                            EraseListFromBD(
+                                response.body()!!
+                            ).execute(params[0]!!)
 
+                        }
                     }
                 }
-            }
-            override fun onFailure(call: Call<ListBDD>, t: Throwable) {
-            }
-        })
+
+                override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                }
+            })
+        }
+        else{
+            val call = request.updateList(params[0]!!.id.toInt(),params[0]!!, API_KEY)
+            call.enqueue(object : Callback<ListBDD> {
+                override fun onResponse(
+                    call: Call<ListBDD>,
+                    response: Response<ListBDD>
+                ) {
+                    print(response)
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                            response.body()!!.isSharedList = true
+                            EraseListFromBD(
+                                response.body()!!
+                            ).execute(params[0]!!)
+
+                        }
+                    }
+                }
+                override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                }
+            })
+        }
 
         return null
     }
