@@ -222,9 +222,7 @@ fun updateAllOfflineItemsToApi(){
                 override fun onResponse(call: Call<ItemBDD>, response: Response<ItemBDD>)
                 {
                     if (response.isSuccessful) {
-                        if (response.body() != null) {
-                            UpdatearOnlineItems(null).execute(it)
-                        }
+                        UpdatearOnlineItems(null).execute(it)
                     }
                     else{
                         insertItemInApi(it)
@@ -236,6 +234,9 @@ fun updateAllOfflineItemsToApi(){
                 }
             })
         }
+    }
+    else{
+        VERIFICADOR = true
     }
 }
 

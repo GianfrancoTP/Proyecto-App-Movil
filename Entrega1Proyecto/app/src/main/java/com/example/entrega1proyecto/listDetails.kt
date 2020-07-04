@@ -428,9 +428,14 @@ class listDetails : AppCompatActivity(),
 
         itemModificadoPos = position
         var count = 0
-
-        val itemBuscadoBD = map.filterValues { it.position == position }.values.toMutableList()
-        intent.putExtra("item from db", itemBuscadoBD[0] as Serializable)
+        if(listBeingUsed.isSharedList){
+            val itemBuscadoBD = map.filterValues { it.position == position + 1 }.values.toMutableList()
+            intent.putExtra("item from db", itemBuscadoBD[0] as Serializable)
+        }
+        else{
+            val itemBuscadoBD = map.filterValues { it.position == position }.values.toMutableList()
+            intent.putExtra("item from db", itemBuscadoBD[0] as Serializable)
+        }
         /*map.keys.forEach{
             if (count == itemModificadoPos){
                 intent.putExtra("item from db", map[it])
@@ -597,12 +602,12 @@ class listDetails : AppCompatActivity(),
             var itemForBDD = ItemBDD(
                 listaActivity.itemsCounter,
                 listaActivity.listId,
-                params!!.nameItem,
-                params!!.estado,
-                params!!.prioridad,
-                params!!.plazo,
-                params!!.notasItem,
-                params!!.fechaCreacion,
+                params.nameItem,
+                params.estado,
+                params.prioridad,
+                params.plazo,
+                params.notasItem,
+                params.fechaCreacion,
                 listaActivity.itemsOnList.indexOf(params),
                 params!!.isShown,
                 "",
@@ -708,9 +713,14 @@ class listDetails : AppCompatActivity(),
                 ) {
                     if (response.isSuccessful) {
                         if (response.body() != null) {
-                            params.updated_at = response.body()!!.updated_at
-                            params.isOnline = true
-                            UpdateItemDb(listaActivity).execute(params)
+                            if(!listaActivity.listBeingUsed.isSharedList) {
+                                params.updated_at = response.body()!!.updated_at
+                                params.isOnline = true
+                                UpdateItemDb(listaActivity).execute(params)
+                            }
+                            else{
+                                getItemsFromSharedList(listaActivity,true)
+                            }
                         }
                     }
                 }
@@ -720,9 +730,14 @@ class listDetails : AppCompatActivity(),
                     val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                     val formatted = current.format(formatter)
                     listaActivity.listBeingUsed.updated_at = formatted
-                    params.isOnline = false
-                    params.updated_at = formatted
-                    UpdateItemDb(listaActivity).execute(params)
+                    if(!listaActivity.listBeingUsed.isSharedList) {
+                        params.isOnline = false
+                        params.updated_at = formatted
+                        UpdateItemDb(listaActivity).execute(params)
+                    }
+                    else{
+                        getItemsFromSharedList(listaActivity,true)
+                    }
                     println("NO FUNCIONA ${t.message}")
 
                 }
@@ -972,20 +987,22 @@ class listDetails : AppCompatActivity(),
         }
 
         fun updateMapShared(listaActivity: listDetails, items: List<ItemBDD>){
+            listaActivity.map = hashMapOf()
             val x = items.sortedBy { it.position }
-            x.forEach {
+            x.forEach { itItem ->
                 val itemAdded =
                     Item(
-                        it.name, it.done, it.starred, it.due_date,
-                        it.notes, it.created_at, it.isShown
+                        itItem.name, itItem.done, itItem.starred, itItem.due_date,
+                        itItem.notes, itItem.created_at, itItem.isShown
                     )
                 if (listaActivity.SwitchItemsChecked.isChecked){
-                    itemAdded.isShown = it.done
+                    itemAdded.isShown = itItem.done
                 } else{
-                    itemAdded.isShown = !it.done
+                    itemAdded.isShown = !itItem.done
                 }
-                it.position = listaActivity.itemsOnList.size
-                listaActivity.map[itemAdded] = it
+                listaActivity.itemsOnList[itItem.position-1] = itemAdded
+                listaActivity.adapter.notifyItemChanged(itItem.position-1)
+                listaActivity.map[itemAdded] = itItem
             }
         }
     }
