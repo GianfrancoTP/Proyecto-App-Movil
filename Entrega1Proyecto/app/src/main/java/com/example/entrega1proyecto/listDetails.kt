@@ -159,7 +159,7 @@ class listDetails : AppCompatActivity(),
                     var itemModifiedPosition = itemsOnList.indexOf(it)
                     it.isShown = it.estado
                     valueTest!!.isShown = it.estado
-                    map[it] = valueTest!!
+                    map[it] = valueTest
                     adapter.notifyItemChanged(itemModifiedPosition)
                     UpdateSpecificItem(this, map[it])
                 }
@@ -182,7 +182,7 @@ class listDetails : AppCompatActivity(),
                     var itemModifiedPosition = itemsOnList.indexOf(it)
                     it.isShown = !it.estado
                     valueTest!!.isShown = it.estado
-                    map[it] = valueTest!!
+                    map[it] = valueTest
                     adapter.notifyItemChanged(itemModifiedPosition)
                     UpdateSpecificItem(this, map[it])
                 }
@@ -209,8 +209,14 @@ class listDetails : AppCompatActivity(),
             ): Boolean {
                 val sourcePosition = viewHolder.adapterPosition
                 val targetPosition = target.adapterPosition
-                map[itemsOnList[sourcePosition]]?.position = targetPosition
-                map[itemsOnList[targetPosition]]?.position = sourcePosition
+                if(listBeingUsed.isSharedList) {
+                    map[itemsOnList[sourcePosition]]?.position = targetPosition + 1
+                    map[itemsOnList[targetPosition]]?.position = sourcePosition + 1
+                }
+                else{
+                    map[itemsOnList[sourcePosition]]?.position = targetPosition
+                    map[itemsOnList[targetPosition]]?.position = sourcePosition
+                }
                 Collections.swap(itemsOnList, sourcePosition, targetPosition)
                 adapter.notifyItemMoved(sourcePosition, targetPosition)
                 ModifyPositionItems(this@listDetails, itemsOnList[sourcePosition], itemsOnList[targetPosition])
@@ -245,9 +251,8 @@ class listDetails : AppCompatActivity(),
                     itemModificadoPos = data.getIntExtra("item position modified", -1)
                     itemsOnList.removeAt(itemModificadoPos)
                     adapter.notifyItemRemoved(itemModificadoPos)
-                    UpdateMap(this).execute()
+                    UpdateMap(this)
                 }
-
             }
         }
     }
@@ -402,7 +407,13 @@ class listDetails : AppCompatActivity(),
 
     // We update the item if it was clicked
     override fun onSpecificItemCLicked(result: Item, check:CheckBox, position: Int) {
-        var itemBDDModified = map.filterValues { it.position == position }.values.toMutableList()[0]
+        lateinit var itemBDDModified: ItemBDD
+        if(listBeingUsed.isSharedList) {
+            itemBDDModified = map.filterValues { it.position == position + 1 }.values.toMutableList()[0]
+        }
+        else{
+            itemBDDModified = map.filterValues { it.position == position }.values.toMutableList()[0]
+        }
 
         if(result.estado){
             result.estado = check.isChecked
@@ -413,8 +424,8 @@ class listDetails : AppCompatActivity(),
             result.isShown = !check.isChecked
         }
 
-        itemBDDModified!!.done = result.estado
-        itemBDDModified!!.isShown = result.isShown
+        itemBDDModified.done = result.estado
+        itemBDDModified.isShown = result.isShown
         map[result] = itemBDDModified
         // We save it on the list ot items
         itemsOnList[position] = result
@@ -578,27 +589,6 @@ class listDetails : AppCompatActivity(),
 
         fun InsertItem(listaActivity: listDetails, params: Item?){
             var listaIt = params!!
-           /*if (listaActivity.isPermissionsGranted() && listaActivity.locationData.value != null){
-                listaActivity.lat =  listaActivity.locationData.value!!.latitude
-                listaActivity.longitud = listaActivity.locationData.value!!.longitude
-            }*/
-            /*when {
-                listaActivity.isPermissionsGranted() -> listaActivity.locationData.observe(listaActivity, Observer {
-                    lat =  it.latitude
-                    longitud = it.longitude
-                })
-
-                /*listaActivity.shouldShowRequestPermissionRationale() -> println("Ask Permission")
-
-                else -> ActivityCompat.requestPermissions(
-                    listaActivity,
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    ),
-                    LOCATION_PERMISSION
-                )*/
-            }*/
             var itemForBDD = ItemBDD(
                 listaActivity.itemsCounter,
                 listaActivity.listId,
@@ -615,6 +605,9 @@ class listDetails : AppCompatActivity(),
                 listaActivity.longitud,
                 listaActivity.lat
             )
+            if(listaActivity.listBeingUsed.isSharedList){
+                itemForBDD.position += 1
+            }
             if(!isOnline(listaActivity))
             {
                 itemForBDD.id += 100
@@ -635,9 +628,16 @@ class listDetails : AppCompatActivity(),
                 ) {
                     if (response.isSuccessful) {
                         if (response.body() != null) {
-                            itemForBDD.id = response.body()!![0].id
-                            itemForBDD.updated_at = response.body()!![0].updated_at
-                            InsertItemDB(listaIt, listaActivity).execute(itemForBDD)
+                            if (!listaActivity.listBeingUsed.isSharedList) {
+                                itemForBDD.id = response.body()!![0].id
+                                itemForBDD.updated_at = response.body()!![0].updated_at
+                                InsertItemDB(listaIt, listaActivity).execute(itemForBDD)
+                            }
+                            else{
+                                itemForBDD.id = response.body()!![0].id
+                                itemForBDD.updated_at = response.body()!![0].updated_at
+                                listaActivity.map[listaIt] = itemForBDD
+                            }
                         }
                     }
                 }
@@ -647,10 +647,15 @@ class listDetails : AppCompatActivity(),
                     val current = LocalDateTime.now()
                     val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                     val formatted = current.format(formatter)
-
-                    itemForBDD.updated_at = formatted
-                    InsertItemDB(listaIt, listaActivity).execute(itemForBDD)
-                    println("NO FUNCIONA ${t.message}")
+                    if (!listaActivity.listBeingUsed.isSharedList) {
+                        itemForBDD.updated_at = formatted
+                        InsertItemDB(listaIt, listaActivity).execute(itemForBDD)
+                        println("NO FUNCIONA ${t.message}")
+                    }
+                    else{
+                        itemForBDD.updated_at = formatted
+                        listaActivity.map[listaIt] = itemForBDD
+                    }
                 }
             })
 
@@ -989,6 +994,7 @@ class listDetails : AppCompatActivity(),
         fun updateMapShared(listaActivity: listDetails, items: List<ItemBDD>){
             listaActivity.map = hashMapOf()
             val x = items.sortedBy { it.position }
+            var posBusc = x[0].position
             x.forEach { itItem ->
                 val itemAdded =
                     Item(
@@ -1000,6 +1006,11 @@ class listDetails : AppCompatActivity(),
                 } else{
                     itemAdded.isShown = !itItem.done
                 }
+                if (itItem.position > posBusc + 1){
+                    itItem.position = posBusc + 1
+                    UpdateSpecificItem(listaActivity, itItem)
+                }
+                posBusc += 1
                 listaActivity.itemsOnList[itItem.position-1] = itemAdded
                 listaActivity.adapter.notifyItemChanged(itItem.position-1)
                 listaActivity.map[itemAdded] = itItem
