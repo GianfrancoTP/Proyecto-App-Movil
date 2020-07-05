@@ -147,14 +147,23 @@ fun UpdateAndEraseAll(){
                             if(!it.isSharedList) {
                                 UpdatearOnlineList(it, count).execute(it)
                             }
+                            // ACA HAY QUE VER EL TEMA DE LA API Y SHARED LISTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                            else{
+                                VERIFICADOR = true
+                            }
                         }
                     }
                     else{
                         if(!it.isSharedList) {
                             insertListInApi(it, count)
                         }
+                        else{
+//                            ACA LOOOOOOOOOOOOOOOO MISMOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                            VERIFICADOR = true
+                        }
                     }
                 }
+
 
                 override fun onFailure(call: Call<ListBDD>, t: Throwable) {
                     VERIFICADOR = true

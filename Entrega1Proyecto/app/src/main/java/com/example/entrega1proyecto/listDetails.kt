@@ -47,6 +47,10 @@ import java.util.*
 import kotlin.collections.ArrayList
 import androidx.lifecycle.Observer
 import kotlinx.android.synthetic.main.share_popup.view.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class listDetails : AppCompatActivity(),
     OnSpecificItemClickListener {
@@ -79,6 +83,9 @@ class listDetails : AppCompatActivity(),
     var longitud: Double = 0.toDouble()
     // shared lists changed name
     var changedName = false
+    var ListWithIdsItems = ArrayList<Long>()
+    var podemosActualizar = true
+    var funcionando = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,6 +109,9 @@ class listDetails : AppCompatActivity(),
             // We obtain the array of list
             GetTheList(this).execute(listId)
         }
+
+        // Contador para ir actualizando la lista
+        loop()
 
 
         // If the activity haven't changed the orientation
@@ -209,6 +219,10 @@ class listDetails : AppCompatActivity(),
                 viewHolder: RecyclerView.ViewHolder,
                 target: RecyclerView.ViewHolder
             ): Boolean {
+                if(funcionando){
+                    Thread.sleep(900)
+                }
+                podemosActualizar = false
                 val sourcePosition = viewHolder.adapterPosition
                 val targetPosition = target.adapterPosition
                 if(listBeingUsed.isSharedList) {
@@ -305,6 +319,10 @@ class listDetails : AppCompatActivity(),
         builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
             @RequiresApi(Build.VERSION_CODES.O)
             override fun onClick(dialog: DialogInterface?, which: Int) {
+                if(funcionando){
+                    Thread.sleep(900)
+                }
+                podemosActualizar = false
                 prioritario = false
                 // We set if its an important item or not
                 if (view.priorityCheckBox.isChecked){
@@ -424,6 +442,10 @@ class listDetails : AppCompatActivity(),
 
     // We update the item if it was clicked
     override fun onSpecificItemCLicked(result: Item, check:CheckBox, position: Int) {
+        if(funcionando){
+            Thread.sleep(900)
+        }
+        podemosActualizar = false
         lateinit var itemBDDModified: ItemBDD
         if(listBeingUsed.isSharedList) {
             itemBDDModified = map.filterValues { it.position == position + 1 }.values.toMutableList()[0]
@@ -452,6 +474,10 @@ class listDetails : AppCompatActivity(),
 
     // To go to the item details activity
     override fun onEyeItemCLicked(result: Item, position: Int) {
+        if(funcionando){
+            Thread.sleep(900)
+        }
+        podemosActualizar = false
         val intent = Intent(this, ItemDetails::class.java)
 
         itemModificadoPos = position
@@ -539,30 +565,51 @@ class listDetails : AppCompatActivity(),
     }
 
     fun shareListPopUp(){
-        var builder: AlertDialog.Builder = AlertDialog.Builder(this)
-        var inflater: LayoutInflater = layoutInflater
-        var view: View = inflater.inflate(R.layout.share_popup,null)
-        builder.setCancelable(false)
-        builder.setView(view)
+        if(listBeingUsed.isSharedList){
+            Toast.makeText(this, "Ya es una lista compartida!", Toast.LENGTH_SHORT).show()
+        }
+        else{
+            var builder: AlertDialog.Builder = AlertDialog.Builder(this)
+            var inflater: LayoutInflater = layoutInflater
+            var view: View = inflater.inflate(R.layout.share_popup,null)
+            builder.setCancelable(false)
+            builder.setView(view)
 
-        // If they dont want to create a new item we resume what the activity was showing
-        builder.setNegativeButton("Cancelar", object: DialogInterface.OnClickListener{
-            override fun onClick(dialog: DialogInterface?, which: Int) {
-                dialog?.dismiss()
-                isShowingDialogAdd = false
+            // If they dont want to create a new item we resume what the activity was showing
+            builder.setNegativeButton("Cancelar", object: DialogInterface.OnClickListener{
+                override fun onClick(dialog: DialogInterface?, which: Int) {
+                    dialog?.dismiss()
+                    isShowingDialogAdd = false
+                }
+            })
+            // Here we create the item
+            builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
+                override fun onClick(dialog: DialogInterface?, which: Int) {
+                    postSharedList(this@listDetails, view.emailSharedEditText.text.toString())
+                    dialog?.dismiss()
+                    isShowingDialogAdd = false
+                }
+            })
+            dialogAdd = builder.create()
+            dialogAdd!!.show()
+            isShowingDialogAdd = true
+        }
+    }
+
+    private fun loop() {
+        CoroutineScope(Dispatchers.IO).launch {
+            delay(5000)
+            CoroutineScope(Dispatchers.Main).launch {
+                if(podemosActualizar) {
+                    funcionando = true
+                    getItemsWorkingFromSharedList(this@listDetails)
+                    loop()
+                }
+                else{
+                    loop()
+                }
             }
-        })
-        // Here we create the item
-        builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
-            override fun onClick(dialog: DialogInterface?, which: Int) {
-                postSharedList(this@listDetails, view.emailSharedEditText.text.toString())
-                dialog?.dismiss()
-                isShowingDialogAdd = false
-            }
-        })
-        dialogAdd = builder.create()
-        dialogAdd!!.show()
-        isShowingDialogAdd = true
+        }
     }
 
     companion object {
@@ -698,6 +745,7 @@ class listDetails : AppCompatActivity(),
             override fun doInBackground(vararg params: ItemBDD?): Void? {
                 listaAct.map[listaActivity] = params[0]!!
                 listaAct.itemsCounter = listaAct.database.insertItem(params[0]!!) + 1
+                listaAct.podemosActualizar = true
                 return null
             }
         }
@@ -888,6 +936,9 @@ class listDetails : AppCompatActivity(),
                 if(listaActivity.listBeingUsed.isSharedList) {
                     getItemsFromSharedList(listaActivity, true)
                 }
+                else{
+                    listaActivity.podemosActualizar = true
+                }
                 //listaActivity.adapter.notifyDataSetChanged()
             }
         }
@@ -990,6 +1041,7 @@ class listDetails : AppCompatActivity(),
                         else{
                             if(!isUpdate) {
                                 listaActivity.nombreListaTextView.text = listaActivity.list.name
+                                listaActivity.podemosActualizar = true
                             }
                         }
                     }
@@ -1009,6 +1061,9 @@ class listDetails : AppCompatActivity(),
                 )
             val x = items.sortedBy { it.position }
             x.forEach {
+                if (!listaActivity.ListWithIdsItems.contains(it.id)) {
+                    listaActivity.ListWithIdsItems.add(it.id)
+                }
                 val itemAdded =
                     Item(
                         it.name, it.done, it.starred, it.due_date,
@@ -1027,6 +1082,7 @@ class listDetails : AppCompatActivity(),
             listaActivity.adapter.setData(listaActivity.itemsOnList)
             // We set the name of the list
             listaActivity.nombreListaTextView.text = listaActivity.listBeingUsed.name
+            listaActivity.podemosActualizar = true
         }
 
         fun postSharedList(listaActivity: listDetails, email: String?){
@@ -1040,7 +1096,7 @@ class listDetails : AppCompatActivity(),
                         response: Response<SharedList>
                     ) {
                         if (response.isSuccessful) {
-
+                            Toast.makeText(listaActivity,"Se ha compartido la lista!", Toast.LENGTH_SHORT).show()
                         }
                     }
 
@@ -1076,6 +1132,7 @@ class listDetails : AppCompatActivity(),
                 listaActivity.adapter.notifyItemChanged(itItem.position-1)
                 listaActivity.map[itemAdded] = itItem
             }
+            listaActivity.podemosActualizar = true
         }
 
         fun UpdateSpecificModItem(listaActivity: listDetails, params: ItemBDD?){
@@ -1096,6 +1153,73 @@ class listDetails : AppCompatActivity(),
                 override fun onFailure(call: Call<ItemBDD>, t: Throwable) {
                 }
             })
+        }
+
+        fun getItemsWorkingFromSharedList(listaActivity: listDetails){
+            val request = UserService.buildService(PersonApi::class.java)
+            val call = request.getAllItem(listaActivity.listBeingUsed.id.toInt(),API_KEY)
+            call.enqueue(object : Callback<List<ItemBDD>> {
+                override fun onResponse(
+                    call: Call<List<ItemBDD>>,
+                    response: Response<List<ItemBDD>>
+                ) {
+                    println(response)
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                            addSharedItems(listaActivity, response.body()!!)
+                        }
+                        else{
+
+                        }
+                    }
+                }
+                override fun onFailure(call: Call<List<ItemBDD>>, t: Throwable) {
+
+                }
+            })
+        }
+
+        fun addSharedItems(listaActivity: listDetails, items: List<ItemBDD>){
+            val x = items.sortedBy { it.position }
+            x.forEach {
+                if (!listaActivity.ListWithIdsItems.contains(it.id)) {
+                    listaActivity.ListWithIdsItems.add(it.id)
+                    val itemAdded =
+                        Item(
+                            it.name, it.done, it.starred, it.due_date,
+                            it.notes, it.created_at, it.isShown
+                        )
+                    if (listaActivity.SwitchItemsChecked.isChecked){
+                        itemAdded.isShown = it.done
+                    } else{
+                        itemAdded.isShown = !it.done
+                    }
+                    listaActivity.list.items!!.add(itemAdded)
+                    listaActivity.itemsOnList.add(itemAdded)
+                    listaActivity.adapter.notifyItemInserted(listaActivity.itemsOnList.size-1)
+                    it.position = listaActivity.itemsOnList.size
+                    listaActivity.map[itemAdded] = it
+                }
+                else{
+                    val o = listaActivity.map.filterValues { itItem -> itItem.id == it.id }.values.toMutableList()[0]
+                    val o2 = listaActivity.map.filterValues { itItem -> itItem.id == it.id }.keys.toMutableList()[0]
+                    if(it.updated_at > o.updated_at){
+                        val shown: Boolean = if(listaActivity.SwitchItemsChecked.isChecked){
+                            it.done
+                        } else{
+                            !it.done
+                        }
+                        val itemShared = Item(it.name,it.done, it.starred,it.due_date,it.notes,it.created_at, shown)
+                        it.position = o.position
+                        listaActivity.list.items!![o.position - 1] = itemShared
+                        listaActivity.itemsOnList[o.position - 1] = itemShared
+                        listaActivity.adapter.notifyItemChanged(o.position - 1)
+                        listaActivity.map.remove(o2)
+                        listaActivity.map[itemShared] = it
+                    }
+                }
+            }
+            listaActivity.funcionando = false
         }
     }
 }
