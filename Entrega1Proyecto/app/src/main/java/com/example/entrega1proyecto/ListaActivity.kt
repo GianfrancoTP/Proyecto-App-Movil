@@ -166,6 +166,16 @@ class ListaActivity : AppCompatActivity(),
         podemosActualizar = false
         // We keep the List who was clicked
         modified = result
+        val c = ArrayList<Int>()
+        listaList.forEach {
+            if (it.isShared!!){
+                c.add(listaList.indexOf(it))
+            }
+        }
+        c.forEach {
+            listaList.removeAt(it)
+            adapter.notifyItemRemoved(it)
+        }
         // Go to the items in a list activity
         val intent = Intent(this, listDetails::class.java)
         intent.putExtra(LISTS, map[result])
@@ -206,16 +216,17 @@ class ListaActivity : AppCompatActivity(),
             else if (resultCode == 159){
                 onlinef = data.getBooleanExtra("online", false)
                 val name = data.getSerializableExtra("changed name") as String
+                ListWithIds = ArrayList()
                 if (name != "no"){
                     val idChangedName = data.getSerializableExtra("id changed name") as Long
-                    ListWithIds.remove(idChangedName)
                     val listRemovedByName = map.filterValues { it.id == idChangedName }.keys.toMutableList()[0]
                     map.remove(listRemovedByName)
-                    val g = listaList.indexOf(listRemovedByName)
+                    /*val g = listaList.indexOf(listRemovedByName)
                     listaList.remove(listRemovedByName)
-                    adapter.notifyItemRemoved(g)
+                    adapter.notifyItemRemoved(g)*/
                 }
                 podemosActualizar = true
+                loop(true)
             }
         }
     }
@@ -227,9 +238,11 @@ class ListaActivity : AppCompatActivity(),
         }
         podemosActualizar = false
         var pos = listaList.indexOf(result)
+        ListWithIds.remove(map[result]!!.id)
         Trash(this).execute(result)
         listaList.remove(result)
         adapter.notifyItemRemoved(pos)
+        println(adapter)
     }
 
     // Function when was clicked the username to log out
@@ -499,9 +512,7 @@ class ListaActivity : AppCompatActivity(),
                         response: Response<ListBDD>
                     ) {
                         if (response.isSuccessful) {
-                            if (response.body() != null) {
-                                println(response.body())
-                            }
+
                         }
                         else{
                             InsertDeletedToDB(listaActivity).execute(ListBddErased(listaABorrar.id))
@@ -537,10 +548,26 @@ class ListaActivity : AppCompatActivity(),
             override fun doInBackground(vararg params: ListaItem?): Void? {
                 var item1 = listaActivity.map[params[0]!!]
                 var item2 = listaActivity.map[params[1]!!]
+                var pos = 0
+                // Si el item1 es lista compartida
+                if(item1!!.isSharedList && !item2!!.isSharedList) {
+                    pos = item1.position - 1
+                    item1.position = item2.position + 1
+                    item2.position = pos
+                }
+                // Si el item2 es lista compartida
+                else if(item2!!.isSharedList && !item1.isSharedList){
+                    pos = item1.position + 1
+                    item1.position = item2.position - 1
+                    item2.position = pos
+                }
+                // Si ambos son o ninguno es
+                else{
+                    pos = item1.position
+                    item1.position = item2.position
+                    item2.position = pos
+                }
 
-                val pos = item1!!.position
-                item1.position = item2!!.position
-                item2.position = pos
 
                 val request = UserService.buildService(PersonApi::class.java)
                 val call = request.updateList(item1.id.toInt(),item1, API_KEY)
@@ -645,9 +672,9 @@ class ListaActivity : AppCompatActivity(),
                         InsertInBDD(listaActivity, false).execute(it)
                     }
                 }
+                listaActivity.funcionando = false
                 return null
             }
-
         }
 
         fun GetRealSharedList(listaActivity: ListaActivity, params: SharedListBDD){
@@ -662,7 +689,9 @@ class ListaActivity : AppCompatActivity(),
                         if(response.body() != null){
                             val x = response.body()
                             x!!.isOnline = true
-                            x.position = listaActivity.listaList.size
+                            if(x.position > listaActivity.listaList.size + 1) {
+                                x.position = listaActivity.listaList.size + 1
+                            }
                             x.isSharedList = true
                             InsertInBDD(listaActivity, true).execute(x)
                         }
@@ -676,10 +705,31 @@ class ListaActivity : AppCompatActivity(),
         }
 
         class InsertInBDD(private val listaActivity: ListaActivity, private val isToF: Boolean) : AsyncTask<ListBDD, Void, ListaItem>(){
+            var pos = listaActivity.listaList.size
             override fun doInBackground(vararg params: ListBDD?): ListaItem? {
-                listaActivity.database.insertList(params[0]!!)
                 val listItems = ListaItem(params[0]!!.name, null, true)
+                if(params[0]!!.position - 1 != listaActivity.listaList.size){
+                    listaActivity.listaList.add(params[0]!!.position - 1,listItems)
+                    pos = params[0]!!.position - 1
+                    listaActivity.map.keys.forEach {
+                        if(it.isShared!!){
+                            listaActivity.map[it]!!.position =  listaActivity.listaList.indexOf(it) + 1
+                            listaActivity.database.updateList(listaActivity.map[it]!!)
+                            updatePosInApi(listaActivity, listaActivity.map[it]!!)
+                        }
+                        else{
+                            listaActivity.map[it]!!.position =  listaActivity.listaList.indexOf(it)
+                            listaActivity.database.updateList(listaActivity.map[it]!!)
+                            updatePosInApi(listaActivity, listaActivity.map[it]!!)
+                        }
+                    }
+                }
+                else{
+                    listaActivity.listaList.add(listItems)
+                }
+                listaActivity.database.insertList(params[0]!!)
                 listaActivity.map[listItems] = params[0]!!
+
                 if(isToF){
                     updatePosInApi(listaActivity, params[0]!!)
                 }
@@ -687,8 +737,8 @@ class ListaActivity : AppCompatActivity(),
             }
 
             override fun onPostExecute(result: ListaItem?) {
-                listaActivity.listaList.add(result!!)
-                listaActivity.adapter.notifyItemInserted(listaActivity.listaList.size - 1)
+
+                listaActivity.adapter.notifyItemInserted(pos)
                 if(!isToF){
                     listaActivity.funcionando = false
                 }

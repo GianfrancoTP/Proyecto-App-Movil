@@ -55,6 +55,10 @@ class AdaptadorCustom(private val itemClickListener: OnItemClickListener, privat
                 animationDrawable.setExitFadeDuration(4000)
                 animationDrawable.start()
             }
+            else{
+                view.listaButton.setBackgroundResource(R.drawable.button_shape)
+                view.listaButton.setTextColor(Color.BLACK)
+            }
 
             // We set the trash image of the list listening to be able to delete the list
             view.trashImageButton.setOnClickListener{

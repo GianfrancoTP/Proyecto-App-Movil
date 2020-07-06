@@ -148,9 +148,10 @@ fun UpdateAndEraseAll(){
                                 response.body()!!.isSharedList = false
                                 UpdatearOnlineList(it, count).execute(response.body())
                             }
-                            // ACA HAY QUE VER EL TEMA DE LA API Y SHARED LISTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                             else{
-                                VERIFICADOR = true
+                                response.body()!!.isOnline = true
+                                response.body()!!.isSharedList = true
+                                ObtainAllSharedItems(response.body()!!).execute()
                             }
                         }
                     }
@@ -159,7 +160,7 @@ fun UpdateAndEraseAll(){
                             insertListInApi(it, count)
                         }
                         else{
-//                            ACA LOOOOOOOOOOOOOOOO MISMOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                            // Aca no debiese entrar, ya que no podemos crear listas compartidas offline
                             VERIFICADOR = true
                         }
                     }
@@ -179,6 +180,91 @@ fun UpdateAndEraseAll(){
         else{
             GetAllFromApi()
         }
+    }
+}
+
+class ObtainAllSharedItems(private val listToSearch: ListBDD): AsyncTask<Void,Void,Void>(){
+    lateinit var listToUpdate: ListWithItems
+    override fun doInBackground(vararg params: Void): Void? {
+        databaseLoader.updateList(listToSearch)
+        listToUpdate = databaseLoader.getSpecificList(listToSearch.id)
+        return null
+    }
+
+    override fun onPostExecute(result: Void?) {
+        val request = UserService.buildService(PersonApi::class.java)
+        if(listToUpdate.items!!.isNotEmpty()) {
+            listToUpdate.items?.forEach {
+                val callUploadLists = request.updateItem(it.id.toInt(), it, API_KEY)
+                callUploadLists.enqueue(object : Callback<ItemBDD> {
+                    override fun onResponse(
+                        call: Call<ItemBDD>,
+                        response: Response<ItemBDD>
+                    ) {
+                        print(response)
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                response.body()!!.isOnline = true
+                                response.body()!!.isShown = !response.body()!!.done
+                                UpdateItemToBd().execute(response.body())
+                            }
+                        }
+                    }
+
+                    // Esto deberia ir si no encuentra el item en la api
+                    override fun onFailure(callUpload: Call<ItemBDD>, t: Throwable) {
+                        insrtIteminApi(it)
+                    }
+                })
+            }
+        }
+        else{
+            VERIFICADOR = true
+        }
+    }
+}
+
+fun insrtIteminApi(item: ItemBDD){
+    val request = UserService.buildService(PersonApi::class.java)
+    val x = ListItems(listOf(item))
+    val p = item
+    val callUploadLists = request.postItem(x, API_KEY)
+    callUploadLists.enqueue(object : Callback<List<ItemBDD>> {
+        override fun onResponse(
+            call: Call<List<ItemBDD>>,
+            response: Response<List<ItemBDD>>
+        ) {
+            print(response)
+            if (response.isSuccessful) {
+                if (response.body() != null) {
+                    item.id = response.body()!![0].id
+                    item.updated_at = response.body()!![0].updated_at
+                    UpdtItemInApi(p).execute(item)
+                }
+            }
+        }
+        override fun onFailure(callUpload: Call<List<ItemBDD>>, t: Throwable) {
+        }
+    })
+}
+
+class UpdtItemInApi(val item: ItemBDD?): AsyncTask<ItemBDD,Void,Void>(){
+    override fun doInBackground(vararg params: ItemBDD?): Void? {
+        params[0]!!.isOnline = true
+        if (item != null) {
+            databaseLoader.deleteItem(item)
+        }
+        databaseLoader.insertItem(params[0]!!)
+        VERIFICADOR = true
+        return null
+    }
+}
+
+class UpdateItemToBd(): AsyncTask<ItemBDD,Void,Void>() {
+    override fun doInBackground(vararg params: ItemBDD?): Void? {
+        databaseLoader.updateItem(params[0]!!)
+        VERIFICADOR = true
+        return null
     }
 }
 
@@ -264,6 +350,7 @@ fun insertItemInApi(itemToInsert: ItemBDD){
             if (response.isSuccessful) {
                 if (response.body() != null) {
                     itemToInsert.id = response.body()!![0].id
+                    itemToInsert.updated_at = response.body()!![0].updated_at
                     UpdatearOnlineItems(p).execute(itemToInsert)
                 }
             }

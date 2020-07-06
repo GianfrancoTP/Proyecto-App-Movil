@@ -638,11 +638,22 @@ class listDetails : AppCompatActivity(),
                     if (listaActivity.itemsOnList.size != 0){
                         listaActivity.itemsOnList = ArrayList()
                     }
-                    listaActivity.list =
-                        ListaItem(
-                            result.list.name,
-                            ArrayList()
-                        )
+                    if(listaActivity.listBeingUsed.isSharedList) {
+                        listaActivity.list =
+                            ListaItem(
+                                result.list.name,
+                                ArrayList(),
+                                true
+                            )
+                    }
+                    else{
+                        listaActivity.list =
+                            ListaItem(
+                                result.list.name,
+                                ArrayList(),
+                                false
+                            )
+                    }
                     val x = result.items?.sortedBy { it.position }
                     x?.forEach {
                         val itemAdded =
@@ -819,16 +830,9 @@ class listDetails : AppCompatActivity(),
                     val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                     val formatted = current.format(formatter)
                     listaActivity.listBeingUsed.updated_at = formatted
-                    if(!listaActivity.listBeingUsed.isSharedList) {
-                        params.isOnline = false
-                        params.updated_at = formatted
-                        if (!listaActivity.listBeingUsed.isSharedList) {
-                            UpdateItemDb(listaActivity).execute(params)
-                        }
-                    }
-                    else{
-                        getItemsFromSharedList(listaActivity,true)
-                    }
+                    params.isOnline = false
+                    params.updated_at = formatted
+                    UpdateItemDb(listaActivity).execute(params)
                     println("NO FUNCIONA ${t.message}")
 
                 }
@@ -1049,7 +1053,9 @@ class listDetails : AppCompatActivity(),
                     }
                 }
                 override fun onFailure(call: Call<List<ItemBDD>>, t: Throwable) {
-
+                    if(!isUpdate) {
+                        GetTheList(listaActivity).execute(listaActivity.listId)
+                    }
                 }
             })
         }
@@ -1080,12 +1086,20 @@ class listDetails : AppCompatActivity(),
                 listaActivity.itemsOnList.add(itemAdded)
                 it.isOnline = true
                 it.position = listaActivity.itemsOnList.size
+                PostToBd(listaActivity).execute(it)
                 listaActivity.map[itemAdded] = it
             }
             listaActivity.adapter.setData(listaActivity.itemsOnList)
             // We set the name of the list
             listaActivity.nombreListaTextView.text = listaActivity.listBeingUsed.name
             listaActivity.podemosActualizar = true
+        }
+
+        class PostToBd(private val listaActivity: listDetails): AsyncTask<ItemBDD,Void,Void>(){
+            override fun doInBackground(vararg params: ItemBDD?): Void? {
+                listaActivity.database.insertItem(params[0]!!)
+                return null
+            }
         }
 
         fun postSharedList(listaActivity: listDetails, email: String?){
@@ -1134,6 +1148,7 @@ class listDetails : AppCompatActivity(),
                 posBusc += 1
                 listaActivity.itemsOnList[itItem.position-1] = itemAdded
                 listaActivity.adapter.notifyItemChanged(itItem.position-1)
+                PostToBd(listaActivity).execute(itItem)
                 listaActivity.map[itemAdded] = itItem
             }
             listaActivity.podemosActualizar = true
@@ -1178,7 +1193,7 @@ class listDetails : AppCompatActivity(),
                     }
                 }
                 override fun onFailure(call: Call<List<ItemBDD>>, t: Throwable) {
-
+                    listaActivity.funcionando = false
                 }
             })
         }
