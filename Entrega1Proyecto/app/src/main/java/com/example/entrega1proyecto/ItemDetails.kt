@@ -37,8 +37,6 @@ import java.time.format.FormatStyle
 import java.util.*
 
 class ItemDetails : AppCompatActivity() {
-    //                  PIERDE LA INFO PQ HACE MUCHAS COSAS EN EL MAIN THREAD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     var item: Item? = null
     var isShowingDialog = false
     var dialog: Dialog? = null
@@ -50,8 +48,6 @@ class ItemDetails : AppCompatActivity() {
     var onlinep = false
     var onlinef = false
     lateinit var listBeingUsed: ListBDD
-    //lateinit var idListaABorrar:ListBDD
-    //lateinit var idItemABorrar:ItemBDD
     var idList = (-1).toLong()
     // MAPS
     private lateinit var mMap: GoogleMap
@@ -84,9 +80,6 @@ class ItemDetails : AppCompatActivity() {
             invokeLocationAction()
         }
 
-
-        //CheckIsInAPI(this).execute()
-
         if(savedInstanceState!=null){
             onlinep = savedInstanceState.getBoolean("onlinef", false)!!
             isShowingDialog = savedInstanceState.getBoolean("IS_SHOWING_DIALOG", false)
@@ -100,8 +93,6 @@ class ItemDetails : AppCompatActivity() {
 
         if(isOnline(this) && !onlinep && !onlinef){
             online = true
-            //LogFragment.GetUserFromApi(LogFragment()).execute()
-            //GetListsFromApi(applicationContext, null, this).execute()
         }
 
         nombreItemTextView.text = item!!.nameItem
@@ -305,7 +296,6 @@ class ItemDetails : AppCompatActivity() {
     // When the back button was pressed
     override fun onBackPressed() {
         updateItemToEndAct()
-        //super.onBackPressed()
     }
 
     fun invokeLocationAction() {

@@ -115,14 +115,6 @@ class listDetails : AppCompatActivity(),
             loop()
         }
 
-
-        // If the activity haven't changed the orientation
-/*
-        if(savedInstanceState == null) {
-            createItems(list!!)
-        }
-
-*/
         if(savedInstanceState!=null){
             onlinep = savedInstanceState.getBoolean("online1", false)
             isShowingDialogAdd = savedInstanceState.getBoolean("IS_SHOWING_DIALOG_ADD", false)
@@ -140,8 +132,6 @@ class listDetails : AppCompatActivity(),
 
         if(isOnline(this) && !onlinep && !onlinef){
             online = true
-            //LogFragment.GetUserFromApi(LogFragment()).execute()
-            //GetListsFromApilistDetails( applicationContext, this, listId ).execute()
         }
 
         locationData = LocationUtil(this)
@@ -177,16 +167,6 @@ class listDetails : AppCompatActivity(),
                     adapter.notifyItemChanged(itemModifiedPosition)
                     UpdateSpecificItem(this, map[it])
                 }
-                /*map.values.forEach {
-                    if(it.done) {
-                        it.isShown = true
-                        UpdateSpecificItem(this, it)
-                    }
-                    else{
-                        it.isShown = false
-                        UpdateSpecificItem(this, it)
-                    }
-                }*/
             }
             else{
                 val mp = map
@@ -200,16 +180,6 @@ class listDetails : AppCompatActivity(),
                     adapter.notifyItemChanged(itemModifiedPosition)
                     UpdateSpecificItem(this, map[it])
                 }
-                /*map.values.forEach {
-                    if(it.done) {
-                        it.isShown = false
-                        UpdateSpecificItem(this, it)
-                    }
-                    else{
-                        it.isShown = true
-                        UpdateSpecificItem(this, it)
-                    }
-                }*/
             }
         }
 
@@ -492,12 +462,7 @@ class listDetails : AppCompatActivity(),
             val itemBuscadoBD = map.filterValues { it.position == position }.values.toMutableList()
             intent.putExtra("item from db", itemBuscadoBD[0] as Serializable)
         }
-        /*map.keys.forEach{
-            if (count == itemModificadoPos){
-                intent.putExtra("item from db", map[it])
-            }
-            count += 1
-        }*/
+
         intent.putExtra("list", listBeingUsed)
         intent.putExtra("online", online)
         intent.putExtra("item to watch", result)
@@ -925,8 +890,6 @@ class listDetails : AppCompatActivity(),
             }
 
             override fun onPostExecute(result: List<ItemBDD>?) {
-                //listaActivity.adapter.notifyItemRangeRemoved(0, x)
-                //listaActivity.adapter.notifyDataSetChanged()
                 var count = 0
                 listaActivity.map = hashMapOf()
                 result!!.forEach{
@@ -945,7 +908,6 @@ class listDetails : AppCompatActivity(),
                 else{
                     listaActivity.podemosActualizar = true
                 }
-                //listaActivity.adapter.notifyDataSetChanged()
             }
         }
 
@@ -953,10 +915,6 @@ class listDetails : AppCompatActivity(),
         fun ModifyPositionItems(listaActivity: listDetails, param0: Item?, param1: Item?){
             var item1 = listaActivity.map[param0!!]
             var item2 = listaActivity.map[param1!!]
-
-            //val pos = item1!!.position
-            //item1.position = item2!!.position
-            //item2.position = pos
 
             val request = UserService.buildService(PersonApi::class.java)
             val call = request.updateItem(item1?.id!!.toInt(),item1, API_KEY)
@@ -1127,7 +1085,6 @@ class listDetails : AppCompatActivity(),
         fun updateMapShared(listaActivity: listDetails, items: List<ItemBDD>){
             listaActivity.map = hashMapOf()
             val x = items.sortedBy { it.position }
-//            var posBusc = x[0].position
             var posBusc = 0
             x.forEach { itItem ->
                 itItem.isOnline = true

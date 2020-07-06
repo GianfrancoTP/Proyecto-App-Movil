@@ -5,15 +5,12 @@ import android.os.AsyncTask
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.room.Room
-import com.example.entrega1proyecto.LogFragment
 import com.example.entrega1proyecto.MainActivity.Companion.VERIFICADOR
 import com.example.entrega1proyecto.configuration.API_KEY
 import com.example.entrega1proyecto.model.*
-import com.example.entrega1proyecto.model.adapters.Item
 import com.example.entrega1proyecto.model.adapters.ListItems
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
-import com.example.entrega1proyecto.networking.isOnline
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response

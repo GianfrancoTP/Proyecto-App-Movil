@@ -22,8 +22,6 @@ import com.example.entrega1proyecto.model.adapters.*
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
 import com.example.entrega1proyecto.networking.isOnline
-import com.example.entrega1proyecto.networking.loaders.EraseFromErasedLists
-import com.example.entrega1proyecto.networking.loaders.GetListsFromApi
 import kotlinx.android.synthetic.main.activity_lista.*
 import kotlinx.android.synthetic.main.popup.view.*
 import kotlinx.coroutines.CoroutineScope
@@ -47,9 +45,6 @@ class ListaActivity : AppCompatActivity(),
     OnTrashClickListener {
 
     var listaList: ArrayList<ListaItem> = ArrayList()
-    var startingListaList: ArrayList<ListaItem> = ArrayList()
-    var itemsRecibidos: ListaItem =
-        ListaItem("")
     var modified: ListaItem =
         ListaItem("")
     var validador: Boolean = false
@@ -103,16 +98,6 @@ class ListaActivity : AppCompatActivity(),
         onlinef = intent.getBooleanExtra("online", false)
         online = onlinep || isOnline(this) || onlinef
 
-        // ESTOOOOOOOOOOOOOOOOOOOO LO DEBERIAMOOOOOOOOOOOOOOOOOOOOOOOS BORRARRRRRRRRRRRRRRRRRRRRRRRR!!!!!!!!!!!!!!
-        /*if(isOnline(this) && !onlinep && !onlinef){
-            online = true
-            //LogFragment.GetUserFromApi(LogFragment()).execute()
-            GetListsFromApi(
-                applicationContext,
-                this
-            ).execute()
-        }*/
-
         user = intent.getSerializableExtra("user details start") as User
         nombreUsuarioTextView.text = user!!.first_name
 
@@ -121,13 +106,8 @@ class ListaActivity : AppCompatActivity(),
             if (intent?.getSerializableExtra("lista") != null) {
                 validador = true
                 // This is to mantain the list if we change the orientation of the phone
-/*
-                startingListaList = intent.getSerializableExtra("lista")!! as ArrayList<ListaItem>
-                createLists(startingListaList)
-*/
             }
         }
-
 
         //This is for the Drag and Drop ----------------------------------------------------------------------------
 
@@ -221,9 +201,6 @@ class ListaActivity : AppCompatActivity(),
                     val idChangedName = data.getSerializableExtra("id changed name") as Long
                     val listRemovedByName = map.filterValues { it.id == idChangedName }.keys.toMutableList()[0]
                     map.remove(listRemovedByName)
-                    /*val g = listaList.indexOf(listRemovedByName)
-                    listaList.remove(listRemovedByName)
-                    adapter.notifyItemRemoved(g)*/
                 }
                 podemosActualizar = true
                 loop(true)
@@ -237,8 +214,11 @@ class ListaActivity : AppCompatActivity(),
             Thread.sleep(900)
         }
         podemosActualizar = false
+
         var pos = listaList.indexOf(result)
-        ListWithIds.remove(map[result]!!.id)
+        if(result.isShared!!) {
+            ListWithIds.remove(map[result]!!.id)
+        }
         Trash(this).execute(result)
         listaList.remove(result)
         adapter.notifyItemRemoved(pos)
