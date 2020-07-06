@@ -672,6 +672,9 @@ class ListaActivity : AppCompatActivity(),
                             if(x.position > listaActivity.listaList.size + 1) {
                                 x.position = listaActivity.listaList.size + 1
                             }
+                            if (x.position == 0){
+                                x.position = 1
+                            }
                             x.isSharedList = true
                             InsertInBDD(listaActivity, true).execute(x)
                         }
