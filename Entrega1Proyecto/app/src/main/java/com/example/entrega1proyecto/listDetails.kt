@@ -642,8 +642,7 @@ class listDetails : AppCompatActivity(),
                 listaActivity.nombreListaTextView.text = listaActivity.list.name
             }
         }
-
-
+        
         fun InsertItem(listaActivity: listDetails, params: Item?){
             var listaIt = params!!
             var itemForBDD = ItemBDD(
