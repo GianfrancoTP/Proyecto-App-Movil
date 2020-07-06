@@ -111,7 +111,9 @@ class listDetails : AppCompatActivity(),
         }
 
         // Contador para ir actualizando la lista
-        loop()
+        if(listBeingUsed.isSharedList) {
+            loop()
+        }
 
 
         // If the activity haven't changed the orientation
@@ -262,7 +264,7 @@ class listDetails : AppCompatActivity(),
                     itemsOnList[itemModificadoPos] = itemModified!!
                     adapter.notifyItemChanged(itemModificadoPos)
                     UpdateMap(this).execute()
-                    Thread.sleep(2000)
+                    Thread.sleep(900)
                 }catch (e: Exception){
                     itemModificadoPos = data.getIntExtra("item position modified", -1)
                     itemsOnList.removeAt(itemModificadoPos)
@@ -638,7 +640,7 @@ class listDetails : AppCompatActivity(),
                     }
                     listaActivity.list =
                         ListaItem(
-                            result!!.list.name,
+                            result.list.name,
                             ArrayList()
                         )
                     val x = result.items?.sortedBy { it.position }
@@ -1076,6 +1078,7 @@ class listDetails : AppCompatActivity(),
                 }
                 listaActivity.list.items!!.add(itemAdded)
                 listaActivity.itemsOnList.add(itemAdded)
+                it.isOnline = true
                 it.position = listaActivity.itemsOnList.size
                 listaActivity.map[itemAdded] = it
             }
@@ -1113,6 +1116,7 @@ class listDetails : AppCompatActivity(),
 //            var posBusc = x[0].position
             var posBusc = 0
             x.forEach { itItem ->
+                itItem.isOnline = true
                 val itemAdded =
                     Item(
                         itItem.name, itItem.done, itItem.starred, itItem.due_date,
@@ -1182,6 +1186,7 @@ class listDetails : AppCompatActivity(),
         fun addSharedItems(listaActivity: listDetails, items: List<ItemBDD>){
             val x = items.sortedBy { it.position }
             x.forEach {
+                it.isOnline = true
                 if (!listaActivity.ListWithIdsItems.contains(it.id)) {
                     listaActivity.ListWithIdsItems.add(it.id)
                     val itemAdded =

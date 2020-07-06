@@ -129,7 +129,6 @@ fun UpdateAndEraseAll(){
             }
         })
     }
-
     // Updateamos Listas offline
     if (allListsOffline != null && allListsOffline?.size != 0) {
         var count = 0
@@ -145,7 +144,9 @@ fun UpdateAndEraseAll(){
                     if (response.isSuccessful) {
                         if (response.body() != null) {
                             if(!it.isSharedList) {
-                                UpdatearOnlineList(it, count).execute(it)
+                                response.body()!!.isOnline = true
+                                response.body()!!.isSharedList = false
+                                UpdatearOnlineList(it, count).execute(response.body())
                             }
                             // ACA HAY QUE VER EL TEMA DE LA API Y SHARED LISTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                             else{
@@ -308,6 +309,9 @@ fun GetAllFromApi(){
         ) {
             if (response.isSuccessful) {
                 if (response.body() != null) {
+                    response.body()!!.forEach {
+                        it.isOnline = true
+                    }
                     allListsFromApi = response.body()!!
                     loadItems(allListsFromApi!!)
                 }
@@ -353,6 +357,10 @@ fun loadItems(allListsFromApi: List<ListBDD>){
                 if (response.isSuccessful) {
                     if (response.body() != null) {
                         if (response.body()!!.isNotEmpty()) {
+                            response.body()!!.forEach {itSpecificItem ->
+                                itSpecificItem.isOnline = true
+                                itSpecificItem.isShown = !itSpecificItem.done
+                            }
                             allListsWithItemsFromApi.add(ListWithItems(it, response.body()))
                         }
                         else{

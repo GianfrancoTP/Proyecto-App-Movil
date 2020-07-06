@@ -67,12 +67,13 @@ class ListaActivity : AppCompatActivity(),
     var onlinef = false
     // Shared Lists
     var ListWithIds = ArrayList<Long>()
+    var podemosActualizar = true
+    var funcionando = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_lista)
-        loop()
         // Here we create the db
         database = Room.databaseBuilder(this, Database::class.java, "ListsBDD").build().ListDao()
 
@@ -102,14 +103,15 @@ class ListaActivity : AppCompatActivity(),
         onlinef = intent.getBooleanExtra("online", false)
         online = onlinep || isOnline(this) || onlinef
 
-        if(isOnline(this) && !onlinep && !onlinef){
+        // ESTOOOOOOOOOOOOOOOOOOOO LO DEBERIAMOOOOOOOOOOOOOOOOOOOOOOOS BORRARRRRRRRRRRRRRRRRRRRRRRRR!!!!!!!!!!!!!!
+        /*if(isOnline(this) && !onlinep && !onlinef){
             online = true
             //LogFragment.GetUserFromApi(LogFragment()).execute()
             GetListsFromApi(
                 applicationContext,
                 this
             ).execute()
-        }
+        }*/
 
         user = intent.getSerializableExtra("user details start") as User
         nombreUsuarioTextView.text = user!!.first_name
@@ -135,6 +137,10 @@ class ListaActivity : AppCompatActivity(),
                 viewHolder: RecyclerView.ViewHolder,
                 target: RecyclerView.ViewHolder
             ): Boolean {
+                if(funcionando){
+                    Thread.sleep(900)
+                }
+                podemosActualizar = false
                 val sourcePosition = viewHolder.adapterPosition
                 val targetPosition = target.adapterPosition
                 Collections.swap(listaList, sourcePosition, targetPosition)
@@ -154,6 +160,10 @@ class ListaActivity : AppCompatActivity(),
 
     // Function to go to the activity which contains the items inside a list
     override fun onItemCLicked(result: ListaItem){
+        if(funcionando){
+            Thread.sleep(900)
+        }
+        podemosActualizar = false
         // We keep the List who was clicked
         modified = result
         // Go to the items in a list activity
@@ -173,19 +183,13 @@ class ListaActivity : AppCompatActivity(),
                 adapter.notifyDataSetChanged()
                 onlinef = data.getBooleanExtra("online", false)
                 GetAllLists(this).execute()
-                // ACA PUEDE SER QUE NOS FALTE OBTENER LA NUEVA LISTA CON SUS ITEMS (UPDATEAR LA LISTA PARA QUE TENGA SUS NUEVOS ITEMS)
             }
             else if (resultCode == 2){
                 user = data.getSerializableExtra("user details updated") as User
                 val endIntent = Intent()
                 // We give the result to the Log in activity to maintain the information
                 onlinef = data.getBooleanExtra("online", false)
-                if(onlinef){
-                    GetListsFromApi(
-                        applicationContext,
-                        this
-                    ).execute()
-                }
+
                 endIntent.putExtra("online", onlinef)
                 endIntent.putExtra("lista de listas",listaList as Serializable)
                 endIntent.putExtra("user details finish",user as Serializable)
@@ -194,14 +198,10 @@ class ListaActivity : AppCompatActivity(),
             }
             else if (resultCode == 3){
                 onlinef = data.getBooleanExtra("online", false)
-                if(onlinef){
-                    GetListsFromApi(
-                        applicationContext,
-                        this
-                    ).execute()
-                }
+
                 user = data.getSerializableExtra("user details update") as User
                 nombreUsuarioTextView.text = user!!.first_name
+                podemosActualizar = true
             }
             else if (resultCode == 159){
                 onlinef = data.getBooleanExtra("online", false)
@@ -215,20 +215,29 @@ class ListaActivity : AppCompatActivity(),
                     listaList.remove(listRemovedByName)
                     adapter.notifyItemRemoved(g)
                 }
+                podemosActualizar = true
             }
         }
     }
 
     // Function when we want to delete a list
     override fun onTrashCLicked(result: ListaItem) {
+        if(funcionando){
+            Thread.sleep(900)
+        }
+        podemosActualizar = false
         var pos = listaList.indexOf(result)
         Trash(this).execute(result)
         listaList.remove(result)
-        recycler_view.adapter?.notifyItemRemoved(pos)
+        adapter.notifyItemRemoved(pos)
     }
 
     // Function when was clicked the username to log out
     fun logOutPopUp(view: View){
+        if(funcionando){
+            Thread.sleep(900)
+        }
+        podemosActualizar = false
         val intent = Intent(this, UserDetails::class.java)
         // We give the result to the Log in activity to maintain the information
         intent.putExtra("online", online)
@@ -257,6 +266,10 @@ class ListaActivity : AppCompatActivity(),
         // Here we create the new list with null items inside it
         builder.setPositiveButton("Confirmar",object:  DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, which: Int) {
+                if(funcionando){
+                    Thread.sleep(900)
+                }
+                podemosActualizar = false
                 val listToBeAdded =
                     ListaItem(
                         view.listNameTextView.text.toString(),
@@ -328,12 +341,20 @@ class ListaActivity : AppCompatActivity(),
         super.onBackPressed()
     }
 
-    private fun loop() {
+    private fun loop(saltar: Boolean) {
         CoroutineScope(IO).launch {
-            delay(5000)
+            if(!saltar) {
+                delay(5000)
+            }
             CoroutineScope(Main).launch {
-                getAllSharedLists(this@ListaActivity)
-                loop()
+                if(podemosActualizar) {
+                    funcionando = true
+                    getAllSharedLists(this@ListaActivity)
+                    loop(false)
+                }
+                else {
+                    loop(false)
+                }
             }
         }
     }
@@ -388,6 +409,8 @@ class ListaActivity : AppCompatActivity(),
                     }
                 }
                 listaActivity.adapter.setData(listaActivity.listaList)
+                listaActivity.podemosActualizar = true
+                listaActivity.loop(true)
             }
         }
 
@@ -431,6 +454,7 @@ class ListaActivity : AppCompatActivity(),
                             if (response.body() != null) {
                                 listToBeAdded.id = response.body()!!.id
                                 listToBeAdded.updated_at = response.body()!!.updated_at
+                                listToBeAdded.isOnline = true
                                 InsertDB(this@InsertList, listaActivity).execute(listToBeAdded)
                             }
                         }
@@ -441,11 +465,12 @@ class ListaActivity : AppCompatActivity(),
                         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                         val formatted = current.format(formatter)
 
+                        listToBeAdded.isOnline = false
                         listToBeAdded.updated_at = formatted
                         InsertDB(this@InsertList, listaActivity).execute(listToBeAdded)
                     }
                 })
-
+                listaActivity.podemosActualizar = true
                 return null
             }
         }
@@ -465,29 +490,37 @@ class ListaActivity : AppCompatActivity(),
                 val listaABorrar = listaActivity.map[params[0]!!]
                 listaActivity.database.deleteList(listaABorrar!!)
                 listaActivity.database.deleteListItems(listaABorrar.id)
-                if(!isOnline(listaActivity)){
-                    listaActivity.database.eraseList(ListBddErased(listaABorrar.id))
-                }
-                else {
-                    val request = UserService.buildService(PersonApi::class.java)
-                    val call = request.deleteList(listaABorrar!!.id.toInt(), API_KEY)
-                    call.enqueue(object : Callback<ListBDD> {
-                        override fun onResponse(
-                            call: Call<ListBDD>,
-                            response: Response<ListBDD>
-                        ) {
-                            if (response.isSuccessful) {
-                                if (response.body() != null) {
-                                    println(response.body())
-                                }
+
+                val request = UserService.buildService(PersonApi::class.java)
+                val call = request.deleteList(listaABorrar.id.toInt(), API_KEY)
+                call.enqueue(object : Callback<ListBDD> {
+                    override fun onResponse(
+                        call: Call<ListBDD>,
+                        response: Response<ListBDD>
+                    ) {
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                println(response.body())
                             }
                         }
-
-                        override fun onFailure(call: Call<ListBDD>, t: Throwable) {
-                            println("NO FUNCIONA ${t.message}")
+                        else{
+                            InsertDeletedToDB(listaActivity).execute(ListBddErased(listaABorrar.id))
                         }
-                    })
-                }
+                    }
+
+                    override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                        InsertDeletedToDB(listaActivity).execute(ListBddErased(listaABorrar.id))
+                        println("NO FUNCIONA ${t.message}")
+                    }
+                })
+                listaActivity.podemosActualizar = true
+                return null
+            }
+        }
+
+        class InsertDeletedToDB(private val listaActivity: ListaActivity): AsyncTask<ListBddErased,Void,Void?>(){
+            override fun doInBackground(vararg params: ListBddErased?): Void? {
+                listaActivity.database.eraseList(params[0]!!)
                 return null
             }
         }
@@ -506,8 +539,8 @@ class ListaActivity : AppCompatActivity(),
                 var item2 = listaActivity.map[params[1]!!]
 
                 val pos = item1!!.position
-                item1!!.position = item2!!.position
-                item2!!.position = pos
+                item1.position = item2!!.position
+                item2.position = pos
 
                 val request = UserService.buildService(PersonApi::class.java)
                 val call = request.updateList(item1.id.toInt(),item1, API_KEY)
@@ -519,8 +552,8 @@ class ListaActivity : AppCompatActivity(),
                         println(response)
                         if (response.isSuccessful) {
                             if (response.body() != null) {
-                                item1!!.updated_at = response.body()!!.updated_at
-                                item1!!.isOnline = true
+                                item1.updated_at = response.body()!!.updated_at
+                                item1.isOnline = true
                                 listaActivity.map[params[0]!!] = item1
                                 UpdateListDb(listaActivity).execute(item1)
                             }
@@ -532,8 +565,8 @@ class ListaActivity : AppCompatActivity(),
                         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                         val formatted = current.format(formatter)
 
-                        item1!!.isOnline = false
-                        item1!!.updated_at = formatted
+                        item1.isOnline = false
+                        item1.updated_at = formatted
                         listaActivity.map[params[0]!!] = item1
                         UpdateListDb(listaActivity).execute(item1)
                         println("NO FUNCIONA ${t.message}")
@@ -549,8 +582,8 @@ class ListaActivity : AppCompatActivity(),
                         println(response)
                         if (response.isSuccessful) {
                             if (response.body() != null) {
-                                item2!!.updated_at = response.body()!!.updated_at
-                                item2!!.isOnline = true
+                                item2.updated_at = response.body()!!.updated_at
+                                item2.isOnline = true
                                 listaActivity.map[params[1]!!] = item2
                                 UpdateListDb(listaActivity).execute(item2)
                             }
@@ -562,14 +595,14 @@ class ListaActivity : AppCompatActivity(),
                         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                         val formatted = current.format(formatter)
 
-                        item2!!.isOnline = false
-                        item2!!.updated_at = formatted
+                        item2.isOnline = false
+                        item2.updated_at = formatted
                         listaActivity.map[params[1]!!] = item2
                         UpdateListDb(listaActivity).execute(item2)
                         println("NO FUNCIONA ${t.message}")
                     }
                 })
-
+                listaActivity.podemosActualizar = true
                 return null
             }
 
@@ -589,6 +622,9 @@ class ListaActivity : AppCompatActivity(),
                                 listaActivity.ListWithIds.add(it.list_id)
                                 GetRealSharedList(listaActivity, it)
                             }
+                            else{
+                                listaActivity.funcionando = false
+                            }
                         }
                     }
                 }
@@ -606,7 +642,7 @@ class ListaActivity : AppCompatActivity(),
                     if (!listaActivity.ListWithIds.contains(it.id) && it.isSharedList){
                         listaActivity.ListWithIds.add(it.id)
                         it.isOnline = false
-                        InsertInBDD(listaActivity).execute(it)
+                        InsertInBDD(listaActivity, false).execute(it)
                     }
                 }
                 return null
@@ -628,7 +664,7 @@ class ListaActivity : AppCompatActivity(),
                             x!!.isOnline = true
                             x.position = listaActivity.listaList.size
                             x.isSharedList = true
-                            InsertInBDD(listaActivity).execute(x)
+                            InsertInBDD(listaActivity, true).execute(x)
                         }
                     }
                 }
@@ -639,18 +675,44 @@ class ListaActivity : AppCompatActivity(),
 
         }
 
-        class InsertInBDD(private val listaActivity: ListaActivity) : AsyncTask<ListBDD, Void, ListaItem>(){
+        class InsertInBDD(private val listaActivity: ListaActivity, private val isToF: Boolean) : AsyncTask<ListBDD, Void, ListaItem>(){
             override fun doInBackground(vararg params: ListBDD?): ListaItem? {
                 listaActivity.database.insertList(params[0]!!)
                 val listItems = ListaItem(params[0]!!.name, null, true)
                 listaActivity.map[listItems] = params[0]!!
+                if(isToF){
+                    updatePosInApi(listaActivity, params[0]!!)
+                }
                 return listItems
             }
 
             override fun onPostExecute(result: ListaItem?) {
                 listaActivity.listaList.add(result!!)
                 listaActivity.adapter.notifyItemInserted(listaActivity.listaList.size - 1)
+                if(!isToF){
+                    listaActivity.funcionando = false
+                }
             }
+        }
+
+        fun updatePosInApi(listaActivity: ListaActivity,itemUpdt: ListBDD){
+            val request = UserService.buildService(PersonApi::class.java)
+            val call = request.updateList(itemUpdt.id.toInt(),itemUpdt, API_KEY)
+            call.enqueue(object : Callback<ListBDD> {
+                override fun onResponse(
+                    call: Call<ListBDD>,
+                    response: Response<ListBDD>
+                ) {
+                    println(response)
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                        }
+                    }
+                }
+                override fun onFailure(call: Call<ListBDD>, t: Throwable) {
+                }
+            })
+            listaActivity.funcionando = false
         }
     }
 }

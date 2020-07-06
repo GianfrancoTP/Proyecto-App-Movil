@@ -6,27 +6,22 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.os.AsyncTask
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.room.RoomMasterTable
-import androidx.room.RoomOpenHelper
 import com.example.entrega1proyecto.configuration.API_KEY
 import com.example.entrega1proyecto.model.*
 import com.example.entrega1proyecto.model.adapters.Item
-import com.example.entrega1proyecto.model.adapters.ListItems
 import com.example.entrega1proyecto.networking.PersonApi
 import com.example.entrega1proyecto.networking.UserService
 import com.example.entrega1proyecto.networking.isOnline
 import com.example.entrega1proyecto.utils.LocationUtil
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
@@ -36,12 +31,10 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.io.Serializable
-import java.lang.Exception
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
-import kotlin.collections.ArrayList
 
 class ItemDetails : AppCompatActivity() {
     //                  PIERDE LA INFO PQ HACE MUCHAS COSAS EN EL MAIN THREAD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -72,9 +65,9 @@ class ItemDetails : AppCompatActivity() {
 
         try {
             item = savedInstanceState?.getSerializable("Item") as Item
-            pos = savedInstanceState?.getInt("Item Mod Position")
-            itemDb = savedInstanceState?.getSerializable("item from db") as ItemBDD
-            idList = savedInstanceState?.getLong("id list")
+            pos = savedInstanceState.getInt("Item Mod Position")
+            itemDb = savedInstanceState.getSerializable("item from db") as ItemBDD
+            idList = savedInstanceState.getLong("id list")
         }
         catch(e:Exception){
             item = intent.getSerializableExtra("item to watch")!! as Item
@@ -126,7 +119,7 @@ class ItemDetails : AppCompatActivity() {
 
             imageView.setOnClickListener {
                 val dpd = DatePickerDialog(this, DatePickerDialog.OnDateSetListener { view, mYear, mMonth, mDay->
-                    var dateStr = "$mYear-$mMonth-$mDay $hour:$min:$seg"
+                    val dateStr = "$mYear-$mMonth-$mDay $hour:$min:$seg"
                     fechaPlazoTextView.setText(dateStr)
                 }, year, month, day)
                 dpd.show()
@@ -159,7 +152,6 @@ class ItemDetails : AppCompatActivity() {
     fun goBackToItemsView(view: View){
         updateItemToEndAct()
     }
-
 
     // To delete the specific item
     fun deleteItem(view: View){
@@ -319,9 +311,8 @@ class ItemDetails : AppCompatActivity() {
     fun invokeLocationAction() {
         val loc = LatLng(itemDb.lat, itemDb.longitud)
         mMap.addMarker(MarkerOptions().position(loc).title("Marker in ${itemDb.name}"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(loc))
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 12.0f))
     }
-
 
     companion object{
 
