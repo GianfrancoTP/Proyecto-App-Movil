@@ -5,6 +5,23 @@
   - Gianfranco Traverso
   - Katherine Jara
 
+# Instrucciones entrega 4
+### Listas Compartidas:
+- Para esta parte creamos un timer de 5 segundos para que comienze a buscar a la API todas las listas compartidas, en donde luego las comparamos con las que tenemos, y si no ha sido actualizada, o insertada anteriormente, esta se agregara al final de la lista, con la posicion respectiva, y una vez modificada su posición, se actualizara la posicion de ella con las listas que estan despues de esta, para mantener un constante orden de las listas.
+- Para poder compartir listas, se debe entrar a una lista (que no sea una compartida a tí), y luego apretar el boton share, en donde aparecerá un pop up preguntando el mail al cual queremos compartir.
+- Si presionamos el boton para compartir en una lista compartida a mi, aparecerá un toast diciendo que no puede ser compartida, porque ya es compartida.
+
+### Mapas
+- Para poder ver el mapa, debemos entrar a una lista, luego a un item (presionar el ojo a su lado derecho), y podremos entrar a ver el mapa de los items creados.
+- Si queremos crear items, debemos seleccionar que permitimos el uso de localización.
+
+### Log In con firebase
+- En nuestra app se espera que siempre que se entre a la app se este conectado a internet, de no ser así, tendra que comenzar de nuevo la app, para poder hacer login.
+- Podremos entrar con cualquier mail de google, y obtendra los datos del usuario desde la API, por lo que solo sirve para poder entrar.
+
+##  Esperamos que les guste la app, nos enfocamos muy bien en el diseño de esta para que se pueda disfrutar de buena forma.
+
+
 # Instrucciones entrega 3
 ### Primer uso de aplicación:
 - Para el primer uso, ya que no contamos con un usuario, contamos con la necesidad de una conexión a internet.
